@@ -1,0 +1,39 @@
+﻿@page
+@model SettingsModel
+@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+@inject THMI_Mod_Manager.Services.LocalizationManager LocalizationManager
+@{
+    ViewData["Title"] = AppConfig.GetLocalized("Settings:Title", "Settings");
+    var locales = LocalizationManager.GetAvailableLocales();
+    var selected = AppConfig.Get("Localization", "Language", "en_US");
+}
+
+<h2>@AppConfig.GetLocalized("Settings:Header", "Settings")</h2>
+
+<form method="post" asp-page-handler="SaveSettings">
+    <div class="mb-3">
+        <label for="languageSelect" class="form-label">@AppConfig.GetLocalized("Settings:SelectLanguageLabel", "Language")</label>
+        <select id="languageSelect" name="language" class="form-select">
+            @foreach (var loc in locales)
+            {
+                var fileName = loc.FileName; // original filename e.g. en_US or en-US
+                <option value="@fileName" selected="@(fileName == selected ? "selected" : null)">@loc.FriendlyName</option>
+            }
+        </select>
+    </div>
+    <hr />
+    <div class="mb-3">
+        <label class="form-label">游戏购买状态</label>
+        <br />
+        <select id="statusSelect" name="status" class="form-select">
+            <option value="owned">已购买</option>
+            <option value="not_owned">未购买</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Cursor</label>
+        <br />
+        <input type="checkbox" value="useMystiaCursor" /> @AppConfig.GetLocalized("Settings:UseMystiaCursorLabel", "Use Mystia Cursor")
+    </div>
+    <button type="submit" class="btn btn-primary">@AppConfig.GetLocalized("Settings:SaveButton", "Save")</button>
+</form>

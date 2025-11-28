@@ -1,0 +1,12 @@
+﻿[App]
+Version=0.0.1
+VersionCode=1
+
+[Localization]
+Language=zh_CN
+
+[Cursor]
+UseMystiaCursor=True
+
+# 重置后的 THMI Mod Manager 项目
+# 夜露死苦——

@@ -1,0 +1,124 @@
+﻿@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - THMI Mod Manager</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/THMI_Mod_Manager.styles.css" asp-append-version="true" />
+    <style>
+        /* Ensure main content doesn't sit under fixed sidebar on md+ */
+        @@media (min-width: 768px) {
+            #mainContent { margin-left: 260px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top navbar for small screens: shows brand and toggle for offcanvas sidebar -->
+    <nav class="navbar navbar-light bg-white border-bottom d-md-none">
+        <div class="container-fluid">
+            <a class="navbar-brand" asp-area="" asp-page="/Index">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
+            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="d-flex">
+        <!-- Sidebar for md and up -->
+        <nav id="sidebar" class="bg-white border-end d-none d-md-block" style="width:260px; min-height:100vh; position:relative;">
+            <div class="p-3">
+                <a class="navbar-brand d-block mb-3" asp-area="" asp-page="/Index">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Index"><i class="bi bi-house"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Privacy"><i class="bi bi-shield-lock"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Privacy", "Privacy")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Dashboard"><i class="bi bi-speedometer2"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Dashboard", "Dashboard")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Mods"><i class="bi bi-box-seam"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Settings"><i class="bi bi-gear"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/About"><i class="bi bi-info-circle"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
+                    </li>
+                </ul>
+
+                <!-- Fixed button at the bottom of the sidebar (md+) -->
+                <div class="position-absolute bottom-0 w-100 p-3">
+                    <a class="btn btn-primary w-100" href="steam://openurl/https://store.steampowered.com" role="button" target="_blank" rel="noopener noreferrer">
+                        <i class="bi bi-box-arrow-up-right"></i> <span class="ms-2">@AppConfig.GetLocalized("Buttons:OpenInSteam", "Open in Steam")</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Offcanvas sidebar for small screens -->
+        <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body" style="display:flex; flex-direction:column;">
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Index"><i class="bi bi-house"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Privacy"><i class="bi bi-shield-lock"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Privacy", "Privacy")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Dashboard"><i class="bi bi-speedometer2"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Dashboard", "Dashboard")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Mods"><i class="bi bi-box-seam"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Settings"><i class="bi bi-gear"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-page="/About"><i class="bi bi-info-circle"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
+                    </li>
+                </ul>
+
+                <!-- Button stuck to bottom inside offcanvas for small screens -->
+                <div class="mt-auto pt-3">
+                    <a class="btn btn-primary w-100" href="steam://openurl/https://store.steampowered.com" role="button" target="_blank" rel="noopener noreferrer">
+                        <i class="bi bi-box-arrow-up-right"></i> <span class="ms-2">@AppConfig.GetLocalized("Buttons:OpenInSteam", "Open in Steam")</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div id="mainContent" class="flex-grow-1">
+            <div class="container py-3">
+                <main role="main" class="pb-3">
+                    @RenderBody()
+                </main>
+            </div>
+
+            <footer class="border-top footer text-muted">
+                <div class="container">
+                    &copy; 2025 - THMI_Mod_Manager - <a asp-area="" asp-page="/Privacy">@AppConfig.GetLocalized("Sidebar:Privacy", "Privacy")</a>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

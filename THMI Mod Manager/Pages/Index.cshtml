@@ -1,0 +1,11 @@
+﻿@page
+@model IndexModel
+@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+@{
+    ViewData["Title"] = AppConfig.GetLocalized("Index:Title", "主页");
+}
+
+<div class="text-center">
+    <h1 class="display-4">@AppConfig.GetLocalized("Index:WelcomeTitle", "Welcome")</h1>
+    <p>@AppConfig.GetLocalized("Index:LearnMore", "Learn about <a href='https://learn.microsoft.com/aspnet/core'>building Web apps with ASP.NET Core</a>.")</p>
+</div>
