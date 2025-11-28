@@ -1,11 +1,108 @@
 ﻿@page
 @model IndexModel
 @inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+@using System.IO
+@using System.Security.Cryptography
+@using System.Text
 @{
     ViewData["Title"] = AppConfig.GetLocalized("Index:Title", "主页");
+    
+    // 检查游戏文件
+    var devBuildStr = AppConfig.Get("[Dev]IsDevBuild", "False");
+    var isDevBuild = !string.IsNullOrEmpty(devBuildStr) && bool.Parse(devBuildStr);
+    var currentDir = System.IO.Directory.GetCurrentDirectory();
+    var gameExePath = System.IO.Path.Combine(currentDir, "Touhou Mystia Izakaya.exe");
+    var unityDllPath = System.IO.Path.Combine(currentDir, "UnityPlayer.dll");
+    var gameExeExists = System.IO.File.Exists(gameExePath);
+    var unityDllExists = System.IO.File.Exists(unityDllPath);
+    var isGameInstalled = gameExeExists && unityDllExists;
+    
+    // CVE-2025-59489 漏洞检查
+    var hasUnityVulnerability = false;
+    var unitySha1 = "";
+    var unityMd5 = "";
+    
+    if (unityDllExists)
+    {
+        try
+        {
+            using (var sha1 = SHA1.Create())
+            using (var md5 = MD5.Create())
+            using (var stream = System.IO.File.OpenRead(unityDllPath))
+            {
+                unitySha1 = BitConverter.ToString(sha1.ComputeHash(stream)).Replace("-", "").ToLower();
+                stream.Position = 0;
+                unityMd5 = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
+                
+                // 检查是否为有漏洞的版本 (Unity 2021.3.28f1 Mono Non-development x64)
+                hasUnityVulnerability = unitySha1.Equals("f533ffe6a197876244aed60fe1c2070def962c73", StringComparison.OrdinalIgnoreCase) ||
+                                       unityMd5.Equals("3efb0fce3c5c6b33d399172b6d366596", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        catch
+        {
+            // 如果哈希计算失败，不认为存在漏洞
+            hasUnityVulnerability = false;
+        }
+    }
+}
+
+@if (hasUnityVulnerability)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-top: -1rem; margin-bottom: 1rem;">
+        <h4 class="alert-heading">@AppConfig.GetLocalized("Index:CVEWarning", "⚠️ 安全警告 - CVE-2025-59489")</h4>
+        <p><strong>@AppConfig.GetLocalized("Index:CVEVulnerabilityDetected", "检测到Unity播放器存在已知安全漏洞！")</strong></p>
+        <p>@AppConfig.GetLocalized("Index:CVEVulnerabilityDesc", "当前UnityPlayer.dll为Unity 2021.3.28f1 Mono Non-development x64播放器版本，该版本存在CVE-2025-59489漏洞。")</p>
+        <hr>
+        <p class="mb-0">@AppConfig.GetLocalized("Index:CVEUpdateRecommendation", "建议立即更新游戏或使用安全版本的Unity播放器。")</p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }
 
 <div class="text-center">
     <h1 class="display-4">@AppConfig.GetLocalized("Index:WelcomeTitle", "Welcome")</h1>
-    <p>@AppConfig.GetLocalized("Index:LearnMore", "Learn about <a href='https://learn.microsoft.com/aspnet/core'>building Web apps with ASP.NET Core</a>.")</p>
+    
+    @if (!isDevBuild && !isGameInstalled)
+    {
+        <div class="alert alert-danger mt-4" role="alert">
+            <h4 class="alert-heading">@AppConfig.GetLocalized("Index:GameNotFound", "游戏未正确安装")</h4>
+            <p>@AppConfig.GetLocalized("Index:GameNotFoundDesc", "未找到《东方夜雀食堂》游戏文件。请确保游戏已正确安装并与本程序放在同一目录下。")</p>
+            <hr>
+            <p class="mb-0">@AppConfig.GetLocalized("Index:FileStatus", "文件状态：")</p>
+            <ul class="mb-0">
+                @if (gameExeExists)
+                {
+                    <li><span class="text-success">✓</span> Touhou Mystia Izakaya.exe - @AppConfig.GetLocalized("Index:FileFound", "已找到")</li>
+                }
+                else
+                {
+                    <li><span class="text-danger">✗</span> Touhou Mystia Izakaya.exe - @AppConfig.GetLocalized("Index:FileMissing", "缺失")</li>
+                }
+                @if (unityDllExists)
+                {
+                    <li><span class="text-success">✓</span> UnityPlayer.dll - @AppConfig.GetLocalized("Index:FileFound", "已找到")</li>
+                }
+                else
+                {
+                    <li><span class="text-danger">✗</span> UnityPlayer.dll - @AppConfig.GetLocalized("Index:FileMissing", "缺失")</li>
+                }
+            </ul>
+        </div>
+    }
+    else if (isDevBuild)
+    {
+        <div class="alert alert-warning mt-4" role="alert">
+            <h4 class="alert-heading">@AppConfig.GetLocalized("Index:DevMode", "开发模式")</h4>
+            <p>@AppConfig.GetLocalized("Index:DevModeDesc", "当前处于开发模式，已跳过游戏文件检查。")</p>
+        </div>
+    }
+</div>
+
+<!-- 渲染Markdown内容 -->
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            @Html.Raw(Model.Content)
+        </div>
+    </div>
 </div>

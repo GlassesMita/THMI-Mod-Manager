@@ -11,3 +11,7 @@ UseMystiaCursor=False
 [Game]
 Status=owned
 
+[Dev]
+IsDevBuild=False
+ShowCVEWarning=True
+
