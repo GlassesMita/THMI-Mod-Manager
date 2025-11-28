@@ -1,6 +1,8 @@
 using System.Globalization;
+using System.Text;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Localization;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using THMI_Mod_Manager.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -92,5 +94,98 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+// 在应用启动后输出运行信息
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStarted.Register(() =>
+{
+    try
+    {
+        // 从配置获取端口信息
+        var configuration = app.Services.GetRequiredService<IConfiguration>();
+        var urls = configuration["urls"] ?? configuration["Urls"] ?? "http://localhost:5225";
+        
+        // 解析URL获取端口
+        var url = urls.Split(';').FirstOrDefault() ?? "http://localhost:5225";
+        var uri = new Uri(url);
+        var port = uri.Port;
+        
+        // 从本地化文件读取消息
+        var appConfigManager = app.Services.GetRequiredService<THMI_Mod_Manager.Services.AppConfigManager>();
+        var currentLanguage = appConfigManager.GetSection("Localization").TryGetValue("Language", out var langValue) ? langValue : "zh_CN";
+        
+        // 构建本地化文件路径
+        var localizationFile = Path.Combine(app.Environment.ContentRootPath, "Localization", $"{currentLanguage}.ini");
+        string runningMessage = $"正在 localhost:{port} 上运行"; // 默认消息
+        string browserOpenedMessage = $"已自动打开浏览器: http://localhost:{port}"; // 默认消息
+        string welcomeMessage = null;
+        
+        if (File.Exists(localizationFile))
+        {
+            try
+            {
+                var lines = File.ReadAllLines(localizationFile, Encoding.UTF8);
+                string currentSection = "";
+                
+                foreach (var rawLine in lines)
+                {
+                    var line = rawLine.Trim();
+                    if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith(";"))
+                        continue;
+                    
+                    if (line.StartsWith("[") && line.EndsWith("]"))
+                    {
+                        currentSection = line.Substring(1, line.Length - 2).Trim();
+                        continue;
+                    }
+                    
+                    var idx = line.IndexOf('=');
+                    if (idx <= 0) continue;
+                    
+                    var key = line.Substring(0, idx).Trim();
+                    var value = line.Substring(idx + 1).Trim();
+                    
+                    // 解析换行符（支持\n作为换行符）
+                    value = value.Replace("\\n", "\n");
+                    
+                    if (currentSection == "Console" || currentSection == "Messages")
+                    {
+                        if (key == "AppRunningMessage")
+                            runningMessage = value.Replace("{port}", port.ToString());
+                        else if (key == "BrowserOpenedMessage")
+                            browserOpenedMessage = value.Replace("{url}", $"http://localhost:{port}");
+                        else if (key == "WelcomeMessage")
+                            welcomeMessage = value;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"读取本地化文件失败: {ex.Message}");
+            }
+        }
+        
+        // 先输出欢迎消息（如果存在）
+        if (!string.IsNullOrEmpty(welcomeMessage))
+        {
+            Console.WriteLine(welcomeMessage);
+        }
+        
+        Console.WriteLine(runningMessage);
+        
+        // 自动打开默认浏览器
+        var openUrl = $"http://localhost:{port}";
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = openUrl,
+            UseShellExecute = true
+        });
+        Console.WriteLine(browserOpenedMessage);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"无法自动打开浏览器: {ex.Message}");
+    }
+});
 
 app.Run();
