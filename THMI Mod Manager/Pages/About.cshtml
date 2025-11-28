@@ -1,0 +1,13 @@
+@page
+@model AboutModel
+@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+@{
+    ViewData["Title"] = AppConfig.GetLocalized("About:Title", "About");
+}
+
+<div class="container">
+    <h1>@AppConfig.GetLocalized("About:Header", "About")</h1>
+    <div class="content">
+        @Html.Raw(Model.Content)
+    </div>
+</div>

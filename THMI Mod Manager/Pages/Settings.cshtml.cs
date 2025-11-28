@@ -26,7 +26,7 @@ namespace THMI_Mod_Manager.Pages
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
         }
 
-        public IActionResult OnPostSaveLanguage([FromForm] string language)
+        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useMystiaCursor)
         {
             if (string.IsNullOrEmpty(language))
             {
@@ -34,7 +34,13 @@ namespace THMI_Mod_Manager.Pages
             }
 
             // Save into AppConfig.Schale under [Localization] Language=... (preserve naming like en_US)
-            _appConfig.Set("Localization", "Language", language);
+            _appConfig.Set("[Localization]Language", language);
+            
+            // Save game status
+            _appConfig.Set("[Game]Status", status);
+            
+            // Save cursor setting
+            _appConfig.Set("[Cursor]UseMystiaCursor", useMystiaCursor.ToString());
 
             // Optionally reload configuration
             _appConfig.Reload();

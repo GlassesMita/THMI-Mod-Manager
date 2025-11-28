@@ -1,4 +1,7 @@
 ﻿@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+
+@{ string year = DateTime.Now.Year.ToString(); }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -55,7 +58,7 @@
 
                 <!-- Fixed button at the bottom of the sidebar (md+) -->
                 <div class="position-absolute bottom-0 w-100 p-3">
-                    <a class="btn btn-primary w-100" href="steam://openurl/https://store.steampowered.com" role="button" target="_blank" rel="noopener noreferrer">
+                    <a class="btn btn-primary w-100" href="steam://openurl/https://store.steampowered.com/app/1584090" role="button" target="_blank" rel="noopener noreferrer">
                         <i class="bi bi-box-arrow-up-right"></i> <span class="ms-2">@AppConfig.GetLocalized("Buttons:OpenInSteam", "Open in Steam")</span>
                     </a>
                 </div>
@@ -92,7 +95,7 @@
 
                 <!-- Button stuck to bottom inside offcanvas for small screens -->
                 <div class="mt-auto pt-3">
-                    <a class="btn btn-primary w-100" href="steam://openurl/https://store.steampowered.com" role="button" target="_blank" rel="noopener noreferrer">
+                    <a class="btn btn-primary w-100" href="steam://openurl/https://store.steampowered.com/app/1584090" role="button" target="_blank" rel="noopener noreferrer">
                         <i class="bi bi-box-arrow-up-right"></i> <span class="ms-2">@AppConfig.GetLocalized("Buttons:OpenInSteam", "Open in Steam")</span>
                     </a>
                 </div>
@@ -109,7 +112,7 @@
 
             <footer class="border-top footer text-muted">
                 <div class="container">
-                    &copy; 2025 - THMI_Mod_Manager - <a asp-area="" asp-page="/Privacy">@AppConfig.GetLocalized("Sidebar:Privacy", "Privacy")</a>
+                    &copy; @year - THMI Mod Manager - <a asp-area="" asp-page="/Privacy">@AppConfig.GetLocalized("Sidebar:Privacy", "Privacy")</a>
                 </div>
             </footer>
         </div>

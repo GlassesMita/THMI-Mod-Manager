@@ -15,11 +15,18 @@ namespace THMI_Mod_Manager.Services
         private readonly ReaderWriterLockSlim _lock = new();
         private readonly Dictionary<string, Dictionary<string, string>> _data = new(StringComparer.OrdinalIgnoreCase);
 
-        public AppConfigManager(IWebHostEnvironment env)
-        {
-            _filePath = Path.Combine(env.ContentRootPath, "AppConfig.Schale");
-            Load();
-        }
+        private readonly IConfiguration _config;
+    private readonly ILogger<AppConfigManager> _logger;
+    private readonly IServiceProvider _serviceProvider;
+
+    public AppConfigManager(IWebHostEnvironment env, IConfiguration configuration, ILogger<AppConfigManager> logger, IServiceProvider serviceProvider)
+    {
+        _config = configuration;
+        _logger = logger;
+        _serviceProvider = serviceProvider;
+        _filePath = Path.Combine(env.ContentRootPath, "AppConfig.Schale");
+        Load();
+    }
 
         private void Load()
         {
@@ -84,6 +91,36 @@ namespace THMI_Mod_Manager.Services
                 _lock.ExitReadLock();
             }
         }
+        
+        public string? Get(string key, string? defaultValue = null)
+        {
+            // Parse key in format [Section]Key or just Key
+            if (key.StartsWith("[") && key.Contains("]"))
+            {
+                var endBracket = key.IndexOf(']');
+                var section = key.Substring(1, endBracket - 1);
+                var actualKey = key.Substring(endBracket + 1);
+                return Get(section, actualKey, defaultValue);
+            }
+            
+            // Try to find the key in any section
+            _lock.EnterReadLock();
+            try
+            {
+                foreach (var section in _data.Values)
+                {
+                    if (section.TryGetValue(key, out var value))
+                    {
+                        return value;
+                    }
+                }
+                return defaultValue;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
 
         public IReadOnlyDictionary<string, string> GetSection(string section)
         {
@@ -122,6 +159,22 @@ namespace THMI_Mod_Manager.Services
             {
                 _lock.ExitWriteLock();
             }
+        }
+        
+        public void Set(string key, string value, bool autoSave = true)
+        {
+            // Parse key in format [Section]Key or just Key
+            if (key.StartsWith("[") && key.Contains("]"))
+            {
+                var endBracket = key.IndexOf(']');
+                var section = key.Substring(1, endBracket - 1);
+                var actualKey = key.Substring(endBracket + 1);
+                Set(section, actualKey, value, autoSave);
+                return;
+            }
+            
+            // If no section specified, use empty section
+            Set(string.Empty, key, value, autoSave);
         }
 
         public bool RemoveKey(string section, string key, bool autoSave = true)
@@ -212,34 +265,118 @@ namespace THMI_Mod_Manager.Services
         }
 
         /// <summary>
-        /// Get localized value for the current UI culture.
-        /// Looks for a section named by full culture (e.g. "en-US"), then neutral two-letter (e.g. "en"),
-        /// then a generic "Localization" section.
-        /// Keys should be like "Sidebar:Home" or "Index:Welcome".
+        /// Get localized value for the configured language.
+        /// Looks for localization files in Localization or Resources directories.
+        /// Supports multiple fallback strategies: exact match, normalized format, neutral culture, default culture.
         /// </summary>
-        public string? GetLocalized(string key, string? defaultValue = null)
+        public string GetLocalized(string key, string? defaultValue = null)
+    {
+        // Get the configured language from the config file
+        var language = Get("[Localization]Language", "en_US");
+        
+        // Get the base path for localization files
+        var basePath = Path.Combine(Path.GetDirectoryName(_filePath) ?? "", "Localization");
+        if (!Directory.Exists(basePath))
+        {
+            basePath = Path.Combine(Path.GetDirectoryName(_filePath) ?? "", "Resources");
+        }
+        
+        // If no localization directory exists, fallback to config-based approach
+        if (!Directory.Exists(basePath))
         {
             _lock.EnterReadLock();
             try
             {
-                var cultureFull = CultureInfo.CurrentUICulture.Name; // e.g. en-US
-                if (!string.IsNullOrEmpty(cultureFull) && _data.TryGetValue(cultureFull, out var dict) && dict.TryGetValue(key, out var val))
+                // Convert to standard format (e.g., en-US)
+                var cultureName = language.Replace('_', '-');
+                
+                // First try with the full culture name (e.g., "en-US")
+                if (!string.IsNullOrEmpty(cultureName) && _data.TryGetValue(cultureName, out var dict) && dict.TryGetValue(key, out var val))
                     return val;
 
-                var neutral = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; // e.g. en
+                // Then try with the neutral culture (e.g., "en")
+                var neutral = cultureName.Split('-')[0];
                 if (!string.IsNullOrEmpty(neutral) && _data.TryGetValue(neutral, out var dict2) && dict2.TryGetValue(key, out var val2))
                     return val2;
 
+                // Finally try with the generic "Localization" section
                 if (_data.TryGetValue("Localization", out var dict3) && dict3.TryGetValue(key, out var val3))
                     return val3;
 
-                return defaultValue;
+                return defaultValue ?? key;
             }
             finally
             {
                 _lock.ExitReadLock();
             }
         }
+        
+        // Load localization resources from files
+        var cache = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+        var localizationFiles = Directory.GetFiles(basePath, "*.ini");
+        
+        foreach (var file in localizationFiles)
+        {
+            var cultureName = Path.GetFileNameWithoutExtension(file);
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string? currentSection = null;
+            
+            foreach (var rawLine in File.ReadAllLines(file, Encoding.UTF8))
+            {
+                var line = rawLine.Trim();
+                if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith(";"))
+                    continue;
+                
+                // Section header [SectionName]
+                if (line.StartsWith("[") && line.EndsWith("]"))
+                {
+                    currentSection = line.Substring(1, line.Length - 2).Trim();
+                    continue;
+                }
+                    
+                var idx = line.IndexOf('=');
+                if (idx <= 0) continue;
+                    
+                var k = line.Substring(0, idx).Trim();
+                var v = line.Substring(idx + 1).Trim();
+                
+                // Store with section prefix if in a section
+                var storeKey = string.IsNullOrEmpty(currentSection) ? k : $"{currentSection}:{k}";
+                dict[storeKey] = v;
+            }
+            
+            cache[cultureName] = dict;
+        }
+        
+        // Try to get localized value with multiple fallback strategies
+        // 1. Try exact match (e.g., zh_CN)
+        if (cache.TryGetValue(language, out var dict1) && dict1.TryGetValue(key, out var value1))
+            return value1;
+            
+        // 2. Try normalized format (e.g., zh-CN)
+        var normalizedLanguage = language.Replace('_', '-');
+        if (normalizedLanguage != language && cache.TryGetValue(normalizedLanguage, out var dictNormalized) && dictNormalized.TryGetValue(key, out var valueNormalized))
+            return valueNormalized;
+            
+        // 3. Try neutral culture (e.g., zh)
+        if (normalizedLanguage.Contains('-'))
+        {
+            var neutralLanguage = normalizedLanguage.Split('-')[0];
+            if (cache.TryGetValue(neutralLanguage, out var dict3) && dict3.TryGetValue(key, out var value3))
+                return value3;
+        }
+            
+        // 4. Try default culture (en)
+        if (cache.TryGetValue("en", out var dict4) && dict4.TryGetValue(key, out var value4))
+            return value4;
+            
+        // 5. Try empty culture
+        if (cache.TryGetValue(string.Empty, out var dict5) && dict5.TryGetValue(key, out var value5))
+            return value5;
+            
+        // 6. Return default value or key as fallback
+        return defaultValue ?? key;
+    }
 
         public void Dispose()
         {

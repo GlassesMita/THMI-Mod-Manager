@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Localization;
+using THMI_Mod_Manager.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,10 +10,23 @@ builder.Services.AddRazorPages();
 
 // Add localization services and custom INI-based localizer factory
 builder.Services.AddLocalization();
-builder.Services.AddSingleton<IStringLocalizerFactory, THMI_Mod_Manager.Services.IniFileStringLocalizerFactory>();
+// 注册本地化服务
+builder.Services.AddSingleton<IStringLocalizerFactory>(provider => 
+{
+    var env = provider.GetRequiredService<IWebHostEnvironment>();
+    var serviceProvider = provider;
+    return new THMI_Mod_Manager.Services.IniFileStringLocalizerFactory(env, serviceProvider);
+});
 
 // Register AppConfigManager
-builder.Services.AddSingleton<THMI_Mod_Manager.Services.AppConfigManager>();
+builder.Services.AddSingleton<THMI_Mod_Manager.Services.AppConfigManager>(provider => 
+{
+    var env = provider.GetRequiredService<IWebHostEnvironment>();
+    var configuration = provider.GetRequiredService<IConfiguration>();
+    var logger = provider.GetRequiredService<ILogger<THMI_Mod_Manager.Services.AppConfigManager>>();
+    var serviceProvider = provider;
+    return new THMI_Mod_Manager.Services.AppConfigManager(env, configuration, logger, serviceProvider);
+});
 // Register LocalizationManager
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.LocalizationManager>();
 
@@ -56,8 +70,6 @@ var requestLocalizationOptions = new RequestLocalizationOptions
     SupportedUICultures = supportedCultures
 };
 
-app.UseRequestLocalization(requestLocalizationOptions);
-
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -65,6 +77,12 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+// 使用动态本地化中间件，在请求本地化之前设置当前文化
+app.UseDynamicLocalization();
+
+// 应用请求本地化
+app.UseRequestLocalization(requestLocalizationOptions);
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

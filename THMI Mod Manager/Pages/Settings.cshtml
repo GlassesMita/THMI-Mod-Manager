@@ -5,12 +5,12 @@
 @{
     ViewData["Title"] = AppConfig.GetLocalized("Settings:Title", "Settings");
     var locales = LocalizationManager.GetAvailableLocales();
-    var selected = AppConfig.Get("Localization", "Language", "en_US");
+    var selected = AppConfig.Get("[Localization]Language", "en_US");
 }
 
 <h2>@AppConfig.GetLocalized("Settings:Header", "Settings")</h2>
 
-<form method="post" asp-page-handler="SaveSettings">
+<form method="post" asp-page-handler="SaveLanguage">
     <div class="mb-3">
         <label for="languageSelect" class="form-label">@AppConfig.GetLocalized("Settings:SelectLanguageLabel", "Language")</label>
         <select id="languageSelect" name="language" class="form-select">
@@ -23,17 +23,17 @@
     </div>
     <hr />
     <div class="mb-3">
-        <label class="form-label">游戏购买状态</label>
+        <label class="form-label">@AppConfig.GetLocalized("Settings:GameStatusLabel", "Game Purchase Status")</label>
         <br />
         <select id="statusSelect" name="status" class="form-select">
-            <option value="owned">已购买</option>
-            <option value="not_owned">未购买</option>
+            <option value="owned">@AppConfig.GetLocalized("Settings:Owned", "Owned")</option>
+            <option value="not_owned">@AppConfig.GetLocalized("Settings:NotOwned", "Not Owned")</option>
         </select>
     </div>
     <div class="mb-3">
-        <label class="form-label">Cursor</label>
+        <label class="form-label">@AppConfig.GetLocalized("Settings:CursorLabel", "Cursor")</label>
         <br />
-        <input type="checkbox" value="useMystiaCursor" /> @AppConfig.GetLocalized("Settings:UseMystiaCursorLabel", "Use Mystia Cursor")
+        <input type="checkbox" name="useMystiaCursor" value="true" /> @AppConfig.GetLocalized("Settings:UseMystiaCursorLabel", "Use Mystia Cursor")
     </div>
     <button type="submit" class="btn btn-primary">@AppConfig.GetLocalized("Settings:SaveButton", "Save")</button>
 </form>

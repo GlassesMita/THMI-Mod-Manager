@@ -6,7 +6,8 @@ VersionCode=1
 Language=zh_CN
 
 [Cursor]
-UseMystiaCursor=True
+UseMystiaCursor=False
 
-# 重置后的 THMI Mod Manager 项目
-# 夜露死苦——
+[Game]
+Status=owned
+
