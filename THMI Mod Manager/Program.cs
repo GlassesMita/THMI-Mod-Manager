@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddControllers(); // 添加API控制器服务
 
 // Add localization services and custom INI-based localizer factory
 builder.Services.AddLocalization();
@@ -94,6 +95,7 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapRazorPages();
+app.MapControllers(); // 添加API控制器支持
 
 // 在应用启动后输出运行信息
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();

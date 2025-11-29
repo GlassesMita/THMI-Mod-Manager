@@ -51,7 +51,7 @@
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-top: -1rem; margin-bottom: 1rem;">
         <h4 class="alert-heading">@AppConfig.GetLocalized("Index:CVEWarning", "⚠️ 安全警告 - CVE-2025-59489")</h4>
-        <p><strong>@AppConfig.GetLocalized("Index:CVEVulnerabilityDetected", "检测到Unity播放器存在已知安全漏洞！")</strong></p>
+        <p><strong>@Html.Raw(AppConfig.GetLocalized("Index:CVEVulnerabilityDetected", "检测到Unity播放器存在已知安全漏洞！"))</strong></p>
         <p>@AppConfig.GetLocalized("Index:CVEVulnerabilityDesc", "当前UnityPlayer.dll为Unity 2021.3.28f1 Mono Non-development x64播放器版本，该版本存在CVE-2025-59489漏洞。")</p>
         <hr>
         <p class="mb-0">@AppConfig.GetLocalized("Index:CVEUpdateRecommendation", "建议立即更新游戏或使用安全版本的Unity播放器。")</p>

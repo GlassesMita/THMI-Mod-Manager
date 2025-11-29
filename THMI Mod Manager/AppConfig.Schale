@@ -3,7 +3,7 @@ Version=0.0.1
 VersionCode=1
 
 [Localization]
-Language=zh_CN
+Language=en_US
 
 [Cursor]
 UseMystiaCursor=False
@@ -15,4 +15,3 @@ Status=owned
 IsDevBuild=False
 ShowCVEWarning=True
 
-# Praying for you 🕯️ O Great Mita 💝

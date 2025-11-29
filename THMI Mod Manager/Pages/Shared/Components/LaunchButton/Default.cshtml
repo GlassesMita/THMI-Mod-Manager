@@ -1,0 +1,128 @@
+@model THMI_Mod_Manager.ViewComponents.LaunchButtonViewModel
+
+<form id="launcherForm" style="display: inline; width: 100%;" 
+      onsubmit="handleLauncherSubmit(event)">
+    <button type="submit" class="btn @Model.ButtonClass" style="width: 100%; display: flex; align-items: center; justify-content: flex-start; padding: 0.5rem 1rem;">
+        <i class="bi @Model.ButtonIcon" style="margin-right: 0.5rem;"></i> 
+        <span id="buttonText">@Model.ButtonText</span>
+    </button>
+</form>
+
+<script>
+    let currentIsRunning = @(Model.IsProcessRunning.ToString().ToLower());
+    
+    function handleLauncherSubmit(event) {
+        event.preventDefault();
+        
+        const action = currentIsRunning ? 'stop' : 'launch';
+        
+        if (currentIsRunning && !confirmStopGame()) {
+            return;
+        }
+        
+        fetch(`/api/launcher/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 立即更新按钮状态
+                updateButtonState(!currentIsRunning);
+                
+                // 延迟后重新检查状态确保准确性
+                if (action === 'launch') {
+                    // 启动游戏时，使用更长的延迟和多次检查
+                    setTimeout(() => {
+                        checkProcessStatusWithRetry(5, 2000); // 最多重试5次，每次间隔2秒
+                    }, 3000); // 初始延迟3秒
+                } else {
+                    // 停止游戏时，正常检查
+                    setTimeout(() => {
+                        checkProcessStatus();
+                    }, 1000);
+                }
+            } else {
+                alert('操作失败: ' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('操作失败，请重试');
+        });
+    }
+    
+    function confirmStopGame() {
+        return confirm('@Html.Raw(Model.ConfirmStopMessage.Replace("\n", "\\n"))');
+    }
+    
+    function updateButtonState(isRunning) {
+        currentIsRunning = isRunning;
+        const button = document.querySelector('#launcherForm button');
+        const buttonText = document.getElementById('buttonText');
+        const buttonIcon = button.querySelector('i');
+        
+        if (isRunning) {
+            button.className = 'btn btn-danger';
+            buttonIcon.className = 'bi bi-stop-fill';
+            buttonText.textContent = 'Stop';
+        } else {
+            button.className = 'btn btn-success';
+            buttonIcon.className = 'bi bi-play-fill';
+            buttonText.textContent = 'Launch';
+        }
+    }
+    
+    function checkProcessStatus() {
+        fetch('/api/launcher/status')
+            .then(response => response.json())
+            .then(data => {
+                updateButtonState(data.isRunning);
+            })
+            .catch(error => {
+                console.error('检查进程状态时出错:', error);
+            });
+    }
+    
+    function checkProcessStatusWithRetry(maxRetries, interval) {
+        let retries = 0;
+        
+        function attemptCheck() {
+            fetch('/api/launcher/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateButtonState(data.isRunning);
+                    
+                    // 如果检测到进程正在运行，或者达到最大重试次数，停止重试
+                    if (data.isRunning || retries >= maxRetries) {
+                        return;
+                    }
+                    
+                    // 如果进程仍未检测到，继续重试
+                    retries++;
+                    setTimeout(attemptCheck, interval);
+                })
+                .catch(error => {
+                    console.error('检查进程状态时出错:', error);
+                    
+                    // 出错时也继续重试，直到达到最大次数
+                    if (retries < maxRetries) {
+                        retries++;
+                        setTimeout(attemptCheck, interval);
+                    }
+                });
+        }
+        
+        attemptCheck();
+    }
+    
+    // 页面加载完成后立即检查一次状态
+    document.addEventListener('DOMContentLoaded', function() {
+        checkProcessStatus();
+        
+        // 定期更新状态（每5秒）
+        setInterval(checkProcessStatus, 5000);
+    });
+</script>
