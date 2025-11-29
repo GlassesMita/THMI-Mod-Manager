@@ -1,4 +1,4 @@
-﻿@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
 
 @{ string year = DateTime.Now.Year.ToString(); }
 
@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/THMI_Mod_Manager.styles.css" asp-append-version="true" />
     <style>
         /* Ensure main content doesn't sit under fixed sidebar on md+ */
         @@media (min-width: 768px) {
@@ -109,6 +108,161 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- 后端存活检测脚本 -->
+    <script>
+        // 后端存活检测配置（使用独立命名空间避免冲突）
+        const backendHealthCheck = {
+            interval: 5000, // 每5秒检测一次
+            timeout: 3000,  // 请求超时时间3秒
+            retryAttempts: 3, // 重试次数
+            currentRetries: 0,
+            isHealthy: true,
+            checkEndpoint: '/api/launcher/status' // 使用已存在的状态检测端点
+        };
+
+        // 显示后端离线提示
+        function showBackendOfflineModal() {
+            // 获取本地化文本
+            const title = '@Html.Raw(AppConfig.GetLocalized("Buttons:BackendConnectionLost", "Connection Lost"))';
+            const offlineTitle = '@Html.Raw(AppConfig.GetLocalized("Buttons:BackendOfflineTitle", "Backend Server Connection Failed!"))';
+            const offlineDesc = '@Html.Raw(AppConfig.GetLocalized("Buttons:BackendOfflineDesc", "Unable to connect to THMI Mod Manager backend service. This may be due to:"))';
+            const reasons = '@Html.Raw(AppConfig.GetLocalized("Buttons:BackendOfflineReasons", "Server is down or crashed|Network connection issues|Application is restarting"))'.split('|');
+            const suggestion = '@Html.Raw(AppConfig.GetLocalized("Buttons:BackendOfflineSuggestion", "Some features may not work properly. Please try refreshing the page or restarting the application."))';
+            const refreshText = '@Html.Raw(AppConfig.GetLocalized("Buttons:BackendOfflineRefresh", "Refresh Page"))';
+            const retryText = '@Html.Raw(AppConfig.GetLocalized("Buttons:BackendOfflineRetry", "Retry Connection"))';
+
+            // 创建模态框HTML
+            const modalHtml = `
+                <div class="modal fade" id="backendOfflineModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="backendOfflineModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="backendOfflineModalLabel">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> ${title}
+                                </h5>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>${offlineTitle}</strong></p>
+                                <p>${offlineDesc}</p>
+                                <ul>
+                                    ${reasons.map(reason => `<li>${reason}</li>`).join('')}
+                                </ul>
+                                <p>${suggestion}</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" onclick="location.reload()">
+                                    <i class="bi bi-arrow-clockwise"></i> ${refreshText}
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="backendHealthCheck.checkNow()">
+                                    <i class="bi bi-arrow-repeat"></i> ${retryText}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 如果模态框已存在，先移除
+            const existingModal = document.getElementById('backendOfflineModal');
+            if (existingModal) {
+                const modalInstance = bootstrap.Modal.getInstance(existingModal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+                existingModal.remove();
+            }
+
+            // 添加模态框到页面
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // 显示模态框
+            const modal = new bootstrap.Modal(document.getElementById('backendOfflineModal'));
+            modal.show();
+        }
+
+        // 隐藏后端离线提示
+        function hideBackendOfflineModal() {
+            const modal = document.getElementById('backendOfflineModal');
+            if (modal) {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+        }
+
+        // 检查后端状态
+        async function checkBackendHealth() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), backendHealthCheck.timeout);
+
+                const response = await fetch(backendHealthCheck.checkEndpoint, {
+                    method: 'GET',
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    // 后端响应正常
+                    if (!backendHealthCheck.isHealthy) {
+                        // 从离线状态恢复
+                        console.log('后端连接已恢复');
+                        hideBackendOfflineModal();
+                        backendHealthCheck.isHealthy = true;
+                        backendHealthCheck.currentRetries = 0;
+                    }
+                } else {
+                    // 后端返回错误状态码
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('后端健康检查失败:', error);
+                backendHealthCheck.currentRetries++;
+
+                if (backendHealthCheck.currentRetries >= backendHealthCheck.retryAttempts) {
+                    // 达到重试上限，认为后端离线
+                    if (backendHealthCheck.isHealthy) {
+                        backendHealthCheck.isHealthy = false;
+                        showBackendOfflineModal();
+                    }
+                }
+            }
+        }
+
+        // 立即检查后端状态
+        backendHealthCheck.checkNow = function() {
+            backendHealthCheck.currentRetries = 0;
+            hideBackendOfflineModal();
+            checkBackendHealth();
+        };
+
+        // 启动定期检测
+        function startHealthCheck() {
+            // 立即执行一次检测
+            checkBackendHealth();
+            
+            // 设置定期检测
+            setInterval(checkBackendHealth, backendHealthCheck.interval);
+        }
+
+        // 页面加载完成后启动检测
+        document.addEventListener('DOMContentLoaded', function() {
+            startHealthCheck();
+        });
+
+        // 页面可见性变化时重新检测（用户切换回页面时）
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && !backendHealthCheck.isHealthy) {
+                backendHealthCheck.checkNow();
+            }
+        });
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

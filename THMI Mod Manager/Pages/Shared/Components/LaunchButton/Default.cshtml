@@ -9,14 +9,21 @@
 </form>
 
 <script>
-    let currentIsRunning = @(Model.IsProcessRunning.ToString().ToLower());
+    // 使用函数作用域避免全局变量冲突
+    (function() {
+        let launchButtonComponentCurrentIsRunning = @(Model.IsProcessRunning.ToString().ToLower());
+        
+        // 将状态检查函数暴露到全局作用域
+        window.checkLaunchButtonStatus = function() {
+            checkProcessStatus();
+        };
     
     function handleLauncherSubmit(event) {
         event.preventDefault();
         
-        const action = currentIsRunning ? 'stop' : 'launch';
+        const action = launchButtonComponentCurrentIsRunning ? 'stop' : 'launch';
         
-        if (currentIsRunning && !confirmStopGame()) {
+        if (launchButtonComponentCurrentIsRunning && !confirmStopGame()) {
             return;
         }
         
@@ -30,7 +37,7 @@
         .then(data => {
             if (data.success) {
                 // 立即更新按钮状态
-                updateButtonState(!currentIsRunning);
+                updateButtonState(!launchButtonComponentCurrentIsRunning);
                 
                 // 延迟后重新检查状态确保准确性
                 if (action === 'launch') {
@@ -59,7 +66,7 @@
     }
     
     function updateButtonState(isRunning) {
-        currentIsRunning = isRunning;
+        launchButtonComponentCurrentIsRunning = isRunning;
         const button = document.querySelector('#launcherForm button');
         const buttonText = document.getElementById('buttonText');
         const buttonIcon = button.querySelector('i');
@@ -125,4 +132,6 @@
         // 定期更新状态（每5秒）
         setInterval(checkProcessStatus, 5000);
     });
+    
+    })(); // 立即执行函数表达式结束
 </script>
