@@ -24,6 +24,9 @@ namespace THMI_Mod_Manager.Pages
         public bool IsDevMode { get; set; }
         public bool ShowCVEWarning { get; set; }
 
+        // 光标设置属性
+        public bool UseMystiaCursor { get; set; }
+
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
             _logger = logger;
@@ -41,6 +44,9 @@ namespace THMI_Mod_Manager.Pages
             // 加载开发者设置
             IsDevMode = _appConfig.Get("[Dev]IsDevBuild", "false").ToLower() == "true";
             ShowCVEWarning = _appConfig.Get("[Dev]ShowCVEWarning", "true").ToLower() != "false";
+
+            // 加载光标设置
+            UseMystiaCursor = _appConfig.Get("[Cursor]UseMystiaCursor", "false").ToLower() == "true";
         }
 
         public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useMystiaCursor)

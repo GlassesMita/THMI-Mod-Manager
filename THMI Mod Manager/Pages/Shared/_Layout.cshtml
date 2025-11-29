@@ -20,6 +20,13 @@
         body {
             padding-top: 0 !important;
         }
+        /* Custom cursor styles */
+        .custom-cursor {
+            cursor: url('@Url.Content("~/Resources/Cursor.cur")'), auto !important;
+        }
+        .custom-cursor * {
+            cursor: url('@Url.Content("~/Resources/Cursor.cur")'), auto !important;
+        }
     </style>
 </head>
 <body>
@@ -108,6 +115,36 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        // Custom cursor functionality
+        function applyCustomCursor() {
+            // Check if custom cursor is enabled in AppConfig
+            fetch('/api/config/get?key=[Cursor]UseMystiaCursor')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.value === 'true') {
+                        document.body.classList.add('custom-cursor');
+                    } else {
+                        document.body.classList.remove('custom-cursor');
+                    }
+                })
+                .catch(error => {
+                    console.log('Custom cursor check failed:', error);
+                    // Remove custom cursor class on error
+                    document.body.classList.remove('custom-cursor');
+                });
+        }
+
+        // Apply cursor on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            applyCustomCursor();
+        });
+
+        // Function to refresh cursor setting (can be called from settings page)
+        window.refreshCustomCursor = function() {
+            applyCustomCursor();
+        };
+    </script>
 
     <!-- 后端存活检测脚本 -->
     <script>

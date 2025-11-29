@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试设置页面功能</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>设置页面功能测试</h1>
+    
+    <div class="test-section">
+        <h3>配置API测试</h3>
+        <div id="api-status" class="status info">正在检测...</div>
+        <button onclick="testGetConfig()">测试获取配置</button>
+        <button onclick="testSetConfig()">测试设置配置</button>
+        <button onclick="testToggleCursor()">切换光标设置</button>
+        <pre id="api-result"></pre>
+    </div>
+
+    <div class="test-section">
+        <h3>设置页面测试</h3>
+        <div id="settings-status" class="status info">正在检测...</div>
+        <button onclick="testSettingsPage()">测试设置页面</button>
+        <pre id="settings-result"></pre>
+    </div>
+
+    <div class="test-section">
+        <h3>自定义光标测试</h3>
+        <div id="cursor-status" class="status info">将鼠标移动到此区域测试光标</div>
+        <div style="padding: 50px; border: 2px dashed #ccc; text-align: center; margin: 20px 0;" onmouseover="showCursorInfo()" onmouseout="hideCursorInfo()">
+            鼠标悬停测试区域
+        </div>
+    </div>
+
+    <script>
+        async function testGetConfig() {
+            const statusEl = document.getElementById('api-status');
+            const resultEl = document.getElementById('api-result');
+            
+            try {
+                statusEl.textContent = '正在获取配置...';
+                statusEl.className = 'status info';
+                
+                const response = await fetch('/api/config/get?key=%5BCursor%5DUseMystiaCursor');
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.textContent = '✅ 配置获取成功';
+                    statusEl.className = 'status success';
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    statusEl.textContent = '❌ 配置获取失败';
+                    statusEl.className = 'status error';
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                statusEl.textContent = '❌ 错误: ' + error.message;
+                statusEl.className = 'status error';
+                resultEl.textContent = error.stack;
+            }
+        }
+
+        async function testSetConfig() {
+            const statusEl = document.getElementById('api-status');
+            const resultEl = document.getElementById('api-result');
+            
+            try {
+                statusEl.textContent = '正在设置配置...';
+                statusEl.className = 'status info';
+                
+                const response = await fetch('/api/config/set', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        key: '[Cursor]UseMystiaCursor',
+                        value: 'True'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.textContent = '✅ 配置设置成功';
+                    statusEl.className = 'status success';
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    statusEl.textContent = '❌ 配置设置失败';
+                    statusEl.className = 'status error';
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                statusEl.textContent = '❌ 错误: ' + error.message;
+                statusEl.className = 'status error';
+                resultEl.textContent = error.stack;
+            }
+        }
+
+        async function testToggleCursor() {
+            const statusEl = document.getElementById('api-status');
+            const resultEl = document.getElementById('api-result');
+            
+            try {
+                // 先获取当前状态
+                const getResponse = await fetch('/api/config/get?key=%5BCursor%5DUseMystiaCursor');
+                const currentData = await getResponse.json();
+                const newValue = currentData.value === 'True' ? 'False' : 'True';
+                
+                statusEl.textContent = `正在切换到 ${newValue === 'True' ? '启用' : '禁用'}...`;
+                statusEl.className = 'status info';
+                
+                // 设置新状态
+                const setResponse = await fetch('/api/config/set', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        key: '[Cursor]UseMystiaCursor',
+                        value: newValue
+                    })
+                });
+                
+                const data = await setResponse.json();
+                
+                if (data.success) {
+                    statusEl.textContent = `✅ 已切换到 ${newValue === 'True' ? '启用' : '禁用'}`;
+                    statusEl.className = 'status success';
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    statusEl.textContent = '❌ 切换失败';
+                    statusEl.className = 'status error';
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                statusEl.textContent = '❌ 错误: ' + error.message;
+                statusEl.className = 'status error';
+                resultEl.textContent = error.stack;
+            }
+        }
+
+        async function testSettingsPage() {
+            const statusEl = document.getElementById('settings-status');
+            const resultEl = document.getElementById('settings-result');
+            
+            try {
+                statusEl.textContent = '正在加载设置页面...';
+                statusEl.className = 'status info';
+                
+                const response = await fetch('/Settings');
+                const html = await response.text();
+                
+                // 检查复选框状态
+                const cursorMatch = html.match(/id="useMystiaCursor"[^>]*checked/);
+                const devModeMatch = html.match(/id="devMode"[^>]*checked/);
+                const cveMatch = html.match(/id="showCVEWarning"[^>]*checked/);
+                
+                const cursorEnabled = cursorMatch !== null;
+                const devModeEnabled = devModeMatch !== null;
+                const cveEnabled = cveMatch !== null;
+                
+                statusEl.textContent = '✅ 设置页面加载成功';
+                statusEl.className = 'status success';
+                
+                resultEl.textContent = `设置状态:\n` +
+                    `  自定义指针: ${cursorEnabled ? '✅ 启用' : '❌ 禁用'}\n` +
+                    `  开发者模式: ${devModeEnabled ? '✅ 启用' : '❌ 禁用'}\n` +
+                    `  CVE警告: ${cveEnabled ? '✅ 启用' : '❌ 禁用'}`;
+                    
+            } catch (error) {
+                statusEl.textContent = '❌ 错误: ' + error.message;
+                statusEl.className = 'status error';
+                resultEl.textContent = error.stack;
+            }
+        }
+
+        function showCursorInfo() {
+            const statusEl = document.getElementById('cursor-status');
+            statusEl.textContent = '鼠标已悬停 - 如果自定义指针启用，你应该看到自定义光标';
+            statusEl.className = 'status info';
+        }
+
+        function hideCursorInfo() {
+            const statusEl = document.getElementById('cursor-status');
+            statusEl.textContent = '将鼠标移动到此区域测试光标';
+            statusEl.className = 'status info';
+        }
+
+        // 页面加载时自动测试
+        window.onload = function() {
+            testGetConfig();
+            testSettingsPage();
+        };
+    </script>
+</body>
+</html>

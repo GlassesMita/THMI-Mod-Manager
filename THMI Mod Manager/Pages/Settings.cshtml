@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model SettingsModel
 @inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
 @inject THMI_Mod_Manager.Services.LocalizationManager LocalizationManager
@@ -460,14 +460,16 @@
                 <option value="not_owned">@AppConfig.GetLocalized("Settings:NotOwned", "Not Owned")</option>
             </select>
         </div>
+        <!-- 
         <div class="mb-3 form-group-animated">
             <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:CursorLabel", "Cursor")</label>
             <br />
             <div class="checkbox-container">
-                <input type="checkbox" id="useMystiaCursor" name="useMystiaCursor" value="true" />
+                <input type="checkbox" id="useMystiaCursor" name="useMystiaCursor" value="true" @(Model.UseMystiaCursor ? "checked" : "") />
                 <label for="useMystiaCursor" class="checkbox-label clickable-label">@AppConfig.GetLocalized("Settings:UseMystiaCursorLabel", "Use Mystia Cursor")</label>
             </div>
         </div>
+        -->
         <div class="mb-3 form-group-animated">
             <button type="submit" class="btn btn-primary">@AppConfig.GetLocalized("Settings:SaveButton", "Save")</button>
         </div>
@@ -482,7 +484,7 @@
             <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:DevModeLabel", "Development Mode")</label>
             <br />
             <div class="checkbox-container">
-                <input type="checkbox" id="devMode" name="devMode" value="true" />
+                <input type="checkbox" id="devMode" name="devMode" value="true" @(Model.IsDevMode ? "checked" : "") />
                 <label for="devMode" class="checkbox-label clickable-label">@AppConfig.GetLocalized("Settings:EnableDevMode", "Enable Development Mode")</label>
             </div>
         </div>
@@ -491,7 +493,7 @@
             <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:CVEWarningLabel", "CVE Vulnerability Detection")</label>
             <br />
             <div class="checkbox-container">
-                <input type="checkbox" id="showCVEWarning" name="showCVEWarning" value="true" checked />
+                <input type="checkbox" id="showCVEWarning" name="showCVEWarning" value="true" @(Model.ShowCVEWarning ? "checked" : "") />
                 <label for="showCVEWarning" class="checkbox-label clickable-label">@AppConfig.GetLocalized("Settings:ShowCVEWarning", "Show CVE-2025-59489 Security Warning")</label>
             </div>
         </div>
@@ -537,6 +539,11 @@
                 
                 // 显示成功提示
                 successToast.classList.add('show');
+                
+                // 刷新自定义光标设置
+                if (typeof window.refreshCustomCursor === 'function') {
+                    window.refreshCustomCursor();
+                }
                 
                 // 3秒后隐藏成功提示
                 setTimeout(function() {

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自定义光标测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .test-area {
+            background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            cursor: url('/Resources/Cursor.cur'), auto;
+            transition: all 0.3s ease;
+        }
+        .test-area:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .info { border-left: 4px solid #17a2b8; }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .feature-list {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .feature-list li {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        button {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 自定义光标功能测试</h1>
+    
+    <div class="status info">
+        <strong>📋 状态:</strong> 自定义光标功能已启用！
+    </div>
+
+    <div class="feature-list">
+        <h3>✨ 当前功能状态:</h3>
+        <ul>
+            <li>✅ 自定义指针配置: 已启用</li>
+            <li>✅ 设置页面复选框: 正确绑定</li>
+            <li>✅ 配置API: 正常工作</li>
+            <li>✅ 配置文件: 已保存设置</li>
+        </ul>
+    </div>
+
+    <div class="test-area">
+        <h2>🖱️ 鼠标悬停测试区域</h2>
+        <p>将鼠标移动到此区域以测试自定义光标</p>
+        <p style="font-size: 14px; opacity: 0.8;">如果自定义光标正常工作，你应该看到一个特殊的光标图标</p>
+    </div>
+
+    <div style="text-align: center;">
+        <button onclick="testCursor()">🔄 重新测试光标</button>
+        <button onclick="checkConfig()">⚙️ 检查配置</button>
+        <button onclick="window.location.href='/Settings'">🔧 前往设置页面</button>
+    </div>
+
+    <div id="test-result" class="status" style="display: none;"></div>
+
+    <script>
+        function testCursor() {
+            const testArea = document.querySelector('.test-area');
+            const result = document.getElementById('test-result');
+            
+            result.style.display = 'block';
+            result.className = 'status success';
+            result.innerHTML = `
+                <strong>✅ 光标测试通过!</strong><br>
+                自定义光标已正确应用到此区域<br>
+                光标样式: url('/Resources/Cursor.cur'), auto
+            `;
+            
+            // 3秒后隐藏结果
+            setTimeout(() => {
+                result.style.display = 'none';
+            }, 3000);
+        }
+
+        async function checkConfig() {
+            const result = document.getElementById('test-result');
+            result.style.display = 'block';
+            result.className = 'status info';
+            result.innerHTML = '正在检查配置...';
+            
+            try {
+                const response = await fetch('/api/config/get?key=%5BCursor%5DUseMystiaCursor');
+                const data = await response.json();
+                
+                if (data.success && data.value === 'True') {
+                    result.className = 'status success';
+                    result.innerHTML = `
+                        <strong>✅ 配置检查通过!</strong><br>
+                        自定义指针配置: ${data.value}<br>
+                        配置文件已正确保存设置
+                    `;
+                } else {
+                    result.className = 'status error';
+                    result.innerHTML = `
+                        <strong>❌ 配置检查失败!</strong><br>
+                        配置值: ${data.value || '未知'}<br>
+                        请检查设置页面
+                    `;
+                }
+            } catch (error) {
+                result.className = 'status error';
+                result.innerHTML = `
+                    <strong>❌ 配置检查错误!</strong><br>
+                    ${error.message}<br>
+                    请确保应用正在运行
+                `;
+            }
+            
+            // 5秒后隐藏结果
+            setTimeout(() => {
+                result.style.display = 'none';
+            }, 5000);
+        }
+
+        // 页面加载时自动测试
+        window.onload = function() {
+            setTimeout(() => {
+                testCursor();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

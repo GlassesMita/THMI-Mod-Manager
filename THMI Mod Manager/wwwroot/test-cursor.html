@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试自定义指针</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-area {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+        }
+        .cursor-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #2196f3;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        .custom-cursor {
+            cursor: url('/Resources/Cursor.cur'), auto !important;
+        }
+        .custom-cursor * {
+            cursor: url('/Resources/Cursor.cur'), auto !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>自定义指针功能测试</h1>
+    
+    <div class="cursor-info">
+        <h3>当前状态</h3>
+        <p id="cursor-status">检测中...</p>
+    </div>
+
+    <div class="test-area">
+        <h3>测试区域</h3>
+        <p>将鼠标移动到此区域以测试指针效果</p>
+        <button onclick="testButton()">测试按钮</button>
+        <input type="text" placeholder="测试输入框" style="padding: 8px; margin: 5px;">
+    </div>
+
+    <div>
+        <button onclick="toggleCursor()">切换自定义指针</button>
+        <button onclick="checkConfig()">检查配置</button>
+    </div>
+
+    <script>
+        async function checkConfig() {
+            try {
+                const response = await fetch('/api/config/get?key=[Cursor]UseMystiaCursor');
+                const data = await response.json();
+                document.getElementById('cursor-status').textContent = 
+                    `配置状态: ${data.value === 'True' ? '启用' : '禁用'} | API响应: ${JSON.stringify(data)}`;
+                
+                // 应用当前配置
+                if (data.value === 'True') {
+                    document.body.classList.add('custom-cursor');
+                } else {
+                    document.body.classList.remove('custom-cursor');
+                }
+            } catch (error) {
+                document.getElementById('cursor-status').textContent = `错误: ${error.message}`;
+            }
+        }
+
+        async function toggleCursor() {
+            try {
+                // 获取当前状态
+                const getResponse = await fetch('/api/config/get?key=[Cursor]UseMystiaCursor');
+                const currentData = await getResponse.json();
+                const newValue = currentData.value === 'True' ? 'False' : 'True';
+                
+                // 设置新状态
+                const setResponse = await fetch('/api/config/set', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        key: '[Cursor]UseMystiaCursor',
+                        value: newValue
+                    })
+                });
+                
+                const result = await setResponse.json();
+                
+                // 应用更改
+                if (newValue === 'True') {
+                    document.body.classList.add('custom-cursor');
+                } else {
+                    document.body.classList.remove('custom-cursor');
+                }
+                
+                document.getElementById('cursor-status').textContent = 
+                    `已切换到: ${newValue === 'True' ? '启用' : '禁用'} | ${JSON.stringify(result)}`;
+                    
+            } catch (error) {
+                document.getElementById('cursor-status').textContent = `错误: ${error.message}`;
+            }
+        }
+
+        function testButton() {
+            alert('按钮被点击了！指针应该显示自定义样式。');
+        }
+
+        // 页面加载时检查配置
+        window.onload = function() {
+            checkConfig();
+        };
+    </script>
+</body>
+</html>
