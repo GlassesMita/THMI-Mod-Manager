@@ -135,7 +135,11 @@ namespace THMI_Mod_Manager.Controllers
             try
             {
                 var processes = Process.GetProcessesByName(PROCESS_NAME);
-                _logger.LogInformation($"检测到 {processes.Length} 个游戏进程");
+                // 只在调试模式下输出详细日志，避免生产环境频繁日志输出
+                if (System.Diagnostics.Debugger.IsAttached)
+                {
+                    _logger.LogDebug($"检测到 {processes.Length} 个游戏进程");
+                }
                 return processes.Length > 0;
             }
             catch (Exception ex)
