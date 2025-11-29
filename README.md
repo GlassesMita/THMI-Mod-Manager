@@ -36,14 +36,14 @@ Prerequisites:
 
 Using Command Prompt:
 
-```pwsh
+```bash
 git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
 cd './THMI-Mod-Manager/THMI Mod Manager'
 ```
 
 Using PowerShell:
 
-```pwsh
+```bash
 git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
 Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
 ```
@@ -52,7 +52,7 @@ Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
 
 Using Command Prompt or PowerShell:
 
-```pwsh
+```bash
 dotnet build -configuration Release
 ```
 
@@ -60,7 +60,7 @@ dotnet build -configuration Release
 
 Using Command Prompt:
 
-```pwsh
+```bash
 # Copy localization files
 xcopy /E /I /Y ".\Localization" ".\bin\Release\net8.0\Localization"
             
@@ -73,7 +73,7 @@ copy /Y ".\AppConfig.Schale" ".\bin\Release\net8.0\AppConfig.Schale"
 
 Using PowerShell:
 
-```pwsh
+```bash
 # Copy localization files
 Copy-Item -Path ".\Localization" -Destination ".\bin\Release\net8.0\Localization" -Recurse
             
@@ -94,14 +94,14 @@ Or you can copy the files to build output directory manually.
 
 Using Command Prompt:
 
-```pwsh
+```bash
 # Copy build output to game directory
 xcopy /E /I /Y ".\bin\Release\net8.0" "C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya"
 ```
 
 Using PowerShell:
 
-```pwsh
+```bash
 # Copy build output to game directory
 Copy-Item -Path ".\bin\Release\net8.0" -Destination "C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya" -Recurse
 ```
@@ -110,7 +110,7 @@ Copy-Item -Path ".\bin\Release\net8.0" -Destination "C:\Program Files (x86)\Stea
 
 Using Command Prompt:
 
-```pwsh
+```bash
 # Run the application
 cd ".\bin\Release\net8.0"
 dotnet "THMI Mod Manager.dll"
@@ -122,7 +122,7 @@ For development, you can also run directly from source, but it may not work well
 
 Using Command Prompt:
 
-```pwsh
+```bash
 # Run the application in development build
 git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
 cd './THMI-Mod-Manager/THMI Mod Manager'
@@ -131,7 +131,7 @@ dotnet run --configuration Debug
 
 Using PowerShell:
 
-```pwsh
+```bash
 # Run the application in development build
 git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
 Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
