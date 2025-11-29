@@ -34,104 +34,109 @@ Prerequisites:
 
 1. Clone the repository:
 
-Using Command Prompt:
+        Using Command Prompt:
 
-    ```pwsh
-    git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
-    cd './THMI-Mod-Manager/THMI Mod Manager'
-    ```
+            ```pwsh
+             git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
+            cd './THMI-Mod-Manager/THMI Mod Manager'
+            ```
 
-Using PowerShell:
+        Using PowerShell:
 
-    ```pwsh
-    git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
-    Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
-    ```
+            ```pwsh
+            git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
+            Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
+            ```
 
 2. Build the application via DotNet CLI:
 
-Using Command Prompt or PowerShell:
+        Using Command Prompt or PowerShell:
 
-    ```pwsh
-    dotnet build -configuration Release
-    ```
+            ```pwsh
+            dotnet build -configuration Release
+            ```
 
 3. Copy required files: **Localization** and **wwwroot** folder and **AppConfig.Schale** to the build output:
 
-Using Command Prompt:
+        Using Command Prompt:
 
-    ```pwsh
-    # Copy localization files
-    xcopy /E /I /Y ".\Localization" "THMI Mod Manager\bin\Release\net8.0\Localization"
-    
-    # Copy web assets
-    xcopy /E /I /Y ".\wwwroot" "THMI Mod Manager\bin\Release\net8.0\wwwroot"
-    
-    # Copy configuration file
-    copy /Y ".\AppConfig.Schale" "THMI Mod Manager\bin\Release\net8.0\AppConfig.Schale"
-    ```
+            ```pwsh
+            # Copy localization files
+            xcopy /E /I /Y ".\Localization" ".\bin\Release\net8.0\Localization"
+            
+            # Copy web assets
+            xcopy /E /I /Y ".\wwwroot" ".\bin\Release\net8.0\wwwroot"
+            
+            # Copy configuration file
+            copy /Y ".\AppConfig.Schale" ".\bin\Release\net8.0\AppConfig.Schale"
+            ``` 
 
-Using PowerShell:
+        Using PowerShell:
 
-    ```pwsh
-    # Copy localization files
-    Copy-Item -Path ".\T\Localization" -Destination "THMI Mod Manager\bin\Release\net8.0\Localization" -Recurse
-    
-    # Copy web assets
-    Copy-Item -Path ".\wwwroot" -Destination "THMI Mod Manager\bin\Release\net8.0\wwwroot" -Recurse
-    
-    # Copy configuration file
-    Copy-Item -Path ".\AppConfig.Schale" -Destination "THMI Mod Manager\bin\Release\net8.0\AppConfig.Schale"
-    ```
+            ```pwsh
+            # Copy localization files
+            Copy-Item -Path ".\Localization" -Destination ".\bin\Release\net8.0\Localization" -Recurse
+            
+            # Copy web assets
+            Copy-Item -Path ".\wwwroot" -Destination ".\bin\Release\net8.0\wwwroot" -Recurse
+            
+            # Copy configuration file
+            Copy-Item -Path ".\AppConfig.Schale" -Destination ".\bin\Release\net8.0\AppConfig.Schale"
+            ```
 
-    Or you can copy the files to build output directory manually.
+        Or you can copy the files to build output directory manually.
 
 4. Copy build output to game directory:
 
-*Assume the game is installed in `C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya`. This path may vary depending on your installation location, and operating `Program Files` folder may need administrator privileges to copy files.*
+        *Assume the game is installed in `C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya`. This path may vary depending on your installation location, and operating `Program Files` folder may need administrator privileges to copy files.*
 
-*If your game is installed in a different location(e.g. `D:\SteamLibrary\steamapps\common\Touhou Mystia Izakaya`), it may will not need administrator privileges to copy files.*
+        *If your game is installed in a different location(e.g. `D:\SteamLibrary\steamapps\common\Touhou Mystia Izakaya`), it may will not need administrator privileges to copy files.*
 
-Using Command Prompt:
+        Using Command Prompt:
 
-    ```pwsh
-    # Copy build output to game directory
-    xcopy /E /I /Y ".\bin\Release\net8.0" "C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya"
-    ```
+           ```pwsh
+            # Copy build output to game directory
+           xcopy /E /I /Y ".\bin\\Release\net8.0" "C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya"
+           ```
 
-Using PowerShell:
+        Using PowerShell:
 
-    ```pwsh
-    # Copy build output to game directory
-    Copy-Item -Path ".\bin\Release\net8.0" -Destination "C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya" -Recurse
-    ```
+           ```pwsh
+            # Copy build output to game directory
+           Copy-Item -Path ".\bin\\Release\net8.0" -Destination "C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya" -Recurse
+           ```
 
 5. Run the application:
 
-    ```pwsh
-    cd ".\bin\Release\net8.0"
-    dotnet "THMI Mod Manager.dll"
-    ```
+        Using Command Prompt:
+
+           ```pwsh
+           # Run the application
+           cd ".\bin\\Release\net8.0"
+           dotnet "THMI Mod Manager.dll"
+           ```
 
 ### Development Mode
 
 For development, you can also run directly from source, but it may not work well with the Web UI because there is no localization files:
 
-Using Command Prompt:
+        Using Command Prompt:
 
-    ```pwsh
-    git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
-    cd './THMI-Mod-Manager/THMI Mod Manager'
-    dotnet run
-    ```
+           ```pwsh
+           # Run the application in development mode
+           git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
+           cd './THMI-Mod-Manager/THMI Mod Manager'
+           dotnet run
+           ```
 
-Using PowerShell:
+        Using PowerShell:
 
-    ```pwsh
-    git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
-    Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
-    dotnet run
-    ```
+           ```pwsh
+           # Run the application in development mode
+           git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
+           Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
+           dotnet run
+           ```
 
 ## Usage
 
