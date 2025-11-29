@@ -77,6 +77,12 @@ namespace THMI_Mod_Manager.Pages.Shared
                     // 使用Steam协议启动游戏
                     var steamUrl = $"steam://rungameid/{SteamAppId}";
                     
+                    // 记录启动尝试
+                    _logger.LogInformation($"=== Process Launch Attempt ===");
+                    _logger.LogInformation($"Launch Method: Steam Protocol");
+                    _logger.LogInformation($"Steam URL: {steamUrl}");
+                    _logger.LogInformation($"Launch Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                    
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     {
                         Process.Start(new ProcessStartInfo
@@ -97,6 +103,7 @@ namespace THMI_Mod_Manager.Pages.Shared
                     }
                     
                     _logger.LogInformation($"已启动Steam应用: {SteamAppId}");
+                    _logger.LogInformation($"=== Launch Complete ===");
                 }
                 
                 return RedirectToPage();
@@ -104,6 +111,17 @@ namespace THMI_Mod_Manager.Pages.Shared
             catch (Exception ex)
             {
                 _logger.LogError(ex, "启动进程时出错");
+                
+                // 记录错误详情
+                _logger.LogError($"=== Process Launch Failed ===");
+                _logger.LogError($"Error: {ex.Message}");
+                _logger.LogError($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError($"Inner Exception: {ex.InnerException.Message}");
+                }
+                _logger.LogError($"=== Launch Failed ===");
+                
                 return RedirectToPage();
             }
         }
@@ -115,6 +133,10 @@ namespace THMI_Mod_Manager.Pages.Shared
             {
                 if (IsProcessRunning)
                 {
+                    _logger.LogInformation($"=== Process Stop Attempt ===");
+                    _logger.LogInformation($"Process Name: {ProcessName}");
+                    _logger.LogInformation($"Stop Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                    
                     var processes = Process.GetProcessesByName(ProcessName);
                     foreach (var process in processes)
                     {
@@ -128,6 +150,12 @@ namespace THMI_Mod_Manager.Pages.Shared
                             _logger.LogError(ex, $"停止进程 {ProcessName} 时出错");
                         }
                     }
+                    
+                    _logger.LogInformation($"=== Stop Complete ===");
+                }
+                else
+                {
+                    _logger.LogInformation($"Process {ProcessName} is not running, no action taken.");
                 }
                 
                 return RedirectToPage();
@@ -135,6 +163,17 @@ namespace THMI_Mod_Manager.Pages.Shared
             catch (Exception ex)
             {
                 _logger.LogError(ex, "停止进程时出错");
+                
+                // 记录错误详情
+                _logger.LogError($"=== Process Stop Failed ===");
+                _logger.LogError($"Error: {ex.Message}");
+                _logger.LogError($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError($"Inner Exception: {ex.InnerException.Message}");
+                }
+                _logger.LogError($"=== Stop Failed ===");
+                
                 return RedirectToPage();
             }
         }

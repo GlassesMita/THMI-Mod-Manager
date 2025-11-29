@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logger Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .button-group {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .info-btn { background-color: #17a2b8; }
+        .warning-btn { background-color: #ffc107; color: #333; }
+        .error-btn { background-color: #dc3545; }
+        .clear-btn { background-color: #6c757d; }
+        #logOutput {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .log-info { color: #4fc3f7; }
+        .log-warning { color: #ffb74d; }
+        .log-error { color: #f44336; }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+        }
+        .log-path {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Logger Test Page</h1>
+        <p>This page demonstrates the logging functionality integrated into the THMI Mod Manager.</p>
+        
+        <div class="status">
+            <strong>Logger Status:</strong> <span id="loggerStatus">Loading...</span>
+        </div>
+        
+        <div class="log-path">
+            <strong>Log File Path:</strong> <span id="logPath">Loading...</span>
+        </div>
+        
+        <div class="button-group">
+            <button class="info-btn" onclick="testInfoLog()">Test Info Log</button>
+            <button class="warning-btn" onclick="testWarningLog()">Test Warning Log</button>
+            <button class="error-btn" onclick="testErrorLog()">Test Error Log</button>
+            <button onclick="testFormattedLog()">Test Formatted Log</button>
+            <button class="clear-btn" onclick="clearLogs()">Clear Display</button>
+            <button onclick="refreshLogs()">Refresh Logs</button>
+        </div>
+        
+        <h3>Log Output:</h3>
+        <div id="logOutput">Waiting for log data...</div>
+    </div>
+
+    <script>
+        // Test logger functionality
+        function testInfoLog() {
+            fetch('/api/logger/test?level=info&message=This is a test info message')
+                .then(response => response.json())
+                .then(data => {
+                    addToLog(`[TEST] Info log sent: ${data.message}`, 'info');
+                    refreshLogs();
+                })
+                .catch(error => {
+                    addToLog(`[ERROR] Failed to send info log: ${error.message}`, 'error');
+                });
+        }
+
+        function testWarningLog() {
+            fetch('/api/logger/test?level=warning&message=This is a test warning message')
+                .then(response => response.json())
+                .then(data => {
+                    addToLog(`[TEST] Warning log sent: ${data.message}`, 'warning');
+                    refreshLogs();
+                })
+                .catch(error => {
+                    addToLog(`[ERROR] Failed to send warning log: ${error.message}`, 'error');
+                });
+        }
+
+        function testErrorLog() {
+            fetch('/api/logger/test?level=error&message=This is a test error message')
+                .then(response => response.json())
+                .then(data => {
+                    addToLog(`[TEST] Error log sent: ${data.message}`, 'error');
+                    refreshLogs();
+                })
+                .catch(error => {
+                    addToLog(`[ERROR] Failed to send error log: ${error.message}`, 'error');
+                });
+        }
+
+        function testFormattedLog() {
+            const user = 'Admin';
+            const action = 'settings update';
+            const timestamp = new Date().toLocaleString();
+            
+            fetch(`/api/logger/test?level=info&message=User ${user} performed ${action} at ${timestamp}`)
+                .then(response => response.json())
+                .then(data => {
+                    addToLog(`[TEST] Formatted log sent: ${data.message}`, 'info');
+                    refreshLogs();
+                })
+                .catch(error => {
+                    addToLog(`[ERROR] Failed to send formatted log: ${error.message}`, 'error');
+                });
+        }
+
+        function addToLog(message, level) {
+            const logOutput = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-${level}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logOutput.appendChild(logEntry);
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logOutput').innerHTML = 'Log display cleared. Perform an action to see new logs.';
+        }
+
+        function refreshLogs() {
+            // In a real implementation, this would fetch logs from the server
+            // For now, we'll just show a message
+            addToLog('Log refresh requested (implementation needed)', 'info');
+        }
+
+        function initializeLogger() {
+            // Check if logger is available
+            fetch('/api/logger/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loggerStatus').textContent = data.isActive ? 'Active' : 'Inactive';
+                    document.getElementById('logPath').textContent = data.logPath || 'Not available';
+                    
+                    if (data.isActive) {
+                        addToLog('Logger initialized successfully', 'info');
+                    } else {
+                        addToLog('Logger is not active', 'warning');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loggerStatus').textContent = 'Error';
+                    document.getElementById('logPath').textContent = 'Unable to determine';
+                    addToLog(`Failed to check logger status: ${error.message}`, 'error');
+                });
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', initializeLogger);
+    </script>
+</body>
+</html>

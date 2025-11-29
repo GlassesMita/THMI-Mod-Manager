@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Diagnostics;
+using THMI_Mod_Manager.Services;
 
 namespace THMI_Mod_Manager.Pages
 {
@@ -36,37 +37,64 @@ namespace THMI_Mod_Manager.Pages
         public void OnGet()
         {
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+            Logger.LogInfo($"Settings page accessed - RequestId: {RequestId}");
 
-            // Load current language from config
-            CurrentLanguage = _appConfig.Get("[Localization]Language", "en_US");
-            SelectedLanguage = CurrentLanguage;
+            try
+            {
+                // Load current language from config
+                CurrentLanguage = _appConfig.Get("[Localization]Language", "en_US");
+                SelectedLanguage = CurrentLanguage;
+                Logger.LogInfo($"Loaded language settings: {CurrentLanguage}");
 
-            // 加载开发者设置
-            IsDevMode = _appConfig.Get("[Dev]IsDevBuild", "false").ToLower() == "true";
-            ShowCVEWarning = _appConfig.Get("[Dev]ShowCVEWarning", "true").ToLower() != "false";
+                // 加载开发者设置
+                IsDevMode = _appConfig.Get("[Dev]IsDevBuild", "false").ToLower() == "true";
+                ShowCVEWarning = _appConfig.Get("[Dev]ShowCVEWarning", "true").ToLower() != "false";
+                Logger.LogInfo($"Loaded developer settings - DevMode: {IsDevMode}, ShowCVEWarning: {ShowCVEWarning}");
 
-            // 加载光标设置
-            UseMystiaCursor = _appConfig.Get("[Cursor]UseMystiaCursor", "false").ToLower() == "true";
+                // 加载光标设置
+                UseMystiaCursor = _appConfig.Get("[Cursor]UseMystiaCursor", "false").ToLower() == "true";
+                Logger.LogInfo($"Loaded cursor settings: UseMystiaCursor: {UseMystiaCursor}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error loading settings: {ex.Message}");
+                throw;
+            }
         }
 
         public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useMystiaCursor)
         {
+            Logger.LogInfo($"Saving language settings - Language: {language}, Status: {status}, UseMystiaCursor: {useMystiaCursor}");
+            
             if (string.IsNullOrEmpty(language))
             {
+                Logger.LogWarning("Language parameter is empty, returning to page");
                 return Page();
             }
 
-            // Save into AppConfig.Schale under [Localization] Language=... (preserve naming like en_US)
-            _appConfig.Set("[Localization]Language", language);
-            
-            // Save game status
-            _appConfig.Set("[Game]Status", status);
-            
-            // Save cursor setting
-            _appConfig.Set("[Cursor]UseMystiaCursor", useMystiaCursor.ToString());
+            try
+            {
+                // Save into AppConfig.Schale under [Localization] Language=... (preserve naming like en_US)
+                _appConfig.Set("[Localization]Language", language);
+                Logger.LogInfo($"Language setting saved: {language}");
+                
+                // Save game status
+                _appConfig.Set("[Game]Status", status);
+                Logger.LogInfo($"Game status saved: {status}");
+                
+                // Save cursor setting
+                _appConfig.Set("[Cursor]UseMystiaCursor", useMystiaCursor.ToString());
+                Logger.LogInfo($"Cursor setting saved: {useMystiaCursor}");
 
-            // Optionally reload configuration
-            _appConfig.Reload();
+                // Optionally reload configuration
+                _appConfig.Reload();
+                Logger.LogInfo("Configuration reloaded successfully");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error saving language settings: {ex.Message}");
+                throw;
+            }
 
             // Redirect to GET to show updated selection
             return RedirectToPage();
@@ -74,12 +102,24 @@ namespace THMI_Mod_Manager.Pages
 
         public IActionResult OnPostSaveDeveloperSettings([FromForm] bool devMode, [FromForm] bool showCVEWarning)
         {
-            // Save developer settings to AppConfig.Schale
-            _appConfig.Set("[Dev]IsDevBuild", devMode.ToString());
-            _appConfig.Set("[Dev]ShowCVEWarning", showCVEWarning.ToString());
+            Logger.LogInfo($"Saving developer settings - DevMode: {devMode}, ShowCVEWarning: {showCVEWarning}");
+            
+            try
+            {
+                // Save developer settings to AppConfig.Schale
+                _appConfig.Set("[Dev]IsDevBuild", devMode.ToString());
+                _appConfig.Set("[Dev]ShowCVEWarning", showCVEWarning.ToString());
+                Logger.LogInfo("Developer settings saved successfully");
 
-            // Reload configuration
-            _appConfig.Reload();
+                // Reload configuration
+                _appConfig.Reload();
+                Logger.LogInfo("Configuration reloaded after developer settings update");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error saving developer settings: {ex.Message}");
+                return new JsonResult(new { success = false, message = $"Error saving settings: {ex.Message}" });
+            }
 
             // Return success
             return new JsonResult(new { success = true, message = "Developer settings saved successfully!" });

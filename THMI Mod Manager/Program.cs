@@ -33,6 +33,23 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.AppConfigManager>(provid
 // Register LocalizationManager
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.LocalizationManager>();
 
+// Register SystemInfoLogger
+builder.Services.AddSingleton<THMI_Mod_Manager.Services.SystemInfoLogger>(provider => 
+{
+    var logger = provider.GetRequiredService<ILogger<THMI_Mod_Manager.Services.SystemInfoLogger>>();
+    var env = provider.GetRequiredService<IWebHostEnvironment>();
+    THMI_Mod_Manager.Services.AppConfigManager appConfigManager = null;
+    try
+    {
+        appConfigManager = provider.GetService<THMI_Mod_Manager.Services.AppConfigManager>();
+    }
+    catch
+    {
+        // AppConfigManager might not be available yet, will handle gracefully in the logger
+    }
+    return new THMI_Mod_Manager.Services.SystemInfoLogger(logger, appConfigManager, env.ContentRootPath);
+});
+
 var app = builder.Build();
 
 // Configure localization options by scanning the Localization folder for *.ini files
@@ -103,6 +120,10 @@ lifetime.ApplicationStarted.Register(() =>
 {
     try
     {
+        // Log system information on startup
+        var systemInfoLogger = app.Services.GetRequiredService<THMI_Mod_Manager.Services.SystemInfoLogger>();
+        systemInfoLogger.LogApplicationStartup();
+        
         // 从配置获取端口信息
         var configuration = app.Services.GetRequiredService<IConfiguration>();
         var urls = configuration["urls"] ?? configuration["Urls"] ?? "http://localhost:5000";
@@ -193,6 +214,20 @@ lifetime.ApplicationStarted.Register(() =>
     catch (Exception ex)
     {
         Console.WriteLine($"无法自动打开浏览器: {ex.Message}");
+    }
+});
+
+// 应用停止时记录关机信息
+lifetime.ApplicationStopping.Register(() =>
+{
+    try
+    {
+        var systemInfoLogger = app.Services.GetRequiredService<THMI_Mod_Manager.Services.SystemInfoLogger>();
+        systemInfoLogger.LogApplicationShutdown();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error during shutdown logging: {ex.Message}");
     }
 });
 

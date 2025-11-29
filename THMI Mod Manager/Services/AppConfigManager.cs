@@ -38,6 +38,17 @@ namespace THMI_Mod_Manager.Services
                 {
                     // ensure directory exists (content root should exist) and create empty file
                     File.WriteAllText(_filePath, string.Empty, Encoding.UTF8);
+                    
+                    // Log that new config file was created
+                    var logMessage = $"AppConfig.Schale created at: {_filePath}";
+                    Logger.Log(Logger.LogLevel.Info, logMessage);
+                    
+                    // Also log to Microsoft logger if available
+                    if (_logger != null)
+                    {
+                        _logger.LogInformation(logMessage);
+                    }
+                    
                     return;
                 }
 
@@ -67,6 +78,16 @@ namespace THMI_Mod_Manager.Services
                         _data[currentSection] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
                     _data[currentSection][key] = value;
+                }
+                
+                // Log successful config load
+                var loadLogMessage = $"AppConfig.Schale loaded from: {_filePath} ({_data.Count} sections)";
+                Logger.Log(Logger.LogLevel.Info, loadLogMessage);
+                
+                // Also log to Microsoft logger if available
+                if (_logger != null)
+                {
+                    _logger.LogInformation(loadLogMessage);
                 }
             }
             finally
@@ -139,6 +160,35 @@ namespace THMI_Mod_Manager.Services
             }
         }
 
+        public List<string> GetAllSections()
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return new List<string>(_data.Keys);
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        public List<string> GetSectionKeys(string section)
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                section ??= string.Empty;
+                return _data.TryGetValue(section, out var dict) 
+                    ? new List<string>(dict.Keys) 
+                    : new List<string>();
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
         public void Set(string section, string key, string value, bool autoSave = true)
         {
             _lock.EnterWriteLock();
@@ -151,7 +201,25 @@ namespace THMI_Mod_Manager.Services
                     _data[section] = dict;
                 }
 
-                dict[key] = value;
+                // Log the configuration change
+                var oldValue = dict.ContainsKey(key) ? dict[key] : null;
+                if (oldValue != value)
+                {
+                    dict[key] = value;
+                    
+                    // Log to custom logger
+                    var logMessage = $"Config updated: [{section}]{key} = {value}";
+                    if (!string.IsNullOrEmpty(oldValue))
+                        logMessage += $" (was: {oldValue})";
+                    
+                    Logger.Log(Logger.LogLevel.Info, logMessage);
+                    
+                    // Also log to Microsoft logger if available
+                    if (_logger != null)
+                    {
+                        _logger.LogInformation(logMessage);
+                    }
+                }
 
                 if (autoSave) Save();
             }
@@ -185,6 +253,20 @@ namespace THMI_Mod_Manager.Services
                 section ??= string.Empty;
                 if (!_data.TryGetValue(section, out var dict)) return false;
                 var removed = dict.Remove(key);
+                
+                if (removed)
+                {
+                    // Log the configuration removal
+                    var logMessage = $"Config removed: [{section}]{key}";
+                    Logger.Log(Logger.LogLevel.Info, logMessage);
+                    
+                    // Also log to Microsoft logger if available
+                    if (_logger != null)
+                    {
+                        _logger.LogInformation(logMessage);
+                    }
+                }
+                
                 if (autoSave && removed) Save();
                 return removed;
             }
@@ -201,6 +283,20 @@ namespace THMI_Mod_Manager.Services
             {
                 section ??= string.Empty;
                 var removed = _data.Remove(section);
+                
+                if (removed)
+                {
+                    // Log the section removal
+                    var logMessage = $"Config section removed: [{section}]";
+                    Logger.Log(Logger.LogLevel.Info, logMessage);
+                    
+                    // Also log to Microsoft logger if available
+                    if (_logger != null)
+                    {
+                        _logger.LogInformation(logMessage);
+                    }
+                }
+                
                 if (autoSave && removed) Save();
                 return removed;
             }
@@ -257,6 +353,16 @@ namespace THMI_Mod_Manager.Services
             }
 
             File.WriteAllText(_filePath, sb.ToString(), Encoding.UTF8);
+            
+            // Log that AppConfig.Schale was written
+            var logMessage = $"AppConfig.Schale written to: {_filePath}";
+            Logger.Log(Logger.LogLevel.Info, logMessage);
+            
+            // Also log to Microsoft logger if available
+            if (_logger != null)
+            {
+                _logger.LogInformation(logMessage);
+            }
         }
 
         public void Reload()
