@@ -105,12 +105,18 @@ lifetime.ApplicationStarted.Register(() =>
     {
         // 从配置获取端口信息
         var configuration = app.Services.GetRequiredService<IConfiguration>();
-        var urls = configuration["urls"] ?? configuration["Urls"] ?? "http://localhost:5225";
+        var urls = configuration["urls"] ?? configuration["Urls"] ?? "http://localhost:5000";
         
         // 解析URL获取端口
         var url = urls.Split(';').FirstOrDefault() ?? "http://localhost:5225";
         var uri = new Uri(url);
         var port = uri.Port;
+        
+        // 确保端口为5000，如果URL中没有明确指定
+        if (port == 80 || port == 0) // 默认HTTP端口或未指定
+        {
+            port = 5000;
+        }
         
         // 从本地化文件读取消息
         var appConfigManager = app.Services.GetRequiredService<THMI_Mod_Manager.Services.AppConfigManager>();

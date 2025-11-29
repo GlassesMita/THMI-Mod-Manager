@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace THMI_Mod_Manager.Controllers
 {
@@ -11,6 +12,7 @@ namespace THMI_Mod_Manager.Controllers
         private readonly ILogger<LauncherController> _logger;
         private const string STEAM_APP_ID = "1584090";
         private const string PROCESS_NAME = "Touhou Mystia Izakaya";
+        private const string STEAM_EXE_NAME = "steam.exe";
 
         public LauncherController(ILogger<LauncherController> logger)
         {
@@ -18,44 +20,63 @@ namespace THMI_Mod_Manager.Controllers
         }
 
         [HttpPost("launch")]
-        public IActionResult Launch()
+        public async Task<IActionResult> Launch()
         {
             try
             {
+                _logger.LogInformation("尝试启动游戏...");
+                
                 if (IsProcessRunning())
                 {
+                    _logger.LogWarning("游戏进程已在运行中");
                     return BadRequest("进程已经在运行中");
                 }
 
                 // 使用Steam协议启动游戏
                 var steamUrl = $"steam://rungameid/{STEAM_APP_ID}";
+                _logger.LogInformation($"使用Steam URL: {steamUrl}");
                 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    Process.Start(new ProcessStartInfo
+                    var psi = new ProcessStartInfo
                     {
                         FileName = steamUrl,
-                        UseShellExecute = true
-                    });
+                        UseShellExecute = true,
+                        CreateNoWindow = true
+                    };
+                    _logger.LogInformation("Windows平台：启动进程配置完成，开始启动...");
+                    var process = Process.Start(psi);
+                    _logger.LogInformation($"进程启动结果: {(process != null ? "成功" : "失败")}");
+                    if (process != null)
+                    {
+                        _logger.LogInformation($"进程ID: {process.Id}");
+                    }
                 }
                 else
                 {
                     // 对于其他平台，尝试使用xdg-open
-                    Process.Start(new ProcessStartInfo
+                    var psi = new ProcessStartInfo
                     {
                         FileName = "xdg-open",
                         Arguments = steamUrl,
-                        UseShellExecute = false
-                    });
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    _logger.LogInformation("非Windows平台：启动进程配置完成，开始启动...");
+                    var process = Process.Start(psi);
+                    _logger.LogInformation($"进程启动结果: {(process != null ? "成功" : "失败")}");
+                    if (process != null)
+                    {
+                        _logger.LogInformation($"进程ID: {process.Id}");
+                    }
                 }
                 
-                _logger.LogInformation($"已启动Steam应用: {STEAM_APP_ID}");
-                return Ok(new { success = true, message = "启动成功" });
+                return Ok(new { success = true, message = "游戏启动命令已发送" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "启动进程时出错");
-                return StatusCode(500, new { success = false, message = "启动失败" });
+                return StatusCode(500, new { success = false, message = $"启动失败: {ex.Message}" });
             }
         }
 
@@ -114,12 +135,64 @@ namespace THMI_Mod_Manager.Controllers
             try
             {
                 var processes = Process.GetProcessesByName(PROCESS_NAME);
+                _logger.LogInformation($"检测到 {processes.Length} 个游戏进程");
                 return processes.Length > 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"检查进程 {PROCESS_NAME} 状态时出错");
+                _logger.LogError(ex, "检查进程状态时出错");
                 return false;
+            }
+        }
+
+        private string FindSteamExecutable()
+        {
+            try
+            {
+                // 常见Steam安装路径
+                var steamPaths = new[]
+                {
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Steam", STEAM_EXE_NAME),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Steam", STEAM_EXE_NAME),
+                    Path.Combine("C:\\", "Program Files", "Steam", STEAM_EXE_NAME),
+                    Path.Combine("C:\\", "Program Files (x86)", "Steam", STEAM_EXE_NAME)
+                };
+
+                foreach (var path in steamPaths)
+                {
+                    if (System.IO.File.Exists(path))
+                    {
+                        _logger.LogInformation($"找到Steam可执行文件: {path}");
+                        return path;
+                    }
+                }
+
+                // 如果文件不存在，尝试通过进程查找
+                var steamProcesses = Process.GetProcessesByName("steam");
+                if (steamProcesses.Length > 0)
+                {
+                    try
+                    {
+                        var steamPath = steamProcesses[0].MainModule?.FileName;
+                        if (!string.IsNullOrEmpty(steamPath))
+                        {
+                            _logger.LogInformation($"通过进程找到Steam可执行文件: {steamPath}");
+                            return steamPath;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning($"无法获取Steam进程路径: {ex.Message}");
+                    }
+                }
+
+                _logger.LogWarning("未找到Steam可执行文件");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "查找Steam可执行文件时出错");
+                return null;
             }
         }
     }

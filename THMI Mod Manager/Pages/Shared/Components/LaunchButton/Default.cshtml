@@ -17,8 +17,9 @@
         window.checkLaunchButtonStatus = function() {
             checkProcessStatus();
         };
-    
-    function handleLauncherSubmit(event) {
+        
+        // 将表单提交处理函数暴露到全局作用域
+        window.handleLauncherSubmit = function(event) {
         event.preventDefault();
         
         const action = launchButtonComponentCurrentIsRunning ? 'stop' : 'launch';
