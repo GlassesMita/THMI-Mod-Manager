@@ -6,8 +6,66 @@
 }
 
 <div class="container">
-    <h1>@AppConfig.GetLocalized("About:Header", "About")</h1>
+    <h1 class="mods-title">@AppConfig.GetLocalized("About:Header", "About")</h1>
     <div class="content">
         @Html.Raw(Model.Content)
     </div>
 </div>
+
+@section Styles {
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .content {
+            line-height: 1.6;
+        }
+
+            .content h2 {
+                margin-top: 2rem;
+                color: #333;
+            }
+
+            .content p {
+                margin-bottom: 1rem;
+            }
+
+            .content ul {
+                margin-bottom: 1rem;
+                padding-left: 1.5rem;
+            }
+
+            .content li {
+                margin-bottom: 0.5rem;
+            }
+
+        /* Mods页面样式 */
+        .mods-title {
+            text-align: center;
+            position: relative;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .mods-title::after {
+            content: "";
+            display: block;
+            width: 0;
+            height: 4px;
+            background: var(--theme-color);
+            margin: 10px auto;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .mods-title:hover::after {
+            width: 100px;
+            animation: expandWidth 0.5s ease-out forwards;
+        }
+</style>
+}

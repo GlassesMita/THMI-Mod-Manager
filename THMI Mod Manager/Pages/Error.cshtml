@@ -1,10 +1,10 @@
-﻿@page
+@page
 @model ErrorModel
 @{
     ViewData["Title"] = "Error";
 }
 
-<h1 class="text-danger">错误</h1>
+<h1 class="mods-title text-danger">错误</h1>
 <h2 class="text-danger">在处理您的请求的时候发生了一个错误</h2>
 
 @if (Model.ShowRequestId)
@@ -24,3 +24,33 @@
     For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
     and restarting the app.
 </p>
+
+@section Styles {
+    <style>
+        /* Mods页面样式 */
+        .mods-title {
+            text-align: center;
+            position: relative;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .mods-title::after {
+            content: "";
+            display: block;
+            width: 0;
+            height: 4px;
+            background: var(--theme-color);
+            margin: 10px auto;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .mods-title:hover::after {
+            width: 100px;
+            animation: expandWidth 0.5s ease-out forwards;
+        }
+</style>
+}

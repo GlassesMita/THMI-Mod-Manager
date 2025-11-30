@@ -63,7 +63,7 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4 welcome-title">@AppConfig.GetLocalized("Index:WelcomeTitle", "Welcome")</h1>
+    <h1 class="display-4 mods-title">@AppConfig.GetLocalized("Index:WelcomeTitle", "Welcome")</h1>
     
     @if (!isDevBuild && !isGameInstalled)
     {
@@ -111,73 +111,34 @@
 </div>
 
 <style>
-    /* 主页动画样式 */
-    @@keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes fadeInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes pulse {
-        0% {
-            @{
-                var color = !string.IsNullOrEmpty(themeColor) ? System.Drawing.ColorTranslator.FromHtml(themeColor) : System.Drawing.ColorTranslator.FromHtml("#c670ff");
-            }
-            box-shadow: 0 0 0 0 @Html.Raw($"rgba({Convert.ToInt32(color.R)}, {Convert.ToInt32(color.G)}, {Convert.ToInt32(color.B)}, 0.4)");
-        }
-        70% {
-            @{
-                var color70 = !string.IsNullOrEmpty(themeColor) ? System.Drawing.ColorTranslator.FromHtml(themeColor) : System.Drawing.ColorTranslator.FromHtml("#c670ff");
-            }
-            box-shadow: 0 0 0 10px @Html.Raw($"rgba({Convert.ToInt32(color70.R)}, {Convert.ToInt32(color70.G)}, {Convert.ToInt32(color70.B)}, 0)");
-        }
-        100% {
-            @{
-                var color100 = !string.IsNullOrEmpty(themeColor) ? System.Drawing.ColorTranslator.FromHtml(themeColor) : System.Drawing.ColorTranslator.FromHtml("#c670ff");
-            }
-            box-shadow: 0 0 0 0 @Html.Raw($"rgba({Convert.ToInt32(color100.R)}, {Convert.ToInt32(color100.G)}, {Convert.ToInt32(color100.B)}, 0)");
-        }
-    }
-
-    .welcome-title {
-        animation: fadeInDown 0.8s ease-out;
-        margin-bottom: 1.5rem;
-        transition: color 0.3s ease;
-    }
-
-    .animated-alert {
-        animation: fadeInUp 0.6s ease-out;
+    /* Mods页面样式 */
+    .mods-title {
+        text-align: center;
+        position: relative;
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+        position: relative;
         transition: all 0.3s ease;
     }
 
-    /* 使用主题色 */
-    .welcome-title {
-        color: @themeColor;
+    .mods-title::after {
+        content: "";
+        display: block;
+        width: 0;
+        height: 4px;
+        background: var(--theme-color);
+        margin: 10px auto;
+        border-radius: 2px;
+        transition: width 0.3s ease;
     }
 
-    .pulse-effect {
-        animation: pulse 2s infinite;
+    .mods-title:hover::after {
+        width: 100px;
+        animation: expandWidth 0.5s ease-out forwards;
     }
 
-    /* 响应式调整 */
     @@media (max-width: 768px) {
-        .welcome-title {
+        .mods-title {
             font-size: 2rem;
         }
     }

@@ -22,6 +22,7 @@
             color: @themeColor !important;
         }
     </style>
+    @await RenderSectionAsync("Styles", required: false)
     <style>
         /* Ensure main content doesn't sit under fixed sidebar on md+ */
         @@media (min-width: 768px) {
