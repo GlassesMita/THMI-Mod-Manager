@@ -26,7 +26,7 @@ namespace THMI_Mod_Manager.Pages
         public bool ShowCVEWarning { get; set; }
 
         // 光标设置属性
-        public bool UseMystiaCursor { get; set; }
+        public bool UseOsuCursor { get; set; }
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -52,8 +52,8 @@ namespace THMI_Mod_Manager.Pages
                 Logger.LogInfo($"Loaded developer settings - DevMode: {IsDevMode}, ShowCVEWarning: {ShowCVEWarning}");
 
                 // 加载光标设置
-                UseMystiaCursor = _appConfig.Get("[Cursor]UseMystiaCursor", "false").ToLower() == "true";
-                Logger.LogInfo($"Loaded cursor settings: UseMystiaCursor: {UseMystiaCursor}");
+                UseOsuCursor = _appConfig.Get("[Cursor]UseMystiaCursor", "false").ToLower() == "true";
+            Logger.LogInfo($"Loaded cursor settings: UseOsuCursor: {UseOsuCursor}");
             }
             catch (Exception ex)
             {
@@ -62,9 +62,9 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useMystiaCursor)
+        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor)
         {
-            Logger.LogInfo($"Saving language settings - Language: {language}, Status: {status}, UseMystiaCursor: {useMystiaCursor}");
+            Logger.LogInfo($"Saving language settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}");
             
             if (string.IsNullOrEmpty(language))
             {
@@ -83,8 +83,8 @@ namespace THMI_Mod_Manager.Pages
                 Logger.LogInfo($"Game status saved: {status}");
                 
                 // Save cursor setting
-                _appConfig.Set("[Cursor]UseMystiaCursor", useMystiaCursor.ToString());
-                Logger.LogInfo($"Cursor setting saved: {useMystiaCursor}");
+                _appConfig.Set("[Cursor]UseMystiaCursor", useOsuCursor.ToString());
+            Logger.LogInfo($"Cursor setting saved: {useOsuCursor}");
 
                 // Optionally reload configuration
                 _appConfig.Reload();

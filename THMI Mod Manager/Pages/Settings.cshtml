@@ -467,8 +467,8 @@
             <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:CursorLabel", "Cursor")</label>
             <br />
             <div class="checkbox-container">
-                <input type="checkbox" id="useMystiaCursor" name="useMystiaCursor" value="true" @(Model.UseMystiaCursor ? "checked" : "") />
-                <label for="useMystiaCursor" class="checkbox-label clickable-label">@AppConfig.GetLocalized("Settings:UseMystiaCursorLabel", "Use Mystia Cursor")</label>
+                <input type="checkbox" id="useOsuCursor" name="useOsuCursor" value="true" />
+                        <label for="useOsuCursor" class="checkbox-label clickable-label">@AppConfig.GetLocalized("Settings:UseOsuCursorLabel", "Use osu! Cursor")</label>
             </div>
         </div>
         -->
@@ -555,7 +555,7 @@
         });
         
         // 为复选框添加交互效果
-        const checkbox = document.getElementById('useMystiaCursor');
+        const checkbox = document.getElementById('useOsuCursor');
         checkbox.addEventListener('change', function() {
             if (this.checked) {
                 this.parentElement.style.backgroundColor = 'rgba(13, 110, 253, 0.1)';

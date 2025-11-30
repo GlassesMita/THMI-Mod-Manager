@@ -115,36 +115,20 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
-        // Custom cursor functionality
-        function applyCustomCursor() {
-            // Check if custom cursor is enabled in AppConfig
-            fetch('/api/config/get?key=[Cursor]UseMystiaCursor')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.value === 'true') {
-                        document.body.classList.add('custom-cursor');
-                    } else {
-                        document.body.classList.remove('custom-cursor');
-                    }
-                })
-                .catch(error => {
-                    console.log('Custom cursor check failed:', error);
-                    // Remove custom cursor class on error
-                    document.body.classList.remove('custom-cursor');
-                });
-        }
-
-        // Apply cursor on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            applyCustomCursor();
-        });
-
-        // Function to refresh cursor setting (can be called from settings page)
-        window.refreshCustomCursor = function() {
-            applyCustomCursor();
-        };
-    </script>
+    
+    @* osu! Cursor 功能 *@
+    @{
+        var configManager = Context.RequestServices.GetService(typeof(THMI_Mod_Manager.Services.AppConfigManager)) as THMI_Mod_Manager.Services.AppConfigManager;
+        var useOsuCursor = configManager?.Get("[Cursor]UseMystiaCursor", "false").ToLower() == "true";
+    }
+    
+    @if (useOsuCursor)
+    {
+        <script src="~/dist/main.js" asp-append-version="true"></script>
+        <script>
+            var cursor = new osuCursor();
+        </script>
+    }
 
     <!-- 后端存活检测脚本 -->
     <script>

@@ -6,10 +6,10 @@ VersionCode=1
 Language=en_US
 
 [Cursor]
-UseMystiaCursor=False
+UseMystiaCursor=True
 
 [Game]
-Status=owned
+Status=
 
 [Dev]
 IsDevBuild=False
