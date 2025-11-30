@@ -43,7 +43,7 @@ namespace THMI_Mod_Manager.Controllers
                 }
 
                 // 解析日志级别
-                Logger.LogLevel logLevel;
+                Logger.LogLevel logLevel = Logger.LogLevel.Info; // 默认值避免 CS8600 警告
                 switch (level?.ToLower())
                 {
                     case "warning":

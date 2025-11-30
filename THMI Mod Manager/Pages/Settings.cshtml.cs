@@ -30,6 +30,9 @@ namespace THMI_Mod_Manager.Pages
         
         // 新的光标类型属性
         public string CursorType { get; set; } = "default";
+        
+        // 主题色属性
+        public string ThemeColor { get; set; } = "#c670ff";
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -69,6 +72,10 @@ namespace THMI_Mod_Manager.Pages
                 }
                 
                 Logger.LogInfo($"Loaded cursor settings: CursorType: {CursorType}");
+                
+                // 加载主题色设置
+                ThemeColor = _appConfig.Get("[App]ThemeColor", "#c670ff");
+                Logger.LogInfo($"Loaded theme color: {ThemeColor}");
             }
             catch (Exception ex)
             {
@@ -77,9 +84,9 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] string cursorType)
+        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] string cursorType, [FromForm] string themeColor)
         {
-            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, CursorType: {cursorType}");
+            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}");
             
             if (string.IsNullOrEmpty(language))
             {
@@ -106,6 +113,13 @@ namespace THMI_Mod_Manager.Pages
                 {
                     _appConfig.Set("[Cursor]CursorType", cursorType);
                     Logger.LogInfo($"Cursor type saved: {cursorType}");
+                }
+                
+                // Save theme color setting
+                if (!string.IsNullOrEmpty(themeColor))
+                {
+                    _appConfig.Set("[App]ThemeColor", themeColor);
+                    Logger.LogInfo($"Theme color saved: {themeColor}");
                 }
 
                 // Optionally reload configuration

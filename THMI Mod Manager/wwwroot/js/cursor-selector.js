@@ -169,6 +169,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 添加 CSS 样式到页面
 function addCursorStyles() {
+    // 获取主题色，默认为#c670ff
+    const themeColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--theme-color').trim() || '#c670ff';
+    
+    // 替换SVG中的颜色值
+    const svgContent = `
+        <svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'>
+            <circle cx='16' cy='16' r='14' fill='${themeColor}' stroke='%23ffffff' stroke-width='2'/>
+            <circle cx='16' cy='16' r='6' fill='%23ffffff'/>
+        </svg>
+    `.replace(/\s+/g, ' ').trim();
+    
+    const encodedSvg = encodeURIComponent(svgContent);
+    
     const style = document.createElement('style');
     style.textContent = `
         /* 全局光标样式 */
@@ -181,11 +195,11 @@ function addCursorStyles() {
         }
         
         body.osu-cursor {
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23ff66aa' stroke='%23ffffff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23ffffff'/%3E%3C/svg%3E") 16 16, auto !important;
+            cursor: url("data:image/svg+xml,${encodedSvg}") 16 16, auto !important;
         }
         
         body.osu-cursor * {
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23ff66aa' stroke='%23ffffff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23ffffff'/%3E%3C/svg%3E") 16 16, auto !important;
+            cursor: url("data:image/svg+xml,${encodedSvg}") 16 16, auto !important;
         }
         
         /* 确保链接和按钮保持指针样式 */
@@ -202,7 +216,7 @@ function addCursorStyles() {
         body.osu-cursor [role="button"],
         body.osu-cursor input[type="submit"],
         body.osu-cursor input[type="button"] {
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23ff66aa' stroke='%23ffffff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23ffffff'/%3E%3C/svg%3E") 16 16, pointer !important;
+            cursor: url("data:image/svg+xml,${encodedSvg}") 16 16, pointer !important;
         }
     `;
     document.head.appendChild(style);

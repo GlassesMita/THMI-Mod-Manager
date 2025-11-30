@@ -38,7 +38,7 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.SystemInfoLogger>(provid
 {
     var logger = provider.GetRequiredService<ILogger<THMI_Mod_Manager.Services.SystemInfoLogger>>();
     var env = provider.GetRequiredService<IWebHostEnvironment>();
-    THMI_Mod_Manager.Services.AppConfigManager appConfigManager = null;
+    THMI_Mod_Manager.Services.AppConfigManager? appConfigManager = null;
     try
     {
         appConfigManager = provider.GetService<THMI_Mod_Manager.Services.AppConfigManager>();
@@ -141,7 +141,7 @@ lifetime.ApplicationStarted.Register(() =>
         
         // 从本地化文件读取消息
         var appConfigManager = app.Services.GetRequiredService<THMI_Mod_Manager.Services.AppConfigManager>();
-        var currentLanguage = appConfigManager.GetSection("Localization").TryGetValue("Language", out var langValue) ? langValue : "zh_CN";
+        string currentLanguage = appConfigManager.GetSection("Localization").TryGetValue("Language", out var langValue) ? langValue : "zh_CN";
         
         // 构建本地化文件路径
         var localizationFile = Path.Combine(app.Environment.ContentRootPath, "Localization", $"{currentLanguage}.ini");

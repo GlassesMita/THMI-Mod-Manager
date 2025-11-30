@@ -33,7 +33,7 @@ namespace THMI_Mod_Manager.Services
                 // Read application version from AppConfig.Schale
                 try
                 {
-                    string appVersion = null;
+                    string? appVersion = null;
                     try
                     {
                         appVersion = _appConfigManager?.Get("Config", "Version");

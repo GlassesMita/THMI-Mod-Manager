@@ -361,7 +361,7 @@ namespace THMI_Mod_Manager.Services
             // Also log to Microsoft logger if available
             if (_logger != null)
             {
-                _logger.LogInformation(logMessage);
+                _logger?.LogInformation(logMessage);
             }
         }
 
@@ -477,7 +477,7 @@ namespace THMI_Mod_Manager.Services
             return value4;
             
         // 5. Try empty culture
-        if (cache.TryGetValue(string.Empty, out var dict5) && dict5.TryGetValue(key, out var value5))
+        if (cache.TryGetValue(string.Empty, out var dict5) && dict5.TryGetValue(key!, out var value5))
             return value5;
             
         // 6. Return default value or key as fallback

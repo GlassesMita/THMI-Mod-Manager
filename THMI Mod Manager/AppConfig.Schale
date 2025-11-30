@@ -1,6 +1,7 @@
 ﻿[App]
 Version=0.0.1
 VersionCode=1
+ThemeColor=#c670ff
 
 [Localization]
 Language=en_US

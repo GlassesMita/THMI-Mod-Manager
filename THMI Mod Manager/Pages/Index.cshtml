@@ -7,6 +7,9 @@
 @{
     ViewData["Title"] = AppConfig.GetLocalized("Index:Title", "主页");
     
+    // 获取主题色
+    var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
+    
     // 检查游戏文件
     var devBuildStr = AppConfig.Get("[Dev]IsDevBuild", "False");
     var isDevBuild = !string.IsNullOrEmpty(devBuildStr) && bool.Parse(devBuildStr);
@@ -60,11 +63,11 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">@AppConfig.GetLocalized("Index:WelcomeTitle", "Welcome")</h1>
+    <h1 class="display-4 welcome-title">@AppConfig.GetLocalized("Index:WelcomeTitle", "Welcome")</h1>
     
     @if (!isDevBuild && !isGameInstalled)
     {
-        <div class="alert alert-danger mt-4" role="alert">
+        <div class="alert alert-danger mt-4 animated-alert" role="alert">
             <h4 class="alert-heading">@AppConfig.GetLocalized("Index:GameNotFound", "游戏未正确安装")</h4>
             <p>@AppConfig.GetLocalized("Index:GameNotFoundDesc", "未找到《东方夜雀食堂》游戏文件。请确保游戏已正确安装并与本程序放在同一目录下。")</p>
             <hr>
@@ -91,7 +94,7 @@
     }
     else if (isDevBuild)
     {
-        <div class="alert alert-warning mt-4" role="alert">
+        <div class="alert alert-warning mt-4 animated-alert" role="alert">
             <h4 class="alert-heading">@AppConfig.GetLocalized("Index:DevMode", "开发模式")</h4>
             <p>@AppConfig.GetLocalized("Index:DevModeDesc", "当前处于开发模式，已跳过游戏文件检查。")</p>
         </div>
@@ -106,3 +109,119 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* 主页动画样式 */
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes pulse {
+        0% {
+            @{
+                var color = !string.IsNullOrEmpty(themeColor) ? System.Drawing.ColorTranslator.FromHtml(themeColor) : System.Drawing.ColorTranslator.FromHtml("#c670ff");
+            }
+            box-shadow: 0 0 0 0 @Html.Raw($"rgba({Convert.ToInt32(color.R)}, {Convert.ToInt32(color.G)}, {Convert.ToInt32(color.B)}, 0.4)");
+        }
+        70% {
+            @{
+                var color70 = !string.IsNullOrEmpty(themeColor) ? System.Drawing.ColorTranslator.FromHtml(themeColor) : System.Drawing.ColorTranslator.FromHtml("#c670ff");
+            }
+            box-shadow: 0 0 0 10px @Html.Raw($"rgba({Convert.ToInt32(color70.R)}, {Convert.ToInt32(color70.G)}, {Convert.ToInt32(color70.B)}, 0)");
+        }
+        100% {
+            @{
+                var color100 = !string.IsNullOrEmpty(themeColor) ? System.Drawing.ColorTranslator.FromHtml(themeColor) : System.Drawing.ColorTranslator.FromHtml("#c670ff");
+            }
+            box-shadow: 0 0 0 0 @Html.Raw($"rgba({Convert.ToInt32(color100.R)}, {Convert.ToInt32(color100.G)}, {Convert.ToInt32(color100.B)}, 0)");
+        }
+    }
+
+    .welcome-title {
+        animation: fadeInDown 0.8s ease-out;
+        margin-bottom: 1.5rem;
+        transition: color 0.3s ease;
+    }
+
+    .animated-alert {
+        animation: fadeInUp 0.6s ease-out;
+        transition: all 0.3s ease;
+    }
+
+    /* 使用主题色 */
+    .welcome-title {
+        color: @themeColor;
+    }
+
+    .pulse-effect {
+        animation: pulse 2s infinite;
+    }
+
+    /* 响应式调整 */
+    @@media (max-width: 768px) {
+        .welcome-title {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<script>
+    // 页面加载完成后添加动画效果
+    document.addEventListener('DOMContentLoaded', function () {
+        // 为欢迎标题添加动画类
+        const welcomeTitle = document.querySelector('.welcome-title');
+        if (welcomeTitle) {
+            welcomeTitle.classList.add('welcome-animation');
+        }
+
+        // 为警告框添加脉冲效果
+        const alertBoxes = document.querySelectorAll('.animated-alert');
+        alertBoxes.forEach(function (alertBox) {
+            // 检查是否为CVE警告
+            if (alertBox.querySelector('.alert-heading') && 
+                (alertBox.querySelector('.alert-heading').textContent.includes('安全警告') || 
+                 alertBox.querySelector('.alert-heading').textContent.includes('CVE') ||
+                 alertBox.querySelector('.alert-heading').textContent.includes('Security Warning'))) {
+                alertBox.classList.add('pulse-effect');
+            }
+        });
+        
+        // 添加悬停效果
+        const welcomeElement = document.querySelector('.welcome-title');
+        if (welcomeElement) {
+            welcomeElement.addEventListener('mouseover', function() {
+                this.style.transform = 'scale(1.05)';
+            });
+            
+            welcomeElement.addEventListener('mouseout', function() {
+                this.style.transform = 'scale(1)';
+            });
+        }
+    });
+    
+    // 主题色变化时更新页面样式
+    function updateThemeColor(newColor) {
+        const welcomeTitle = document.querySelector('.welcome-title');
+        if (welcomeTitle) {
+            welcomeTitle.style.color = newColor;
+        }
+    }
+</script>

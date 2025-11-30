@@ -2,7 +2,7 @@
 .cursor-selector-container {
     margin: 20px 0;
     padding: 15px;
-    border: 2px solid #007bff;
+    border: 2px solid var(--theme-color, #c670ff);
     border-radius: 8px;
     background-color: transparent;
 }
@@ -11,7 +11,7 @@
     font-size: 16px;
     font-weight: bold;
     margin-bottom: 15px;
-    color: #333;
+    color: var(--theme-color, #c670ff);
 }
 
 .cursor-radio-group {
@@ -32,8 +32,8 @@
 }
 
 .cursor-radio-option:hover {
-    background-color: #e8f4fd;
-    border-color: #007bff;
+    background-color: color-mix(in srgb, var(--theme-color, #c670ff) 20%, white);
+    border-color: var(--theme-color, #c670ff);
 }
 
 .cursor-radio-option input[type="radio"] {
@@ -44,13 +44,13 @@
 .cursor-radio-label {
     flex: 1;
     font-size: 14px;
-    color: #333;
+    color: var(--theme-color, #c670ff);
 }
 
 .cursor-preview-trigger {
     position: relative;
     padding: 5px 10px;
-    background-color: #007bff;
+    background-color: var(--theme-color, #c670ff);
     color: white;
     border-radius: 4px;
     font-size: 12px;
@@ -59,7 +59,7 @@
 }
 
 .cursor-preview-trigger:hover {
-    background-color: #0056b3;
+    background-color: color-mix(in srgb, var(--theme-color, #c670ff) 80%, black);
 }
 
 /* 指针预览窗口 */
@@ -69,7 +69,7 @@
     left: 50%;
     transform: translateX(-50%);
     background-color: white;
-    border: 2px solid #007bff;
+    border: 2px solid var(--theme-color, #c670ff);
     border-radius: 8px;
     padding: 15px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -95,21 +95,21 @@
     font-size: 12px;
     font-weight: bold;
     margin-bottom: 10px;
-    color: #333;
+    color: var(--theme-color, #c670ff);
 }
 
 .cursor-preview-area {
     width: 80px;
     height: 60px;
-    border: 1px solid #ddd;
+    border: 1px solid color-mix(in srgb, var(--theme-color, #c670ff) 30%, white);
     border-radius: 4px;
     margin: 0 auto;
-    background-color: #f8f9fa;
+    background-color: color-mix(in srgb, var(--theme-color, #c670ff) 10%, white);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    color: #666;
+    color: var(--theme-color, #c670ff);
     position: relative;
     overflow: hidden;
 }
@@ -130,7 +130,7 @@
     left: 50%;
     transform: translateX(-50%);
     border: 8px solid transparent;
-    border-top-color: #007bff;
+    border-top-color: var(--theme-color, #c670ff);
 }
 
 /* 响应式设计 */
@@ -155,33 +155,33 @@
 @media (prefers-color-scheme: dark) {
     .cursor-selector-container {
         background-color: transparent;
-        border-color: #4299e1;
+        border-color: color-mix(in srgb, var(--theme-color, #c670ff) 70%, white);
     }
     
     .cursor-selector-title {
-        color: #e2e8f0;
+        color: var(--theme-color, #c670ff);
     }
     
     .cursor-radio-option:hover {
-        background-color: #4a5568;
+        background-color: color-mix(in srgb, var(--theme-color, #c670ff) 30%, black);
     }
     
     .cursor-radio-label {
-        color: #e2e8f0;
+        color: var(--theme-color, #c670ff);
     }
     
     .cursor-preview-popup {
-        background-color: #2d3748;
-        border-color: #4299e1;
+        background-color: color-mix(in srgb, var(--theme-color, #c670ff) 90%, black);
+        border-color: color-mix(in srgb, var(--theme-color, #c670ff) 70%, white);
     }
     
     .cursor-preview-title {
-        color: #e2e8f0;
+        color: var(--theme-color, #c670ff);
     }
     
     .cursor-preview-area {
-        background-color: #4a5568;
-        border-color: #718096;
-        color: #e2e8f0;
+        background-color: color-mix(in srgb, var(--theme-color, #c670ff) 30%, black);
+        border-color: color-mix(in srgb, var(--theme-color, #c670ff) 50%, black);
+        color: var(--theme-color, #c670ff);
     }
 }
