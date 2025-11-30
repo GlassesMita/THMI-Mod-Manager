@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/cursor-selector.css" asp-append-version="true" />
     <style>
         /* Ensure main content doesn't sit under fixed sidebar on md+ */
         @@media (min-width: 768px) {
@@ -116,19 +117,31 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     
-    @* osu! Cursor 功能 *@
+    @* 指针选择器功能 *@
     @{
         var configManager = Context.RequestServices.GetService(typeof(THMI_Mod_Manager.Services.AppConfigManager)) as THMI_Mod_Manager.Services.AppConfigManager;
-        var useOsuCursor = configManager?.Get("[Cursor]UseMystiaCursor", "false").ToLower() == "true";
+        var cursorType = configManager?.Get("[Cursor]CursorType", "default");
     }
     
-    @if (useOsuCursor)
-    {
-        <script src="~/dist/main.js" asp-append-version="true"></script>
-        <script>
-            var cursor = new osuCursor();
-        </script>
-    }
+    @* 添加animejs CDN引用，用于osu光标动画 *@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="~/js/cursor-selector.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof CursorSelector !== 'undefined') {
+                const cursorSelector = CursorSelector.init();
+                
+                // 如果是 osu 游标类型，初始化 osuCursor
+                if ('@{Html.Raw(cursorType);}' === 'osu') {
+                    // 动态加载 osu 游标（非模块方式）
+                    // 使用 setTimeout 确保在下一个事件循环中执行
+                    setTimeout(() => {
+                        cursorSelector.loadOsuCursor();
+                    }, 0);
+                }
+            }
+        });
+    </script>
 
     <!-- 后端存活检测脚本 -->
     <script>

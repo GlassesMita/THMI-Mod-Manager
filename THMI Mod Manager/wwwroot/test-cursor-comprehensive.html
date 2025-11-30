@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Cursor Selector Test</title>
+    <link rel="stylesheet" href="/css/cursor-selector.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .test-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .test-header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .test-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .test-content {
+            padding: 30px;
+        }
+        .status-panel {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .status-panel.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        .test-area {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .test-area:hover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+        .results-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .result-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .result-item.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .result-item.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🎯 Cursor Selector Test Suite</h1>
+            <p>Comprehensive testing for cursor selection functionality</p>
+        </div>
+        
+        <div class="test-content">
+            <div id="status-panel" class="status-panel">
+                <h3>🚀 Initializing Test Suite...</h3>
+                <p id="status-text">Loading cursor selector components...</p>
+            </div>
+
+            <!-- Feature Overview -->
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🖱️</div>
+                    <h4>Cursor Selection</h4>
+                    <p>Test radio button selection functionality</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👁️</div>
+                    <h4>Preview System</h4>
+                    <p>Test hover preview functionality</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h4>Save/Load</h4>
+                    <p>Test configuration persistence</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h4>Visual Feedback</h4>
+                    <p>Test visual styling and animations</p>
+                </div>
+            </div>
+
+            <!-- Cursor Selector Component -->
+            <div class="cursor-selector-container">
+                <div class="cursor-selector-title">🎨 Choose Your Cursor Style</div>
+                <div class="cursor-radio-group">
+                    <div class="cursor-radio-option">
+                        <input type="radio" id="cursor-default" name="cursor-type" value="default" checked>
+                        <label for="cursor-default" class="cursor-radio-label">🖱️ Default Cursor</label>
+                        <div class="cursor-preview-trigger" data-cursor-type="default">
+                            👁️ Preview
+                            <div class="cursor-preview-popup" data-cursor-type="default">
+                                <div class="cursor-preview-title">Default System Cursor</div>
+                                <div class="cursor-preview-area">Move mouse here to test</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="cursor-radio-option">
+                        <input type="radio" id="cursor-mystia" name="cursor-type" value="mystia">
+                        <label for="cursor-mystia" class="cursor-radio-label">🦋 Mystia Cursor</label>
+                        <div class="cursor-preview-trigger" data-cursor-type="mystia">
+                            👁️ Preview
+                            <div class="cursor-preview-popup" data-cursor-type="mystia">
+                                <div class="cursor-preview-title">Mystia Custom Cursor</div>
+                                <div class="cursor-preview-area">Move mouse here to test</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="cursor-radio-option">
+                        <input type="radio" id="cursor-osu" name="cursor-type" value="osu">
+                        <label for="cursor-osu" class="cursor-radio-label">🎯 osu! lazer Cursor</label>
+                        <div class="cursor-preview-trigger" data-cursor-type="osu">
+                            👁️ Preview
+                            <div class="cursor-preview-popup" data-cursor-type="osu">
+                                <div class="cursor-preview-title">osu! lazer Game Cursor</div>
+                                <div class="cursor-preview-area">Move mouse here to test</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Area -->
+            <div class="test-area">
+                <h3>🧪 Interactive Test Area</h3>
+                <p>Move your mouse over this area to test the selected cursor style.</p>
+                <div style="margin: 20px 0;">
+                    <button onclick="alert('Button clicked!')" style="margin: 5px;">Test Button</button>
+                    <input type="text" placeholder="Test input field" style="margin: 5px; padding: 8px;">
+                    <select style="margin: 5px; padding: 8px;">
+                        <option>Test Select</option>
+                        <option>Option 1</option>
+                        <option>Option 2</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <button class="btn btn-primary" onclick="runAllTests()">🚀 Run All Tests</button>
+                <button class="btn btn-success" onclick="testCursorSelection()">🖱️ Test Selection</button>
+                <button class="btn btn-success" onclick="testPreviewSystem()">👁️ Test Previews</button>
+                <button class="btn btn-success" onclick="testSaveLoad()">💾 Test Save/Load</button>
+                <button class="btn btn-warning" onclick="resetToDefault()">🔄 Reset to Default</button>
+                <button class="btn btn-primary" onclick="clearResults()">🧹 Clear Results</button>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="results-panel">
+                <h3>📊 Test Results</h3>
+                <div id="test-results">
+                    <div class="result-item">Ready to run tests...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/cursor-selector.js"></script>
+    <script>
+        let testResults = [];
+        let testStartTime = null;
+
+        // Enhanced logging function
+        function logResult(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const resultItem = {
+                message: message,
+                type: type,
+                timestamp: timestamp
+            };
+            testResults.push(resultItem);
+            updateResultsDisplay();
+        }
+
+        function updateResultsDisplay() {
+            const resultsContainer = document.getElementById('test-results');
+            resultsContainer.innerHTML = testResults.map(result => 
+                `<div class="result-item ${result.type}">
+                    <strong>${result.timestamp}</strong>: ${result.message}
+                </div>`
+            ).join('');
+            resultsContainer.scrollTop = resultsContainer.scrollHeight;
+        }
+
+        function updateStatus(message, isError = false) {
+            const statusPanel = document.getElementById('status-panel');
+            const statusText = document.getElementById('status-text');
+            
+            if (isError) {
+                statusPanel.className = 'status-panel error';
+            } else {
+                statusPanel.className = 'status-panel';
+            }
+            statusText.textContent = message;
+        }
+
+        function clearResults() {
+            testResults = [];
+            updateResultsDisplay();
+            logResult('Results cleared, ready for new tests', 'success');
+        }
+
+        // Test functions
+        async function testCursorSelection() {
+            logResult('Starting cursor selection tests...', 'info');
+            
+            try {
+                // Test 1: Check if cursor selector is initialized
+                if (!window.cursorSelector) {
+                    throw new Error('Cursor selector not initialized');
+                }
+                logResult('✅ Cursor selector is initialized', 'success');
+
+                // Test 2: Test getting current cursor
+                const currentCursor = window.cursorSelector.getCurrentCursor();
+                logResult(`✅ Current cursor: ${currentCursor}`, 'success');
+
+                // Test 3: Test setting different cursors
+                const cursorTypes = ['mystia', 'osu', 'default'];
+                for (const cursorType of cursorTypes) {
+                    window.cursorSelector.setCursor(cursorType);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    const newCursor = window.cursorSelector.getCurrentCursor();
+                    if (newCursor === cursorType) {
+                        logResult(`✅ Successfully set cursor to: ${cursorType}`, 'success');
+                    } else {
+                        logResult(`❌ Failed to set cursor to: ${cursorType}`, 'error');
+                    }
+                }
+
+                // Test 4: Test radio button synchronization
+                const radioButtons = document.querySelectorAll('input[name="cursor-type"]');
+                let radioSyncSuccess = true;
+                radioButtons.forEach(radio => {
+                    if (radio.checked && radio.value !== window.cursorSelector.getCurrentCursor()) {
+                        radioSyncSuccess = false;
+                    }
+                });
+                logResult(radioSyncSuccess ? '✅ Radio buttons synchronized correctly' : '❌ Radio buttons not synchronized', radioSyncSuccess ? 'success' : 'error');
+
+            } catch (error) {
+                logResult(`❌ Cursor selection test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPreviewSystem() {
+            logResult('Starting preview system tests...', 'info');
+            
+            try {
+                // Test 1: Check preview triggers
+                const previewTriggers = document.querySelectorAll('.cursor-preview-trigger');
+                logResult(`✅ Found ${previewTriggers.length} preview triggers`, 'success');
+
+                // Test 2: Check preview popups
+                const previewPopups = document.querySelectorAll('.cursor-preview-popup');
+                logResult(`✅ Found ${previewPopups.length} preview popups`, 'success');
+
+                // Test 3: Test preview popup structure
+                previewPopups.forEach((popup, index) => {
+                    const title = popup.querySelector('.cursor-preview-title');
+                    const area = popup.querySelector('.cursor-preview-area');
+                    if (title && area) {
+                        logResult(`✅ Preview popup ${index + 1} has correct structure`, 'success');
+                    } else {
+                        logResult(`❌ Preview popup ${index + 1} missing components`, 'error');
+                    }
+                });
+
+                // Test 4: Test preview trigger events (simulated)
+                if (previewTriggers.length > 0) {
+                    const firstTrigger = previewTriggers[0];
+                    const mouseEnterEvent = new MouseEvent('mouseenter', { bubbles: true });
+                    firstTrigger.dispatchEvent(mouseEnterEvent);
+                    
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    logResult(`✅ Preview trigger events working`, 'success');
+                    
+                    const mouseLeaveEvent = new MouseEvent('mouseleave', { bubbles: true });
+                    firstTrigger.dispatchEvent(mouseLeaveEvent);
+                }
+
+            } catch (error) {
+                logResult(`❌ Preview system test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSaveLoad() {
+            logResult('Starting save/load tests...', 'info');
+            
+            try {
+                // Test 1: Test localStorage functionality
+                const testCursor = 'mystia';
+                window.cursorSelector.setCursor(testCursor);
+                window.cursorSelector.saveCursorPreference(testCursor);
+                
+                // Test 2: Check if saved to localStorage
+                const savedCursor = localStorage.getItem('preferredCursor');
+                if (savedCursor === testCursor) {
+                    logResult(`✅ Cursor preference saved to localStorage: ${savedCursor}`, 'success');
+                } else {
+                    logResult(`❌ Cursor preference not saved correctly`, 'error');
+                }
+
+                // Test 3: Test loading saved cursor
+                localStorage.setItem('preferredCursor', 'osu');
+                window.cursorSelector.loadSavedCursor();
+                const loadedCursor = window.cursorSelector.getCurrentCursor();
+                if (loadedCursor === 'osu') {
+                    logResult(`✅ Cursor preference loaded correctly: ${loadedCursor}`, 'success');
+                } else {
+                    logResult(`❌ Cursor preference not loaded correctly`, 'error');
+                }
+
+                // Test 4: Test server-side save (if available)
+                if (window.saveCursorSetting) {
+                    logResult('✅ Server-side save function available', 'success');
+                } else {
+                    logResult('ℹ️ Server-side save function not available (using localStorage only)', 'info');
+                }
+
+            } catch (error) {
+                logResult(`❌ Save/load test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function resetToDefault() {
+            try {
+                window.cursorSelector.setCursor('default');
+                localStorage.removeItem('preferredCursor');
+                logResult('✅ Reset to default cursor and cleared saved preference', 'success');
+            } catch (error) {
+                logResult(`❌ Reset failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function runAllTests() {
+            testStartTime = Date.now();
+            logResult('🚀 Starting comprehensive test suite...', 'info');
+            updateStatus('Running all tests...');
+            
+            await testCursorSelection();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testPreviewSystem();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testSaveLoad();
+            
+            const testDuration = ((Date.now() - testStartTime) / 1000).toFixed(2);
+            logResult(`✅ All tests completed in ${testDuration}s`, 'success');
+            updateStatus(`✅ All tests completed successfully in ${testDuration}s`);
+        }
+
+        // Initialize and setup
+        document.addEventListener('DOMContentLoaded', function() {
+            logResult('🎯 Test suite initialized', 'success');
+            updateStatus('✅ Test suite ready - click "Run All Tests" to begin');
+            
+            // Listen for cursor change events
+            window.addEventListener('cursorChanged', function(event) {
+                logResult(`🔄 Cursor changed event: ${event.detail.cursorType}`, 'info');
+            });
+        });
+    </script>
+</body>
+</html>

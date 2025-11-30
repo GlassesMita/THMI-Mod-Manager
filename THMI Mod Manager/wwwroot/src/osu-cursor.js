@@ -1,12 +1,57 @@
-import cursorDefault from 'data-url:../assets/cursor.png';
-import cursorAdditive from 'data-url:../assets/cursor-additive.png';
-import styleSheet from 'bundle-text:./style.css';
-import anime from 'animejs';
+// 通过传统的<script>标签加载，不使用模块方式
+// 资源已内联到HTML中或通过其他方式提供
+// animejs库通过CDN在_layout.cshtml中引入
 
-export default class osuCursor {
+class osuCursor {
     constructor(options) {
 		this.options = options || {};
 		this.options.rotate ??= true;
+
+		// 添加样式到 DOM
+		// 添加样式到 DOM
+		const style = document.createElement('style');
+		style.textContent = `
+			.osu-cursor-container {
+				position: fixed;
+				width: 100%;
+				height: 100%;
+				top: 0;
+				left: 0;
+				z-index: 9999;
+				pointer-events: none;
+			}
+			
+			.osu-cursor-default {
+				position: absolute;
+				width: 32px;
+				height: 32px;
+				margin-top: -16px;
+				margin-left: -16px;
+				background-size: contain;
+				background-repeat: no-repeat;
+				transform-origin: center;
+				will-change: transform;
+				z-index: 9999;
+			}
+			
+			.osu-cursor-additive {
+				position: absolute;
+				width: 32px;
+				height: 32px;
+				margin-top: -16px;
+				margin-left: -16px;
+				background-size: contain;
+				background-repeat: no-repeat;
+				transform-origin: center;
+				will-change: transform;
+				z-index: 9998;
+			}
+			
+			body:not(.osu-cursor-enabled) .osu-cursor-container {
+				display: none;
+			}
+		`;
+		document.head.appendChild(style);
 
 		this.init();
     }
@@ -37,18 +82,22 @@ export default class osuCursor {
 		this.isTouch = false;
 
 
-		const style = document.createElement('style');
-		style.textContent = styleSheet;
-		document.body.appendChild(style);
+		// 使用传统的CSS文件引用
+		const link = document.createElement('link');
+		link.rel = 'stylesheet';
+		link.href = '/src/style.css';  // 假设CSS文件位于同一目录
+		document.head.appendChild(link);
 
 		if (document.querySelector("#osu-cursor")){
 			return;
 		}
+		
+		// 使用传统的图片路径
 		this.cursor = this.injectHtml(`
 		<div class='osu-cursor' id='osu-cursor'>
 			<div class='cursor-inner'>
-			<img class='cursor-fg' src='${cursorDefault}'/>
-			<img class='cursor-additive' src='${cursorAdditive}'/>
+			<img class='cursor-fg' src='/assets/cursor.png'/>
+			<img class='cursor-additive' src='/assets/cursor-additive.png'/>
 			</div>
 		</div>`, document.body);
 		this.cursor.style.display = "none";
@@ -280,4 +329,18 @@ export default class osuCursor {
 			this.cursor = null;
 		}
     }
+}
+
+// 检查是否作为模块加载
+if (typeof module !== 'undefined' && module.exports) {
+    // CommonJS (Node.js)
+    module.exports = osuCursor;
+} else if (typeof define === 'function' && define.amd) {
+    // AMD
+    define(function() {
+        return osuCursor;
+    });
+} else if (typeof window !== 'undefined') {
+    // 浏览器全局作用域
+    window.osuCursor = osuCursor;
 }

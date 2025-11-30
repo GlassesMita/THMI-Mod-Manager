@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>osu! lazer Cursor Test</title>
+    <!-- 添加AnimeJS CDN引用 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-area {
+            width: 100%;
+            height: 80vh;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .draggable {
+            width: 100px;
+            height: 100px;
+            background-color: #ff66aa;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .console {
+            background-color: #000;
+            color: #00ff00;
+            padding: 10px;
+            font-family: monospace;
+            height: 150px;
+            overflow-y: scroll;
+            margin-top: 20px;
+            border: 1px solid #333;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>osu! lazer Cursor Test</h1>
+    
+    <div class="controls">
+        <button onclick="initOsuCursor()">Initialize osu! lazer Cursor</button>
+        <button onclick="unloadOsuCursor()">Unload osu! lazer Cursor</button>
+        <button onclick="testAnimeJS()">Test AnimeJS</button>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+    
+    <div class="test-area" id="testArea">
+        <div class="draggable" id="draggable">Drag Me</div>
+    </div>
+    
+    <div class="console" id="console">
+        > Console Output:
+    </div>
+
+    <script>
+        const consoleEl = document.getElementById('console');
+        
+        function log(message) {
+            const time = new Date().toLocaleTimeString();
+            consoleEl.innerHTML += `\n[${time}] ${message}`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearConsole() {
+            consoleEl.innerHTML = '> Console Output:';
+        }
+        
+        function initOsuCursor() {
+            log('Initializing osu! lazer cursor...');
+            
+            if (typeof osuCursor !== 'undefined') {
+                window.osuCursorInstance = new osuCursor();
+                log('osu! lazer cursor initialized successfully');
+            } else {
+                log('Error: osuCursor is not defined. Loading script...');
+                
+                const script = document.createElement('script');
+                script.src = '/src/osu-cursor.js';
+                script.onload = () => {
+                    log('osu-cursor.js loaded successfully');
+                    setTimeout(() => {
+                        if (typeof osuCursor !== 'undefined') {
+                            window.osuCursorInstance = new osuCursor();
+                            log('osu! lazer cursor initialized successfully');
+                        } else {
+                            log('Error: osuCursor is still not defined after loading script');
+                        }
+                    }, 100);
+                };
+                script.onerror = (error) => {
+                    log('Error loading osu-cursor.js: ' + error.message);
+                };
+                document.head.appendChild(script);
+            }
+        }
+        
+        function unloadOsuCursor() {
+            log('Unloading osu! lazer cursor...');
+            
+            if (window.osuCursorInstance) {
+                window.osuCursorInstance.stop();
+                window.osuCursorInstance = null;
+                log('osu! lazer cursor unloaded successfully');
+            } else {
+                log('No osu! lazer cursor instance found');
+            }
+        }
+        
+        function testAnimeJS() {
+            log('Testing AnimeJS availability...');
+            
+            if (typeof anime !== 'undefined') {
+                log('AnimeJS is available. Version: ' + anime.version);
+                
+                // Simple animation test
+                const draggable = document.getElementById('draggable');
+                anime({
+                    targets: draggable,
+                    scale: 1.2,
+                    duration: 500,
+                    direction: 'alternate',
+                    easing: 'easeInOutQuad',
+                    complete: function() {
+                        log('AnimeJS animation test completed');
+                    }
+                });
+            } else {
+                log('Error: AnimeJS is not available');
+            }
+        }
+        
+        // Check if libraries are already loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Page loaded');
+            
+            if (typeof anime !== 'undefined') {
+                log('AnimeJS is available. Version: ' + anime.version);
+            } else {
+                log('AnimeJS is not loaded');
+            }
+            
+            if (typeof osuCursor !== 'undefined') {
+                log('osuCursor is available');
+            } else {
+                log('osuCursor is not loaded');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+/* 指针选择器样式 */
+.cursor-selector-container {
+    margin: 20px 0;
+    padding: 15px;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    background-color: transparent;
+}
+
+.cursor-selector-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.cursor-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cursor-radio-option {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.cursor-radio-option:hover {
+    background-color: #e8f4fd;
+    border-color: #007bff;
+}
+
+.cursor-radio-option input[type="radio"] {
+    margin-right: 10px;
+    transform: scale(1.2);
+}
+
+.cursor-radio-label {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+}
+
+.cursor-preview-trigger {
+    position: relative;
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: help;
+    transition: background-color 0.3s ease;
+}
+
+.cursor-preview-trigger:hover {
+    background-color: #0056b3;
+}
+
+/* 指针预览窗口 */
+.cursor-preview-popup {
+    position: absolute;
+    top: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: white;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 120px;
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.cursor-preview-popup.fade-in {
+    opacity: 1;
+    visibility: visible;
+}
+
+.cursor-preview-popup.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.cursor-preview-title {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.cursor-preview-area {
+    width: 80px;
+    height: 60px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin: 0 auto;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #666;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 不同指针样式的预览 */
+.cursor-preview-area.mystia-cursor {
+    cursor: url('/Resources/Cursor.cur'), auto;
+}
+
+.cursor-preview-area.osu-cursor {
+    cursor: url('/assets/cursor.png'), auto;
+}
+
+.cursor-preview-popup::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: #007bff;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .cursor-selector-container {
+        margin: 15px 0;
+        padding: 12px;
+    }
+    
+    .cursor-radio-option {
+        padding: 8px;
+    }
+    
+    .cursor-preview-popup {
+        top: -70px;
+        min-width: 100px;
+        padding: 12px;
+    }
+}
+
+/* 深色主题支持 */
+@media (prefers-color-scheme: dark) {
+    .cursor-selector-container {
+        background-color: transparent;
+        border-color: #4299e1;
+    }
+    
+    .cursor-selector-title {
+        color: #e2e8f0;
+    }
+    
+    .cursor-radio-option:hover {
+        background-color: #4a5568;
+    }
+    
+    .cursor-radio-label {
+        color: #e2e8f0;
+    }
+    
+    .cursor-preview-popup {
+        background-color: #2d3748;
+        border-color: #4299e1;
+    }
+    
+    .cursor-preview-title {
+        color: #e2e8f0;
+    }
+    
+    .cursor-preview-area {
+        background-color: #4a5568;
+        border-color: #718096;
+        color: #e2e8f0;
+    }
+}

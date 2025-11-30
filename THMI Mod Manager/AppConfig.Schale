@@ -6,7 +6,9 @@ VersionCode=1
 Language=en_US
 
 [Cursor]
-UseMystiaCursor=True
+UseCustomCursor=True
+CursorType=default
+UseMystiaCursor=False
 
 [Game]
 Status=

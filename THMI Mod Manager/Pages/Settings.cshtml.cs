@@ -27,6 +27,9 @@ namespace THMI_Mod_Manager.Pages
 
         // 光标设置属性
         public bool UseOsuCursor { get; set; }
+        
+        // 新的光标类型属性
+        public string CursorType { get; set; } = "default";
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -51,9 +54,21 @@ namespace THMI_Mod_Manager.Pages
                 ShowCVEWarning = _appConfig.Get("[Dev]ShowCVEWarning", "true").ToLower() != "false";
                 Logger.LogInfo($"Loaded developer settings - DevMode: {IsDevMode}, ShowCVEWarning: {ShowCVEWarning}");
 
-                // 加载光标设置
+                // 加载光标设置（向后兼容）
                 UseOsuCursor = _appConfig.Get("[Cursor]UseMystiaCursor", "false").ToLower() == "true";
-            Logger.LogInfo($"Loaded cursor settings: UseOsuCursor: {UseOsuCursor}");
+                
+                // 加载新的光标类型设置
+                CursorType = _appConfig.Get("[Cursor]CursorType", "default");
+                
+                // 向后兼容：如果旧的UseOsuCursor为true，则转换为新的osu类型
+                if (UseOsuCursor && CursorType == "default")
+                {
+                    CursorType = "osu";
+                    _appConfig.Set("[Cursor]CursorType", "osu");
+                    Logger.LogInfo("Converted legacy UseOsuCursor setting to new CursorType: osu");
+                }
+                
+                Logger.LogInfo($"Loaded cursor settings: CursorType: {CursorType}");
             }
             catch (Exception ex)
             {
@@ -62,9 +77,9 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor)
+        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] string cursorType)
         {
-            Logger.LogInfo($"Saving language settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}");
+            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, CursorType: {cursorType}");
             
             if (string.IsNullOrEmpty(language))
             {
@@ -82,9 +97,16 @@ namespace THMI_Mod_Manager.Pages
                 _appConfig.Set("[Game]Status", status);
                 Logger.LogInfo($"Game status saved: {status}");
                 
-                // Save cursor setting
+                // Save cursor setting (向后兼容)
                 _appConfig.Set("[Cursor]UseMystiaCursor", useOsuCursor.ToString());
-            Logger.LogInfo($"Cursor setting saved: {useOsuCursor}");
+                Logger.LogInfo($"Legacy cursor setting saved: {useOsuCursor}");
+                
+                // Save new cursor type setting
+                if (!string.IsNullOrEmpty(cursorType))
+                {
+                    _appConfig.Set("[Cursor]CursorType", cursorType);
+                    Logger.LogInfo($"Cursor type saved: {cursorType}");
+                }
 
                 // Optionally reload configuration
                 _appConfig.Reload();
@@ -92,12 +114,42 @@ namespace THMI_Mod_Manager.Pages
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error saving language settings: {ex.Message}");
+                Logger.LogError($"Error saving settings: {ex.Message}");
                 throw;
             }
 
             // Redirect to GET to show updated selection
             return RedirectToPage();
+        }
+
+        public IActionResult OnPostSaveCursorSettings([FromForm] string cursorType)
+        {
+            Logger.LogInfo($"Saving cursor settings - CursorType: {cursorType}");
+            
+            if (string.IsNullOrEmpty(cursorType))
+            {
+                Logger.LogWarning("CursorType parameter is empty, returning to page");
+                return new JsonResult(new { success = false, message = "Cursor type cannot be empty" });
+            }
+
+            try
+            {
+                // Save cursor type setting
+                _appConfig.Set("[Cursor]CursorType", cursorType);
+                Logger.LogInfo($"Cursor type saved: {cursorType}");
+
+                // Optionally reload configuration
+                _appConfig.Reload();
+                Logger.LogInfo("Configuration reloaded successfully after cursor settings update");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error saving cursor settings: {ex.Message}");
+                return new JsonResult(new { success = false, message = $"Error saving cursor settings: {ex.Message}" });
+            }
+
+            // Return success
+            return new JsonResult(new { success = true, message = "Cursor settings saved successfully!" });
         }
 
         public IActionResult OnPostSaveDeveloperSettings([FromForm] bool devMode, [FromForm] bool showCVEWarning)

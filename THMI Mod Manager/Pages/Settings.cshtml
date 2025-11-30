@@ -462,16 +462,28 @@
             </select>
         </div>
         -->
-        <!-- 
+        <!-- 指针选择器 -->
         <div class="mb-3 form-group-animated">
             <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:CursorLabel", "Cursor")</label>
-            <br />
-            <div class="checkbox-container">
-                <input type="checkbox" id="useOsuCursor" name="useOsuCursor" value="true" />
-                        <label for="useOsuCursor" class="checkbox-label clickable-label">@AppConfig.GetLocalized("Settings:UseOsuCursorLabel", "Use osu! Cursor")</label>
+            <div class="cursor-selector-container">
+                <div class="cursor-radio-group">
+                    <div class="cursor-radio-option">
+                        <input type="radio" id="cursorDefault" name="cursorType" value="default" @(Model.CursorType == "default" ? "checked" : "") />
+                        <label for="cursorDefault" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:CursorDefault", "Default Cursor")</label>
+                    </div>
+                    
+                    <div class="cursor-radio-option">
+                        <input type="radio" id="cursorMystia" name="cursorType" value="mystia" @(Model.CursorType == "mystia" ? "checked" : "") />
+                        <label for="cursorMystia" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:CursorMystia", "Mystia Cursor")</label>
+                    </div>
+                    
+                    <div class="cursor-radio-option">
+                        <input type="radio" id="cursorOsu" name="cursorType" value="osu" @(Model.CursorType == "osu" ? "checked" : "") />
+                        <label for="cursorOsu" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:CursorOsu", "osu! lazer Cursor")</label>
+                    </div>
+                </div>
             </div>
         </div>
-        -->
         <div class="mb-3 form-group-animated">
             <button type="submit" class="btn btn-primary">@AppConfig.GetLocalized("Settings:SaveButton", "Save")</button>
         </div>
@@ -554,14 +566,20 @@
             }, 1000);
         });
         
-        // 为复选框添加交互效果
-        const checkbox = document.getElementById('useOsuCursor');
-        checkbox.addEventListener('change', function() {
-            if (this.checked) {
-                this.parentElement.style.backgroundColor = 'rgba(13, 110, 253, 0.1)';
-            } else {
-                this.parentElement.style.backgroundColor = 'transparent';
-            }
+        // 为光标选项添加交互效果
+        const cursorRadios = document.querySelectorAll('input[name="cursorType"]');
+        cursorRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // 移除所有选项的高亮
+                document.querySelectorAll('.cursor-radio-option').forEach(option => {
+                    option.style.backgroundColor = 'transparent';
+                });
+                
+                // 为选中的选项添加高亮
+                if (this.checked) {
+                    this.closest('.cursor-radio-option').style.backgroundColor = 'rgba(13, 110, 253, 0.1)';
+                }
+            });
         });
         
 
@@ -668,6 +686,31 @@
             developerSection.classList.add('show');
             loadDeveloperSettings();
         }
+
+        // 在主表单提交时保存光标设置
+        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+            // 获取选中的光标类型
+            const selectedCursor = document.querySelector('input[name="cursorType"]:checked');
+            if (selectedCursor) {
+                // 添加光标类型到表单数据
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'cursorType';
+                hiddenInput.value = selectedCursor.value;
+                this.appendChild(hiddenInput);
+            }
+        });
+
+        // 为光标选择器添加事件监听
+        document.querySelectorAll('input[name="cursorType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // 添加视觉反馈
+                this.closest('.cursor-radio-option').style.backgroundColor = 'rgba(13, 110, 253, 0.1)';
+                setTimeout(() => {
+                    this.closest('.cursor-radio-option').style.backgroundColor = '';
+                }, 500);
+            });
+        });
 
     });
 </script>
