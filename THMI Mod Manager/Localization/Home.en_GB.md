@@ -1,26 +1,57 @@
-# Welcome to THMI Mod Manager
+# THMI Mod Manager - Home
 
-THMI Mod Manager is a comprehensive tool designed to enhance your gaming experience with Touhou Mystia Izakaya. Our mod manager provides a user-friendly interface for managing game modifications, ensuring compatibility, and maintaining your game installation.
+Welcome to **THMI Mod Manager**! This is a mod management tool specifically designed for *Touhou Mystia Izakaya*.
 
-## Features
+## 🎮 Game File Verification
 
-- **Mod Management**: Easily install, uninstall, and organise your game modifications
-- **Compatibility Checking**: Automatically verify mod compatibility with your game version
-- **User-Friendly Interface**: Intuitive design for both beginners and advanced users
-- **Multi-Language Support**: Available in multiple languages for global accessibility
-- **Security Features**: Built-in vulnerability detection and warnings for your safety
+To ensure the mod manager works properly, we need to verify that game files are complete. The system will automatically check for the following files:
 
-## Getting Started
+### Required Files
+- **Touhou Mystia Izakaya.exe** - Main game executable file
+- **UnityPlayer.dll** - Unity engine core library file
 
-1. Ensure Touhou Mystia Izakaya is properly installed
-2. Place the mod manager in the same directory as your game installation
-3. Launch the application and explore the available features
-4. Browse and install mods through the intuitive interface
+### File Status Indicators
+- ✅ **Found** - File exists and is accessible
+- ❌ **Missing** - File does not exist or is inaccessible
 
-## Safety Information
+## 🔧 Development Mode
 
-This application includes security features to protect your gaming experience. We recommend keeping the CVE vulnerability detection enabled to stay informed about potential security issues with your Unity player version.
+If you are a developer or performing testing work, you can enable **Development Mode** through the configuration file. In this mode:
+- Skip game file integrity checks
+- Display development mode notifications
+- Allow operation without game files present
 
-## Support
+## 📁 File Location
 
-For support and updates, please visit our official channels. We're committed to providing the best mod management experience for the Touhou Mystia Izakaya community.
+Please ensure the mod manager is in the same directory as the game files:
+```
+Game Directory/
+├── Touhou Mystia Izakaya.exe
+├── UnityPlayer.dll
+└── THMI Mod Manager.exe
+```
+
+## 🌐 Multi-language Support
+
+THMI Mod Manager supports multiple languages, including:
+- Simplified Chinese
+- Traditional Chinese
+- English (US)
+- Japanese
+
+## 🚀 Getting Started
+
+1. Ensure the game is properly installed
+2. Place the mod manager in the game directory
+3. Run THMI Mod Manager
+4. Start managing your mods!
+
+## 💡 Tips
+
+- If files are shown as missing, check if the game is properly installed
+- Ensure you own a legitimate copy of the game
+- It's recommended to close the game before running the mod manager
+
+---
+
+*THMI Mod Manager - Making mod management easier*
