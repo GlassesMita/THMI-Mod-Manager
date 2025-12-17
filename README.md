@@ -24,6 +24,40 @@ A mod manager for Touhou Mystia Izakaya game.
 - Web browser that supports modern web standards (Google Chrome, Microsoft Edge, Mozilla Firefox, etc.)
 - Internet connection for downloading mods (optional)
 
+## Certificate Installation
+
+> [!IMPORTANT]
+> This application is signed with a self-signed certificate (`Schale.cer`) to establish trust between the application and Windows. Before running the application, you must install this certificate to your computer's Trusted Root Certification Authorities store. Without this step, Windows may block the application from running and show security warnings.
+
+You can install the certificate using either of the following methods:
+
+### Method 1: Using the Provided Scripts (Recommended)
+
+Navigate to the `Certificate` folder and run one of the provided scripts as Administrator:
+
+**For Command Prompt:**
+1. Right-click on `Install Certificate.cmd`
+2. Select "Run as administrator"
+3. When prompted, enter the full path to the certificate file: `.\Schale.cer`
+
+**For PowerShell:**
+1. Right-click on `Install Certificate.ps1`
+2. Select "Run with PowerShell"
+3. If prompted by User Account Control, click "Yes"
+4. When prompted, enter the full path to the certificate file: `.\Schale.cer`
+
+### Method 2: Manual Installation
+
+1. Double-click on `Schale.cer` in the `Certificate` folder
+2. Click "Install Certificate..."
+3. Select "Local Machine" and click "Next"
+4. Select "Place all certificates in the following store"
+5. Click "Browse..." and select "Trusted Root Certification Authorities"
+6. Click "Next" and then "Finish"
+7. Confirm the security warning dialog
+
+After successful installation, you should see a confirmation message. You can now proceed with building and running the application.
+
 ## Build from Source
 
 Prerequisites:
