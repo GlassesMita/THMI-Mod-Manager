@@ -29,6 +29,20 @@ A mod manager for Touhou Mystia Izakaya game.
 > [!IMPORTANT]
 > This application is signed with a self-signed certificate (`Schale.cer`) to establish trust between the application and Windows. Before running the application, you must install this certificate to your computer's Trusted Root Certification Authorities store. Without this step, Windows may block the application from running and show security warnings.
 
+> [!WARNING]
+> For security reasons, you should verify the certificate hash before installation to ensure it matches the expected values:
+> 
+> **Certificate Information:**
+> - Name: Schale.cer
+> - SHA256: 2318021fc2af5fb3c94defb6806f83078d1d6bc1a2410a99ff906b235b8a04cb
+> - SHA1: 176a1dd309270eb8206c8832326c5d67e7d9c483
+> - MD5: 7f0f30cdfe08cf0cd55dceb5c2556be3
+>
+> You can verify the certificate hash using PowerShell:
+> ```powershell
+> Get-FileHash -Path ".\Certificate\Schale.cer" -Algorithm SHA256
+> ```
+
 You can install the certificate using either of the following methods:
 
 ### Method 1: Using the Provided Scripts (Recommended)
