@@ -43,6 +43,9 @@ A mod manager for Touhou Mystia Izakaya game.
 > Get-FileHash -Path ".\Certificate\Schale.cer" -Algorithm SHA256
 > ```
 
+> [!NOTE]
+> **For Developers**: The provided `Schale.cer` file is a public certificate used only for verifying the authenticity of the application. It cannot be used for signing applications. If you are a developer who needs to sign the application, you must create your own private key and certificate pair. The private key is required for signing, while the public certificate (`.cer` file) is distributed to end users to verify that the application was downloaded from an official source.
+
 You can install the certificate using either of the following methods:
 
 ### Method 1: Using the Provided Scripts (Recommended)
