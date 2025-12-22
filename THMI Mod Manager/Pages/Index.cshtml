@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model IndexModel
 @inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
 @using System.IO
@@ -62,6 +62,8 @@
     </div>
 }
 
+<input type="hidden" id="themeColorHidden" value="@themeColor" />
+
 <div class="text-center">
     <h1 class="display-4 mods-title">@AppConfig.GetLocalized("Index:WelcomeTitle", "Welcome")</h1>
     
@@ -110,79 +112,10 @@
     </div>
 </div>
 
-<style>
-    /* Mods页面样式 */
-    .mods-title {
-        text-align: center;
-        position: relative;
-        margin-bottom: 2rem;
-        font-size: 2.5rem;
-        position: relative;
-        transition: all 0.3s ease;
-    }
+@section Styles {
+    <link rel="stylesheet" href="~/css/index.css" />
+}
 
-    .mods-title::after {
-        content: "";
-        display: block;
-        width: 0;
-        height: 4px;
-        background: var(--theme-color);
-        margin: 10px auto;
-        border-radius: 2px;
-        transition: width 0.3s ease;
-    }
-
-    .mods-title:hover::after {
-        width: 100px;
-        animation: expandWidth 0.5s ease-out forwards;
-    }
-
-    @@media (max-width: 768px) {
-        .mods-title {
-            font-size: 2rem;
-        }
-    }
-</style>
-
-<script>
-    // 页面加载完成后添加动画效果
-    document.addEventListener('DOMContentLoaded', function () {
-        // 为欢迎标题添加动画类
-        const welcomeTitle = document.querySelector('.welcome-title');
-        if (welcomeTitle) {
-            welcomeTitle.classList.add('welcome-animation');
-        }
-
-        // 为警告框添加脉冲效果
-        const alertBoxes = document.querySelectorAll('.animated-alert');
-        alertBoxes.forEach(function (alertBox) {
-            // 检查是否为CVE警告
-            if (alertBox.querySelector('.alert-heading') && 
-                (alertBox.querySelector('.alert-heading').textContent.includes('安全警告') || 
-                 alertBox.querySelector('.alert-heading').textContent.includes('CVE') ||
-                 alertBox.querySelector('.alert-heading').textContent.includes('Security Warning'))) {
-                alertBox.classList.add('pulse-effect');
-            }
-        });
-        
-        // 添加悬停效果
-        const welcomeElement = document.querySelector('.welcome-title');
-        if (welcomeElement) {
-            welcomeElement.addEventListener('mouseover', function() {
-                this.style.transform = 'scale(1.05)';
-            });
-            
-            welcomeElement.addEventListener('mouseout', function() {
-                this.style.transform = 'scale(1)';
-            });
-        }
-    });
-    
-    // 主题色变化时更新页面样式
-    function updateThemeColor(newColor) {
-        const welcomeTitle = document.querySelector('.welcome-title');
-        if (welcomeTitle) {
-            welcomeTitle.style.color = newColor;
-        }
-    }
-</script>
+@section Scripts {
+    <script src="~/js/index.js"></script>
+}

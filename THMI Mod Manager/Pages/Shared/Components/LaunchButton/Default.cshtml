@@ -28,11 +28,15 @@
             return;
         }
         
+        // 准备请求数据
+        const requestData = {};
+        
         fetch(`/api/launcher/${action}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify(requestData)
         })
         .then(response => response.json())
         .then(data => {

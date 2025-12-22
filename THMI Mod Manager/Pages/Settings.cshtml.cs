@@ -33,6 +33,10 @@ namespace THMI_Mod_Manager.Pages
         
         // 主题色属性
         public string ThemeColor { get; set; } = "#c670ff";
+        
+        // 游戏版本设置属性
+        public string GameVersion { get; set; } = "legitimate"; // legitimate 或 pirated
+        public string CustomLauncherPath { get; set; } = ""; // 自定义启动器路径
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -76,6 +80,11 @@ namespace THMI_Mod_Manager.Pages
                 // 加载主题色设置
                 ThemeColor = _appConfig.Get("[App]ThemeColor", "#c670ff");
                 Logger.LogInfo($"Loaded theme color: {ThemeColor}");
+                
+                // 加载游戏版本设置
+                GameVersion = _appConfig.Get("[Game]GameVersion", "legitimate");
+                CustomLauncherPath = _appConfig.Get("[Game]CustomLauncherPath", "");
+                Logger.LogInfo($"Loaded game version settings: GameVersion: {GameVersion}, CustomLauncherPath: {CustomLauncherPath}");
             }
             catch (Exception ex)
             {
@@ -84,9 +93,10 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] string cursorType, [FromForm] string themeColor)
+        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] bool useCustomCursor, [FromForm] string cursorType, [FromForm] string themeColor, [FromForm] string gameVersion, [FromForm] string customLauncherPath, [FromForm] string modsPath, [FromForm] string gamePath)
         {
-            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}");
+            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, GameVersion: {gameVersion}, CustomLauncherPath: {customLauncherPath}, ModsPath: {modsPath}, GamePath: {gamePath}");
+            
             
             if (string.IsNullOrEmpty(language))
             {
@@ -121,6 +131,36 @@ namespace THMI_Mod_Manager.Pages
                     _appConfig.Set("[App]ThemeColor", themeColor);
                     Logger.LogInfo($"Theme color saved: {themeColor}");
                 }
+                
+                // Save game version settings
+                if (!string.IsNullOrEmpty(gameVersion))
+                {
+                    _appConfig.Set("[Game]GameVersion", gameVersion);
+                    Logger.LogInfo($"Game version saved: {gameVersion}");
+                }
+                
+                // Save custom launcher path
+                _appConfig.Set("[Game]CustomLauncherPath", customLauncherPath);
+                Logger.LogInfo($"Custom launcher path saved: {customLauncherPath}");
+
+                // Save custom cursor setting
+                _appConfig.Set("[Cursor]UseCustomCursor", useCustomCursor.ToString());
+                Logger.LogInfo($"Custom cursor setting saved: {useCustomCursor}");
+
+                // Save mods path setting - automatically set to current directory + Mods folder
+                string autoModsPath = Path.Combine(AppContext.BaseDirectory, "Mods");
+                // Ensure the Mods directory exists
+                if (!Directory.Exists(autoModsPath))
+                {
+                    Directory.CreateDirectory(autoModsPath);
+                }
+                _appConfig.Set("[App]ModsPath", autoModsPath);
+                Logger.LogInfo($"Mods path automatically set to: {autoModsPath}");
+
+                // Save game path setting - automatically set to current directory
+                string autoGamePath = AppContext.BaseDirectory;
+                _appConfig.Set("[App]GamePath", autoGamePath);
+                Logger.LogInfo($"Game path automatically set to: {autoGamePath}");
 
                 // Optionally reload configuration
                 _appConfig.Reload();

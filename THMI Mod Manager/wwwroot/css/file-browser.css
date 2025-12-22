@@ -1,0 +1,453 @@
+/* 文件浏览器模态框样式 */
+.file-browser-modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* 防止模态框本身出现滚动条 */
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0;
+    transition: opacity 0.3s ease, background-color 0.3s ease;
+}
+
+.file-browser-modal.show {
+    display: block;
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* 文件浏览器内容区域 - 使用绝对定位实现真正的中心居中 */
+.file-browser-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    background-color: #fff;
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 900px;
+    height: 80%;
+    max-height: 700px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    /* 添加这个属性确保变换基于元素自身的中心点 */
+    transform-origin: center center;
+    /* 确保内容区域不会因为子元素内容而溢出 */
+    overflow: hidden;
+    /* 确保在动画过程中保持居中 */
+    will-change: transform, opacity;
+    /* 添加固定定位以防止父元素影响 */
+    position: fixed;
+}
+
+/* 响应式设计 - 小屏幕设备 */
+@media (max-width: 768px) {
+    .file-browser-content {
+        width: 95%;
+        height: 90%;
+        max-height: none;
+    }
+    
+    .file-browser-header {
+        padding: 0.75rem;
+    }
+    
+    .file-browser-title {
+        font-size: 1.1rem;
+    }
+    
+    .file-browser-body {
+        padding: 0.75rem;
+    }
+    
+    .file-browser-footer {
+        padding: 0.75rem;
+    }
+}
+
+/* 响应式设计 - 超小屏幕设备 */
+@media (max-width: 480px) {
+    .file-browser-content {
+        width: 98%;
+        height: 95%;
+    }
+    
+    .address-bar {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .address-input {
+        width: 100%;
+    }
+    
+    .address-btn {
+        width: 100%;
+    }
+    
+    .file-filter-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
+
+.file-browser-modal.show .file-browser-content {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+/* 头部 */
+.file-browser-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-browser-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #343a40;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    color: #343a40;
+    background-color: #f8f9fa;
+}
+
+/* 主体内容 */
+.file-browser-body {
+    padding: 1rem;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 驱动器选择 */
+.drive-selector {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.drive-selector label {
+    margin-right: 0.5rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.drive-selector select {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.drive-selector select:focus {
+    outline: none;
+    border-color: #c670ff;
+    box-shadow: 0 0 0 0.2rem rgba(198, 112, 255, 0.25);
+}
+
+/* 驱动器信息显示 */
+.drive-info {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    border: 1px solid #e9ecef;
+}
+
+.drive-details p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.drive-details strong {
+    color: #343a40;
+}
+
+.drive-space-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.drive-space-used {
+    height: 100%;
+    background-color: #c670ff;
+    border-radius: 4px;
+}
+
+/* 文件浏览器区域 */
+.file-explorer {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 地址栏 */
+.address-bar {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.address-input {
+    flex: 1;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.address-input:focus {
+    outline: none;
+    border-color: #c670ff;
+    box-shadow: 0 0 0 0.2rem rgba(198, 112, 255, 0.25);
+}
+
+.address-btn {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    color: #495057;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+.address-btn:hover {
+    color: #fff;
+    background-color: #c670ff;
+    border-color: #c670ff;
+}
+
+/* 文件过滤 */
+.file-filter-container {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-filter-container label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.file-filter-container select {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.file-filter-container select:focus {
+    outline: none;
+    border-color: #c670ff;
+    box-shadow: 0 0 0 0.2rem rgba(198, 112, 255, 0.25);
+}
+
+/* 文件列表 */
+.file-list {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    /* 确保文件列表不会超出其容器 */
+    max-height: calc(90vh - 200px); /* 根据需要调整减去的高度 */
+    /* 添加平滑滚动效果 */
+    scroll-behavior: smooth;
+}
+
+/* 文件项和文件夹项 */
+.folder-item, .file-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #495057;
+}
+
+.folder-item:hover, .file-item:hover {
+    background-color: #e9ecef;
+    transform: translateX(5px);
+}
+
+.folder-item.active, .file-item.active {
+    background-color: rgba(198, 112, 255, 0.1);
+    border-left: 3px solid #c670ff;
+}
+
+/* 文件图标 */
+.file-icon {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+    width: 1.5rem;
+    text-align: center;
+}
+
+/* 文件名 */
+.file-name {
+    flex: 1;
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+/* 文件大小和修改时间 */
+.file-size, .file-date {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-left: 1rem;
+    white-space: nowrap;
+}
+
+/* 加载指示器 */
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: #c670ff;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+    border-color: #c670ff #e9ecef #e9ecef;
+}
+
+/* 底部 */
+.file-browser-footer {
+    padding: 1rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* 按钮样式 */
+.btn {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-secondary {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    color: #fff;
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #c670ff;
+    border-color: #c670ff;
+}
+
+.btn-primary:hover {
+    color: #fff;
+    background-color: #b345ff;
+    border-color: #a626ff;
+}
+
+/* 滚动条样式 */
+.file-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.file-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.file-list::-webkit-scrollbar-thumb {
+    background: #c670ff;
+    border-radius: 4px;
+}
+
+.file-list::-webkit-scrollbar-thumb:hover {
+    background: #b345ff;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .file-browser-content {
+        width: 95%;
+        height: 95%;
+        margin: 0.5rem;
+        position: fixed;
+    }
+    
+    .drive-selector, .address-bar, .file-filter-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .file-size, .file-date {
+        display: none;
+    }
+}

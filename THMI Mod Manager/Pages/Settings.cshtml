@@ -3,561 +3,15 @@
 @inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
 @inject THMI_Mod_Manager.Services.LocalizationManager LocalizationManager
 @using System.Drawing
-@{
-    ViewData["Title"] = AppConfig.GetLocalized("Settings:Title", "Settings");
+@{    ViewData["Title"] = AppConfig.GetLocalized("Settings:Title", "Settings");
     var locales = LocalizationManager.GetAvailableLocales();
     var selected = AppConfig.Get("[Localization]Language", "en_US");
     var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
 }
 
-<style>
-    /* Settings页面动画样式 */
-    .settings-container {
-        animation: fadeIn 0.5s ease-in-out;
-    }
+<link rel="stylesheet" href="~/css/settings.css" />
 
-    .mods-title {
-        text-align: center;
-        position: relative;
-        margin-bottom: 2rem;
-        font-size: 2.5rem;
-        position: relative;
-        transition: all 0.3s ease;
-    }
 
-    .mods-title::after {
-        content: "";
-        display: block;
-        width: 0;
-        height: 4px;
-        background: var(--theme-color);
-        margin: 10px auto;
-        border-radius: 2px;
-        transition: width 0.3s ease;
-    }
-
-    .mods-title:hover::after {
-        width: 100px;
-        animation: expandWidth 0.5s ease-out forwards;
-    }
-
-    .form-group-animated {
-        opacity: 0;
-        animation: fadeInUp 0.5s ease-out forwards;
-        transform: translateY(20px);
-    }
-
-    .form-group-animated:nth-child(1) { animation-delay: 0.1s; }
-    .form-group-animated:nth-child(2) { animation-delay: 0.2s; }
-    .form-group-animated:nth-child(3) { animation-delay: 0.3s; }
-    .form-group-animated:nth-child(4) { animation-delay: 0.4s; }
-
-    .form-label {
-        transition: all 0.3s ease;
-        display: inline-block;
-        position: relative;
-    }
-
-    .form-label:hover {
-        color: @themeColor;
-        transform: translateX(5px);
-    }
-
-    .btn-primary {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border-radius: 0.375rem;
-        position: relative;
-        overflow: hidden;
-        color: #fff;
-        background-color: @themeColor;
-        border-color: @themeColor;
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-2px) scale(1.02);
-        @{
-            Color color = ColorTranslator.FromHtml(themeColor);
-            var rgba = $"rgba({color.R}, {color.G}, {color.B}, 0.15)";
-        }
-        box-shadow: 0 8px 25px @rgba;
-    }
-
-    .btn-primary:focus {
-        transform: translateY(-1px) scale(1.01);
-        @{
-            var focusColorBtnPrimary2 = ColorTranslator.FromHtml(themeColor);
-            var focusRgbaBtnPrimary = $"rgba({focusColorBtnPrimary2.R}, {focusColorBtnPrimary2.G}, {focusColorBtnPrimary2.B}, 0.25)";
-        }
-        box-shadow: 0 0 0 0.25rem @focusRgbaBtnPrimary;
-    }
-
-    .btn-primary {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .btn-primary::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: left 0.5s;
-    }
-
-    .btn-primary:hover::before {
-        left: 100%;
-    }
-
-    .checkbox-container {
-        display: inline-flex;
-        align-items: center;
-        cursor: pointer;
-        position: relative;
-        padding: 8px 12px;
-        border-radius: 0.375rem;
-        transition: all 0.3s ease;
-    }
-
-    .checkbox-container:hover {
-        background-color: fade(@themeColor, 10%);
-        transform: translateX(5px);
-    }
-
-    .checkbox-container input[type="checkbox"] {
-        margin-right: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .checkbox-container input[type="checkbox"]:checked {
-        transform: scale(1.1);
-    }
-
-    .checkbox-label {
-        transition: all 0.3s ease;
-    }
-
-    .checkbox-container:hover .checkbox-label {
-        color: @themeColor;
-    }
-
-    .settings-hr {
-        height: 2px;
-        @{
-            var themeColorObj = ColorTranslator.FromHtml(themeColor);
-            var themeRgba75 = $"rgba({themeColorObj.R}, {themeColorObj.G}, {themeColorObj.B}, 0.75)";
-            var themeRgba0 = $"rgba({themeColorObj.R}, {themeColorObj.G}, {themeColorObj.B}, 0)";
-        }
-        background-image: linear-gradient(to right, @themeRgba0, @themeRgba75, @themeRgba0);
-        border: 0;
-        margin: 1.5rem 0;
-        animation: expandWidth 1s ease-out;
-    }
-
-    /* 动画关键帧 */
-    @@keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    @@keyframes slideDown {
-        from { 
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to { 
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes fadeInUp {
-        from { 
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to { 
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes expandWidth {
-        from { width: 0; }
-        to { width: 100%; }
-    }
-
-    /* 表单提交动画 - 已更新为按钮加载样式 */
-
-    @@keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-
-    /* 成功提示动画 */
-    .success-toast {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background-color: #198754;
-        color: white;
-        padding: 15px 20px;
-        border-radius: 0.375rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transform: translateX(120%);
-        transition: transform 0.3s ease-out;
-        z-index: 1000;
-    }
-
-    .success-toast.show {
-        transform: translateX(0);
-    }
-
-    /* 可点击标签样式 */
-    .clickable-label {
-        cursor: pointer;
-        user-select: none;
-        transition: all 0.2s ease;
-    }
-
-    .clickable-label:hover {
-        color: @themeColor;
-        transform: translateX(2px);
-    }
-
-    .clickable-label:active {
-        transform: translateX(1px);
-    }
-
-    /* Bootstrap 自定义选择框样式 */
-    .form-select {
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0.375rem;
-        padding: 0.375rem 2.25rem 0.375rem 0.75rem;
-        font-size: 1rem;
-        font-weight: 400;
-        line-height: 1.5;
-        color: #212529;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-        background-position: right 0.5rem center;
-        background-repeat: no-repeat;
-        background-size: 1.5em 1.5em;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        appearance: none;
-    }
-
-    
-
-    .form-select:hover {
-        border-color: @themeColor;
-    }
-
-    .form-select:disabled {
-        background-color: #e9ecef;
-        opacity: 1;
-    }
-
-    /* 自定义复选框样式 */
-    .checkbox-container {
-        display: flex;
-        align-items: center;
-        padding: 0.5rem;
-        border-radius: 0.375rem;
-        transition: background-color 0.15s ease-in-out;
-    }
-
-    .checkbox-container input[type="checkbox"] {
-        width: 1.25rem;
-        height: 1.25rem;
-        margin-right: 0.5rem;
-        cursor: pointer;
-        accent-color: @themeColor;
-    }
-
-    .checkbox-label {
-        margin-bottom: 0;
-        cursor: pointer;
-        font-weight: 400;
-        color: #212529;
-    }
-
-    /* 表单组间距优化 */
-    .form-group-animated {
-        margin-bottom: 1.5rem;
-    }
-
-    .form-label {
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: #495057;
-    }
-
-    /* Bootstrap 按钮样式增强 */
-    .btn {
-        display: inline-block;
-        font-weight: 400;
-        line-height: 1.5;
-        color: #212529;
-        text-align: center;
-        text-decoration: none;
-        vertical-align: middle;
-        cursor: pointer;
-        user-select: none;
-        background-color: transparent;
-        border: 1px solid transparent;
-        padding: 0.375rem 0.75rem;
-        font-size: 1rem;
-        border-radius: 0.375rem;
-        transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    }
-
-    .btn-primary {
-        color: #fff;
-        background-color: @themeColor;
-        border-color: @themeColor;
-    }
-
-    .btn-primary:hover {
-        color: #fff;
-        background-color: darken(@themeColor, 10%);
-        border-color: darken(@themeColor, 15%);
-    }
-
-    .btn-primary:focus {
-        color: #fff;
-        background-color: #0b5ed7;
-        border-color: #0a58ca;
-        @{
-            var focusColorBtnPrimary3 = ColorTranslator.FromHtml(themeColor);
-            var focusRgbaBtnPrimary2 = $"rgba({focusColorBtnPrimary3.R}, {focusColorBtnPrimary3.G}, {focusColorBtnPrimary3.B}, 0.5)";
-        }
-        box-shadow: 0 0 0 0.25rem @focusRgbaBtnPrimary2;
-    }
-
-    .btn-primary:active {
-        color: #fff;
-        background-color: darken(@themeColor, 20%);
-        border-color: darken(@themeColor, 25%);
-    }
-
-    /* 设置容器样式 */
-    .settings-container {
-        max-width: 600px;
-        margin: 2rem auto;
-        padding: 2rem;
-        background-color: #fff;
-        border-radius: 0.5rem;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-
-    /* 响应式设计 */
-    @@media (max-width: 768px) {
-        .settings-container {
-            margin: 1rem;
-            padding: 1.5rem;
-        }
-        
-        .mods-title {
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-    }
-
-    /* 自定义分隔线样式 */
-    .settings-hr {
-        margin: 1.5rem 0;
-        color: inherit;
-        background-color: currentColor;
-        border: 0;
-        opacity: 0.25;
-        height: 1px;
-    }
-
-    /* 表单控件焦点状态增强 */
-    .form-control:focus {
-        color: #212529;
-        background-color: #fff;
-        border-color: @themeColor;
-        outline: 0;
-        @{
-            var focusColorFormControl = ColorTranslator.FromHtml(themeColor);
-            var focusRgbaFormControl = $"rgba({focusColorFormControl.R}, {focusColorFormControl.G}, {focusColorFormControl.B}, 0.25)";
-        }
-        box-shadow: 0 0 0 0.25rem @focusRgbaFormControl;
-    }
-
-    .form-select:focus {
-        border-color: @themeColor;
-        outline: 0;
-        @{
-            var focusColorFormSelect = ColorTranslator.FromHtml(themeColor);
-            var focusRgbaFormSelect = $"rgba({focusColorFormSelect.R}, {focusColorFormSelect.G}, {focusColorFormSelect.B}, 0.25)";
-        }
-        box-shadow: 0 0 0 0.25rem @focusRgbaFormSelect;
-    }
-
-    /* 按钮加载状态 */
-    .btn.loading {
-        position: relative;
-        color: transparent;
-    }
-
-    .btn.loading::after {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 1rem;
-        height: 1rem;
-        margin: -0.5rem 0 0 -0.5rem;
-        border: 0.125rem solid currentColor;
-        border-radius: 50%;
-        border-top-color: transparent;
-        animation: spin 0.75s linear infinite;
-        color: #fff;
-    }
-
-    /* 开发者设置样式 */
-    .developer-section {
-        display: none;
-        margin-top: 2rem;
-        padding: 1.5rem;
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 0.5rem;
-        animation: fadeInUp 0.5s ease-out;
-    }
-
-    .developer-section.show {
-        display: block;
-    }
-
-    .developer-title {
-        color: #dc3545;
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        text-align: center;
-    }
-
-    .click-counter {
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background-color: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 5px 10px;
-        border-radius: 15px;
-        font-size: 12px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        z-index: 1000;
-        display: none; /* 完全隐藏点击计数器 */
-    }
-
-    .click-counter.show {
-        opacity: 1;
-    }
-
-    .mods-title {
-        cursor: default; /* 改为默认指针 */
-        user-select: none;
-        transition: opacity 0.2s ease;
-    }
-
-    .mods-title:hover {
-        opacity: 0.8;
-    }
-    
-    /* Bootstrap风格的单选框样式 */
-    .form-check-input:checked {
-        background-color: @themeColor;
-        border-color: @themeColor;
-    }
-    
-    .form-check-input:focus {
-        border-color: @themeColor;
-        outline: 0;
-        @{
-            var focusColorFormCheck = ColorTranslator.FromHtml(themeColor);
-            var focusRgbaFormCheck = $"rgba({focusColorFormCheck.R}, {focusColorFormCheck.G}, {focusColorFormCheck.B}, 0.25)";
-        }
-        box-shadow: 0 0 0 0.25rem @focusRgbaFormCheck;
-    }
-    
-    .form-check-input:disabled {
-        background-color: #e9ecef;
-        opacity: 1;
-    }
-    
-    .form-check-label {
-        margin-left: 0.5rem;
-    }
-    
-    .form-check-inline {
-        display: inline-block;
-        margin-right: 1rem;
-    }
-    
-    /* 指针选择器样式改进 */
-    .cursor-radio-option {
-        padding: 0.75rem;
-        border-radius: 0.375rem;
-        transition: all 0.2s ease;
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        margin-bottom: 0.5rem;
-    }
-    
-    .cursor-radio-option:hover {
-        background-color: #e9ecef;
-        border-color: #adb5bd;
-    }
-    
-    .cursor-radio-label {
-        color: #212529;
-        font-weight: 500;
-        margin-left: 0.5rem;
-        cursor: pointer;
-    }
-    
-    .cursor-radio-option input[type="radio"] {
-        accent-color: @themeColor;
-    }
-    
-    /* 主题色选择器样式 */
-    .color-selector-container {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .form-control-color {
-        width: 50px;
-        height: 35px;
-        padding: 2px;
-        cursor: pointer;
-    }
-    
-    .color-preview-container {
-        display: flex;
-        align-items: center;
-    }
-    
-    .color-preview-box {
-        width: 50px;
-        height: 30px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-    
-    .color-preview-text {
-        font-family: monospace;
-    }
-</style>
 
 <div class="settings-container">
     <h1 class="mods-title" id="settingsTitle" style="cursor: default;">@AppConfig.GetLocalized("Settings:Header", "Settings")</h1>
@@ -587,287 +41,86 @@
         -->
         <!-- 指针选择器 -->
         <div class="mb-3 form-group-animated">
-            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:CursorLabel", "Cursor")</label>
-            <div class="cursor-selector-container">
-                <div class="cursor-radio-group">
-                    <div class="cursor-radio-option">
-                        <input type="radio" id="cursorDefault" name="cursorType" value="default" @(Model.CursorType == "default" ? "checked" : "") />
-                        <label for="cursorDefault" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:CursorDefault", "Default Cursor")</label>
-                    </div>
-                    
-                    <div class="cursor-radio-option">
-                        <input type="radio" id="cursorMystia" name="cursorType" value="mystia" @(Model.CursorType == "mystia" ? "checked" : "") />
-                        <label for="cursorMystia" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:CursorMystia", "Mystia Cursor")</label>
-                    </div>
-                    
-                    <div class="cursor-radio-option">
-                        <input type="radio" id="cursorOsu" name="cursorType" value="osu" @(Model.CursorType == "osu" ? "checked" : "") />
-                        <label for="cursorOsu" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:CursorOsu", "osu! lazer Cursor")</label>
-                    </div>
-                </div>
+            <label for="cursorType" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:CursorLabel", "Cursor")</label>
+            <select id="cursorType" name="cursorType" class="form-select">
+                <option value="default" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "default")>@AppConfig.GetLocalized("Settings:CursorDefault", "Default Cursor")</option>
+                <option value="mystia" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "mystia")>@AppConfig.GetLocalized("Settings:CursorMystia", "Mystia Cursor (CSS)")</option>
+                <option value="osu" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "osu")>@AppConfig.GetLocalized("Settings:CursorOsu", "osu Cursor (JS)")</option>
+            </select>
+        </div>
+
+        @*
+        <div class="mb-3 form-group-animated">
+            <label for="modsPath" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:ModsPathLabel", "Mods Folder")</label>
+            <div class="input-group">
+                <input type="text" id="modsPath" name="modsPath" class="form-control" value="@AppConfig.Get("[App]ModsPath", AppContext.BaseDirectory)" readonly />
+                <button type="button" class="btn btn-primary" id="browseModsPath" data-title="@AppConfig.GetLocalized("FileBrowser:SelectModsFolder", "Select Mods Folder")" disabled>@AppConfig.GetLocalized("Common:Browse", "Browse")</button>
             </div>
         </div>
-        
-        <!-- 主题色选择器 -->
+
         <div class="mb-3 form-group-animated">
-            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:ThemeColorLabel", "Theme Color")</label>
-            <div class="color-selector-container">
-                <input type="color" id="themeColorPicker" name="themeColor" value="@Model.ThemeColor" class="form-control form-control-color" title="@AppConfig.GetLocalized("Settings:ChooseThemeColor", "Choose your theme color")" />
-                <div class="color-preview-container mt-2">
-                    <div class="color-preview-box" id="colorPreview" style="width: 50px; height: 30px; background-color: @Model.ThemeColor; border: 1px solid #ccc; border-radius: 4px;"></div>
-                    <span class="color-preview-text ms-2" id="colorPreviewText">@Model.ThemeColor</span>
-                </div>
-                <div class="form-text text-muted mt-2">
-                    @AppConfig.GetLocalized("Settings:ThemeColorNote", "Note: Browser extensions like Dark Reader may affect the display of theme colors, which is normal.")
-                </div>
+            <label for="gamePath" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:GamePathLabel", "Game Folder")</label>
+            <div class="input-group">
+                <input type="text" id="gamePath" name="gamePath" class="form-control" value="@AppConfig.Get("[App]GamePath", "")" readonly />
+                <button type="button" class="btn btn-primary" id="browseGamePath" data-title="@AppConfig.GetLocalized("FileBrowser:SelectGameFolder", "Select Game Folder")" disabled>@AppConfig.GetLocalized("Common:Browse", "Browse")</button>
             </div>
         </div>
+        *@
+
+        <div class="mb-3 form-group-animated">
+            <label for="themeColor" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:ThemeColorLabel", "Theme Color")</label>
+            <div class="input-group">
+                <input type="color" id="themeColor" name="themeColor" class="form-control form-control-color" value="@themeColor" title="Choose your theme color" />
+                <input type="text" id="themeColorText" name="themeColorText" class="form-control" value="@themeColor" />
+            </div>
+        </div>
+
+        <!--
+        <div class="mb-3 form-group-animated">
+            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:SteamStatusLabel", "Steam Status")</label>
+            <div class="checkbox-container">
+                <input type="checkbox" id="isSteam" name="isSteam" @(bool.Parse(AppConfig.Get("[App]IsSteam", "true")) ? "checked" : "") />
+                <label for="isSteam" class="checkbox-label">@AppConfig.GetLocalized("Settings:IsSteam", "Steam Version")</label>
+            </div>
+        </div>
+        -->
         
         <div class="mb-3 form-group-animated">
-            <button type="submit" class="btn btn-primary">@AppConfig.GetLocalized("Settings:SaveButton", "Save")</button>
+            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:GameVersionLabel", "Game Version")</label>
+            <div class="cursor-radio-option">
+                <input type="radio" id="gameVersionLegitimate" name="gameVersion" value="legitimate" @(AppConfig.Get("[App]GameVersion", "legitimate") == "legitimate" ? "checked" : "") onclick="toggleCustomLauncher(this)" />
+                <label for="gameVersionLegitimate" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:GameVersionLegitimate", "Legitimate (Steam)")</label>
+            </div>
+            <div class="cursor-radio-option">
+                <input type="radio" id="gameVersionPirated" name="gameVersion" value="pirated" @(AppConfig.Get("[App]GameVersion", "legitimate") == "pirated" ? "checked" : "") onclick="toggleCustomLauncher(this)" />
+                <label for="gameVersionPirated" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:GameVersionPirated", "Pirated (Custom Launcher)")</label>
+            </div>
         </div>
+
+        <div class="custom-launcher-section" id="customLauncherSection">
+            <div class="mb-3 form-group-animated">
+                <label for="customLauncherPath" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:CustomLauncherLabel", "Custom Launcher")</label>
+                <div class="input-group">
+                    <input type="text" id="customLauncherPath" name="customLauncherPath" class="form-control" value="@AppConfig.Get("[App]CustomLauncherPath", "")" />
+                    <button type="button" class="btn btn-primary" id="browseCustomLauncher" data-title="@AppConfig.GetLocalized("FileBrowser:SelectExecutable", "Select Executable File")">@AppConfig.GetLocalized("Common:Browse", "Browse")</button>
+                </div>
+                <div id="customLauncherError" class="text-danger mt-1"></div>
+                <small id="customLauncherNote" class="form-text text-muted">@AppConfig.GetLocalized("Settings:CustomLauncherNote", "Select the executable file to launch the game. The Mod Manager's own executable is not allowed.")</small>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary save-button" id="saveButton">
+            <span id="saveText">@AppConfig.GetLocalized("Common:Save", "Save")</span>
+            <div id="loadingSpinner" class="spinner-border spinner-border-sm" style="display: none;" role="status">
+                <span class="visually-hidden">@AppConfig.GetLocalized("Common:Saving", "Saving...")</span>
+            </div>
+        </button>
     </form>
 
-    <!-- 开发者设置部分 -->
-    <div class="developer-section" id="developerSection">
-        <h3 class="developer-title">⚠️ @AppConfig.GetLocalized("Settings:DeveloperSettings", "Developer Settings")</h3>
-        <hr class="settings-hr" />
-        
-        <div class="mb-3 form-group-animated">
-            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:DevModeLabel", "Development Mode")</label>
-            <br />
-            <div class="checkbox-container">
-                <input type="checkbox" id="devMode" name="devMode" value="true" @(Model.IsDevMode ? "checked" : "") />
-                <label for="devMode" class="checkbox-label clickable-label">@AppConfig.GetLocalized("Settings:EnableDevMode", "Enable Development Mode")</label>
-            </div>
-        </div>
-        
-        <div class="mb-3 form-group-animated">
-            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:CVEWarningLabel", "CVE Vulnerability Detection")</label>
-            <br />
-            <div class="checkbox-container">
-                <input type="checkbox" id="showCVEWarning" name="showCVEWarning" value="true" @(Model.ShowCVEWarning ? "checked" : "") />
-                <label for="showCVEWarning" class="checkbox-label clickable-label">@AppConfig.GetLocalized("Settings:ShowCVEWarning", "Show CVE-2025-59489 Security Warning")</label>
-            </div>
-        </div>
-        
-        <div class="mb-3 form-group-animated">
-            <button type="button" class="btn btn-primary" onclick="saveDeveloperSettings()">@AppConfig.GetLocalized("Settings:SaveDeveloperSettings", "Save Developer Settings")</button>
-        </div>
+    <div class="success-toast" id="successToast">
+        @AppConfig.GetLocalized("Settings:ChangesSaved", "Changes saved successfully!")
     </div>
 </div>
 
-<div id="successToast" class="success-toast">
-    @AppConfig.GetLocalized("Settings:SaveSuccessMessage", "Settings saved successfully!")
-</div>
+<script src="~/js/settings.js"></script>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('settingsForm');
-        const successToast = document.getElementById('successToast');
-        const selects = document.querySelectorAll('.form-select');
-        
-        // 为所有下拉框添加动画效果
-        selects.forEach((select, index) => {
-            // 改变值时的动画
-            select.addEventListener('change', function() {
-                // 添加成功反馈
-                this.style.borderColor = '#198754';
-                setTimeout(() => {
-                    this.style.borderColor = '';
-                }, 1500);
-            });
-        });
-        
-        form.addEventListener('submit', function(e) {
-            // 添加保存动画
-            const submitButton = form.querySelector('.btn-primary');
-            submitButton.classList.add('loading');
-            submitButton.disabled = true;
-            
-            // 模拟表单提交过程
-            setTimeout(function() {
-                submitButton.classList.remove('loading');
-                submitButton.disabled = false;
-                
-                // 显示成功提示
-                successToast.classList.add('show');
-                
-                // 刷新自定义光标设置
-                if (typeof window.refreshCustomCursor === 'function') {
-                    window.refreshCustomCursor();
-                }
-                
-                // 3秒后隐藏成功提示
-                setTimeout(function() {
-                    successToast.classList.remove('show');
-                }, 3000);
-            }, 1000);
-        });
-        
-        // 为光标选项添加交互效果
-        const cursorRadios = document.querySelectorAll('input[name="cursorType"]');
-        cursorRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                // 移除所有选项的高亮
-                document.querySelectorAll('.cursor-radio-option').forEach(option => {
-                    option.style.backgroundColor = 'transparent';
-                });
-                
-                // 为选中的选项添加高亮
-                if (this.checked) {
-                    const themeColor = '@themeColor';
-                    this.closest('.cursor-radio-option').style.backgroundColor = 'rgba(' + parseInt(themeColor.substring(1, 3), 16) + ', ' + parseInt(themeColor.substring(3, 5), 16) + ', ' + parseInt(themeColor.substring(5, 7), 16) + ', 0.1)';
-                }
-            });
-        });
-        
-
-        
-
-        
-
-    // 开发者设置相关功能
-        let clickCount = 0;
-        const settingsTitle = document.getElementById('settingsTitle');
-        const clickCounter = document.getElementById('clickCounter');
-        const clickCountSpan = document.getElementById('clickCount');
-        const developerSection = document.getElementById('developerSection');
-        
-        // 从配置加载开发者设置
-        function loadDeveloperSettings() {
-            // 从AppConfig加载实际的设置值
-            const isDevMode = '@(Model.IsDevMode ? "true" : "false")' === 'true';
-            const showCVE = '@(Model.ShowCVEWarning ? "true" : "false")' === 'true';
-            
-            document.getElementById('devMode').checked = isDevMode;
-            document.getElementById('showCVEWarning').checked = showCVE;
-        }
-        
-        // 保存开发者设置
-        window.saveDeveloperSettings = function() {
-            const devMode = document.getElementById('devMode').checked;
-            const showCVEWarning = document.getElementById('showCVEWarning').checked;
-            
-            // 创建表单数据
-            const formData = new FormData();
-            formData.append('devMode', devMode);
-            formData.append('showCVEWarning', showCVEWarning);
-            
-            // 发送到后端保存
-            fetch('/settings?handler=SaveDeveloperSettings', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // 保存到本地存储
-                    localStorage.setItem('developerMode', devMode);
-                    localStorage.setItem('showCVEWarning', showCVEWarning);
-                    
-                    // 如果开发模式开启，立即显示开发者设置
-                    if (devMode) {
-                        developerSection.classList.add('show');
-                    }
-                    
-                    // 显示成功提示
-                    const successToast = document.getElementById('successToast');
-                    successToast.textContent = data.message || '开发者设置已保存！';
-                    successToast.classList.add('show');
-                    
-                    setTimeout(function() {
-                        successToast.classList.remove('show');
-                        successToast.textContent = '@AppConfig.GetLocalized("Settings:SaveSuccessMessage", "Settings saved successfully!")';
-                    }, 3000);
-                }
-            })
-            .catch(error => {
-                console.error('保存开发者设置失败:', error);
-                alert('保存失败，请重试');
-            });
-        };
-        
-        // 标题点击事件
-        settingsTitle.addEventListener('click', function() {
-            clickCount++;
-            clickCountSpan.textContent = clickCount;
-            clickCounter.classList.add('show');
-            
-            if (clickCount >= 10) {
-                developerSection.classList.add('show');
-                clickCounter.style.display = 'none';
-                loadDeveloperSettings();
-                
-                // 显示解锁提示
-                const successToast = document.getElementById('successToast');
-                const localizedText = '@AppConfig.GetLocalized("Settings:DeveloperUnlocked", "🔓 Developer options unlocked!")';
-                // 解码HTML实体
-                const textArea = document.createElement('textarea');
-                textArea.innerHTML = localizedText;
-                successToast.textContent = textArea.value;
-                successToast.classList.add('show');
-                
-                setTimeout(function() {
-                    successToast.classList.remove('show');
-                    successToast.textContent = '@AppConfig.GetLocalized("Settings:SaveSuccessMessage", "Settings saved successfully!")';
-                }, 3000);
-            }
-            
-            // 3秒后隐藏计数器
-            setTimeout(function() {
-                if (clickCount < 10) {
-                    clickCounter.classList.remove('show');
-                }
-            }, 3000);
-        });
-        
-        // 初始化开发者设置（如果已解锁）
-        if (localStorage.getItem('developerMode') === 'true') {
-            developerSection.classList.add('show');
-            loadDeveloperSettings();
-        }
-
-        // 在主表单提交时保存光标设置
-        document.getElementById('settingsForm').addEventListener('submit', function(e) {
-            // 获取选中的光标类型
-            const selectedCursor = document.querySelector('input[name="cursorType"]:checked');
-            if (selectedCursor) {
-                // 添加光标类型到表单数据
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'cursorType';
-                hiddenInput.value = selectedCursor.value;
-                this.appendChild(hiddenInput);
-            }
-        });
-
-        // 为光标选择器添加事件监听
-        document.querySelectorAll('input[name="cursorType"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                // 添加视觉反馈
-                const themeColor = '@themeColor';
-                this.closest('.cursor-radio-option').style.backgroundColor = 'rgba(' + parseInt(themeColor.substring(1, 3), 16) + ', ' + parseInt(themeColor.substring(3, 5), 16) + ', ' + parseInt(themeColor.substring(5, 7), 16) + ', 0.1)';
-                setTimeout(() => {
-                    this.closest('.cursor-radio-option').style.backgroundColor = '';
-                }, 500);
-            });
-        });
-
-        // 主题颜色选择器实时预览功能
-        const themeColorPicker = document.getElementById('themeColorPicker');
-        const colorPreview = document.getElementById('colorPreview');
-        const colorPreviewText = document.getElementById('colorPreviewText');
-        
-        if (themeColorPicker && colorPreview && colorPreviewText) {
-            themeColorPicker.addEventListener('input', function() {
-                const selectedColor = this.value;
-                colorPreview.style.backgroundColor = selectedColor;
-                colorPreviewText.textContent = selectedColor;
-            });
-        }
-    });
-</script>

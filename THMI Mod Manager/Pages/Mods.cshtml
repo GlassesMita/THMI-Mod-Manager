@@ -6,10 +6,16 @@
     var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
 }
 
+<input type="hidden" id="themeColorHidden" value="@themeColor" />
+
 <div class="mods-container">
     <h1 class="mods-title">@AppConfig.GetLocalized("Mods:Header", "Mod 管理")</h1>
     
     <div class="mods-content">
+        <div class="install-section">
+            <button id="installModButton" class="btn btn-primary">@AppConfig.GetLocalized("Mods:Install", "安装 Mod")</button>
+        </div>
+        
         <div class="coming-soon-card">
             <div class="card-icon">🎮</div>
             <h2>@AppConfig.GetLocalized("Mods:ComingSoon", "即将到来")</h2>
@@ -45,221 +51,10 @@
     </div>
 </div>
 
-<style>
-    /* Mod 管理页面动画样式 */
-    .mods-container {
-        animation: fadeIn 0.5s ease-in-out;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-    }
+@section Styles {
+    <link rel="stylesheet" href="~/css/mods.css" />
+}
 
-    .mods-title {
-        animation: slideDown 0.6s ease-out;
-        transform-origin: top left;
-        text-align: center;
-        margin-bottom: 2rem;
-        color: @themeColor;
-        font-size: 2.5rem;
-        position: relative;
-        transition: all 0.3s ease;
-    }
-
-    .mods-title::after {
-        content: "";
-        display: block;
-        width: 0;
-        height: 4px;
-        background: @themeColor;
-        margin: 10px auto;
-        border-radius: 2px;
-        transition: width 0.3s ease;
-    }
-
-    .mods-title:hover::after {
-        width: 100px;
-        animation: expandWidth 0.5s ease-out forwards;
-    }
-
-    .mods-content {
-        opacity: 0;
-        animation: fadeInUp 0.5s ease-out 0.3s forwards;
-        transform: translateY(20px);
-    }
-
-    .coming-soon-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 15px;
-        padding: 2.5rem;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        margin-bottom: 2rem;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .coming-soon-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-    }
-
-    .card-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        animation: pulse 2s infinite;
-    }
-
-    .coming-soon-card h2 {
-        color: #495057;
-        margin-bottom: 1rem;
-        font-size: 2rem;
-    }
-
-    .coming-soon-card p {
-        color: #6c757d;
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-        line-height: 1.6;
-    }
-
-    .feature-list {
-        text-align: left;
-        max-width: 400px;
-        margin: 0 auto;
-    }
-
-    .feature-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding: 0.5rem;
-        border-radius: 8px;
-        transition: background-color 0.3s ease;
-    }
-
-    .feature-item:hover {
-        background-color: rgba(0, 0, 0, 0.03);
-    }
-
-    .feature-icon {
-        color: @themeColor;
-        font-size: 1.2rem;
-        margin-right: 10px;
-        font-weight: bold;
-    }
-
-    .placeholder-section {
-        background-color: #fff;
-        border-radius: 10px;
-        padding: 2rem;
-        text-align: center;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e9ecef;
-    }
-
-    .placeholder-section h3 {
-        color: #495057;
-        margin-bottom: 1rem;
-    }
-
-    .placeholder-section p {
-        color: #6c757d;
-        margin-bottom: 1.5rem;
-        line-height: 1.6;
-    }
-
-    .status-indicator {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.5rem 1rem;
-        background-color: #e7f3ff;
-        border-radius: 20px;
-        color: #1c7ed6;
-        font-weight: 500;
-    }
-
-    .status-dot {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        background-color: #1c7ed6;
-        border-radius: 50%;
-        margin-right: 8px;
-        animation: pulse 1.5s infinite;
-    }
-
-    /* 动画关键帧 */
-    @@keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    @@keyframes slideDown {
-        from { 
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to { 
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes fadeInUp {
-        from { 
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to { 
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes expandWidth {
-        from { width: 0; }
-        to { width: 100px; }
-    }
-
-    @@keyframes pulse {
-        0% {
-            transform: scale(1);
-            opacity: 1;
-        }
-        50% {
-            transform: scale(1.1);
-            opacity: 0.7;
-        }
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
-
-    /* 响应式设计 */
-    @@media (max-width: 768px) {
-        .mods-container {
-            padding: 15px;
-        }
-        
-        .mods-title {
-            font-size: 2rem;
-        }
-        
-        .coming-soon-card {
-            padding: 1.5rem;
-        }
-        
-        .card-icon {
-            font-size: 3rem;
-        }
-        
-        .coming-soon-card h2 {
-            font-size: 1.5rem;
-        }
-        
-        .feature-list {
-            max-width: 100%;
-        }
-    }
-</style>
+@section Scripts {
+    <script src="~/js/mods.js"></script>
+}

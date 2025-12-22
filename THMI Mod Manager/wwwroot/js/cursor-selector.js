@@ -2,18 +2,29 @@
 class CursorSelector {
     constructor() {
         this.currentCursor = 'default';
-        this.radioOptions = document.querySelectorAll('.cursor-radio-option input[type="radio"]');
+        this.radioOptions = null;
         this.osuCursorInstance = null;
-        
-        this.init();
+        this.isDomReady = false;
     }
 
     init() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.onDomReady());
+        } else {
+            this.onDomReady();
+        }
+    }
+
+    onDomReady() {
+        this.isDomReady = true;
+        this.radioOptions = document.querySelectorAll('.cursor-radio-option input[type="radio"]');
         this.bindEvents();
         this.loadSavedCursor();
     }
 
     bindEvents() {
+        if (!this.radioOptions) return;
+        
         // 绑定单选框事件
         this.radioOptions.forEach(radio => {
             radio.addEventListener('change', (e) => {
@@ -35,7 +46,7 @@ class CursorSelector {
 
     applyCursor(cursorType) {
         // 移除所有光标类
-        document.body.classList.remove('mystia-cursor', 'osu-cursor');
+        document.body.classList.remove('mystia-cursor', 'osu-cursor', 'custom-cursor');
         
         // 移除之前添加的光标样式
         const existingCursorStyle = document.getElementById('dynamic-cursor-style');
@@ -52,7 +63,7 @@ class CursorSelector {
         switch (cursorType) {
             case 'mystia':
                 // Mystia Cursor通过CSS样式加载
-                document.body.classList.add('mystia-cursor');
+                document.body.classList.add('custom-cursor');
                 break;
             case 'osu':
                 // osu! lazer指针通过JavaScript文件加载
@@ -78,9 +89,9 @@ class CursorSelector {
             }
             this.osuCursorInstance = new osuCursor();
         } else {
-            // 动态加载osu-cursor.js（确保不以模块方式加载）
+            // 动态加载/dist/main.js（确保不以模块方式加载）
             const script = document.createElement('script');
-            script.src = '/src/osu-cursor.js';
+            script.src = '/dist/main.js';
             // 移除type="module"属性，确保以传统方式加载
             script.onload = () => {
                 // 等待下一个事件循环确保osuCursor已定义
@@ -93,7 +104,7 @@ class CursorSelector {
                 }, 0);
             };
             script.onerror = (error) => {
-                console.error('加载osu-cursor.js失败:', error);
+                console.error('加载/dist/main.js失败:', error);
             };
             document.head.appendChild(script);
         }
@@ -186,11 +197,11 @@ function addCursorStyles() {
     const style = document.createElement('style');
     style.textContent = `
         /* 全局光标样式 */
-        body.mystia-cursor {
+        body.custom-cursor {
             cursor: url('/Resources/Cursor.cur'), auto !important;
         }
         
-        body.mystia-cursor * {
+        body.custom-cursor * {
             cursor: url('/Resources/Cursor.cur'), auto !important;
         }
         
@@ -203,11 +214,11 @@ function addCursorStyles() {
         }
         
         /* 确保链接和按钮保持指针样式 */
-        body.mystia-cursor a,
-        body.mystia-cursor button,
-        body.mystia-cursor [role="button"],
-        body.mystia-cursor input[type="submit"],
-        body.mystia-cursor input[type="button"] {
+        body.custom-cursor a,
+        body.custom-cursor button,
+        body.custom-cursor [role="button"],
+        body.custom-cursor input[type="submit"],
+        body.custom-cursor input[type="button"] {
             cursor: url('/Resources/Cursor.cur'), pointer !important;
         }
         

@@ -2,17 +2,22 @@
 Version=0.0.1
 VersionCode=1
 ThemeColor=#c670ff
+ModsPath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\Mods
+GamePath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\
 
 [Localization]
 Language=en_US
 
 [Cursor]
-UseCustomCursor=True
+UseCustomCursor=False
 CursorType=default
 UseMystiaCursor=False
 
 [Game]
+Version=0.0.1
 Status=
+GameVersion=legitimate
+CustomLauncherPath=
 
 [Dev]
 IsDevBuild=False

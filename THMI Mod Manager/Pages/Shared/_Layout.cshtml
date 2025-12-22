@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/cursor-selector.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settings.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/file-browser.css" asp-append-version="true" />
     <style>
         h1 {
             color: @themeColor !important;
@@ -193,12 +195,51 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/settings.js" asp-append-version="true"></script>
     
     @* 指针选择器功能 *@
     @{
         var configManager = Context.RequestServices.GetService(typeof(THMI_Mod_Manager.Services.AppConfigManager)) as THMI_Mod_Manager.Services.AppConfigManager;
         var cursorType = configManager?.Get("[Cursor]CursorType", "default");
     }
+    <script src="~/js/file-browser.js" asp-append-version="true"></script>
+    
+    <!-- 全局文件浏览器模态框 -->
+    <div id="fileBrowserModal" class="file-browser-modal" role="dialog" aria-labelledby="fileBrowserTitle" aria-modal="true">
+        <div class="file-browser-content">
+            <div class="file-browser-header">
+                <h3 class="file-browser-title" id="fileBrowserTitle">Select File</h3>
+                <button type="button" class="close-button" onclick="window.fileBrowser.close()" aria-label="Close">&times;</button>
+            </div>
+            <div class="file-browser-body">
+                <div class="drive-selector">
+                    <label for="driveSelector">Drive:</label>
+                    <select id="driveSelector"></select>
+                    <div id="driveInfo" class="drive-info"></div>
+                </div>
+                <div class="file-explorer">
+                    <div class="address-bar">
+                        <input type="text" id="addressBar" class="address-input" placeholder="Enter path..." />
+                        <button type="button" onclick="window.fileBrowser.navigateToAddress()" class="address-btn">Go</button>
+                    </div>
+                    <div class="file-filter-container">
+                        <label for="fileFilterSelect">Filter:</label>
+                        <select id="fileFilterSelect">
+                            <option value="all">All</option>
+                            <option value="zip">Zip Files</option>
+                            <option value="izakaya">Izakaya Files</option>
+                        </select>
+                    </div>
+                    <div class="file-list" id="filesList">
+                        <div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="file-browser-footer">
+                <button type="button" onclick="window.fileBrowser.close()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
     
     @* 添加animejs CDN引用，用于osu光标动画 *@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
@@ -208,14 +249,12 @@
             if (typeof CursorSelector !== 'undefined') {
                 const cursorSelector = CursorSelector.init();
                 
-                // 如果是 osu 游标类型，初始化 osuCursor
-                if ('@{Html.Raw(cursorType);}' === 'osu') {
-                    // 动态加载 osu 游标（非模块方式）
-                    // 使用 setTimeout 确保在下一个事件循环中执行
-                    setTimeout(() => {
-                        cursorSelector.loadOsuCursor();
-                    }, 0);
-                }
+                // 根据配置应用不同的指针类型
+                const cursorType = '@Html.Raw(cursorType)';
+                
+                // 使用 CursorSelector 实例的 setCursor 方法来应用光标类型
+                // 这样可以确保 currentCursor 属性与实际应用的光标类型一致
+                cursorSelector.setCursor(cursorType);
             }
         });
     </script>

@@ -1,0 +1,25 @@
+/* Privacy页面样式 */
+.mods-title {
+    text-align: center;
+    position: relative;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.mods-title::after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 4px;
+    background: var(--theme-color);
+    margin: 10px auto;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.mods-title:hover::after {
+    width: 100px;
+    animation: expandWidth 0.5s ease-out forwards;
+}
