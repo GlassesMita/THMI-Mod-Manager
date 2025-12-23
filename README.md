@@ -53,7 +53,7 @@ Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
 Using Command Prompt or PowerShell:
 
 ```bash
-dotnet build -configuration Release
+dotnet build --configuration Release
 ```
 
 3. Copy required files: **Localization** and **wwwroot** folder and **AppConfig.Schale** to the build output:

@@ -29,6 +29,13 @@ class FileBrowser {
 
     // 初始化文件浏览器
     init() {
+        // 设置默认的过滤器选项
+        this.updateFilterOptions([
+            { value: 'all', label: 'All' },
+            { value: 'zip', label: 'Zip Files' },
+            { value: 'izakaya', label: 'Izakaya Files' }
+        ]);
+        
         // 加载驱动器列表
         this.loadDrives();
         // 加载应用运行目录的文件
@@ -59,11 +66,39 @@ class FileBrowser {
         }
     }
 
+    // 更新过滤器下拉框选项
+    updateFilterOptions(filterOptions) {
+        const fileFilterSelect = document.getElementById('fileFilterSelect');
+        if (!fileFilterSelect) return;
+        
+        // 清空现有选项
+        fileFilterSelect.innerHTML = '';
+        
+        // 添加"All"选项
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = 'All';
+        fileFilterSelect.appendChild(allOption);
+        
+        // 添加自定义选项
+        if (filterOptions && Array.isArray(filterOptions)) {
+            filterOptions.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.label;
+                fileFilterSelect.appendChild(opt);
+            });
+        }
+    }
+
     // 打开文件浏览器
     open(type, options = {}) {
         this.currentFileBrowserType = type;
         const fileBrowserModal = document.getElementById('fileBrowserModal');
         const fileFilterSelect = document.getElementById('fileFilterSelect');
+        
+        // 重置文件扩展名数组以确保没有旧的扩展名残留
+        this.fileExtensions = [];
         
         // 设置选项
         if (options.title) {
@@ -85,10 +120,21 @@ class FileBrowser {
             this.setOnFolderSelected(options.onFolderSelected);
         }
         
-        // 重置文件过滤器为'all'
-        this.currentFileFilter = 'all';
+        // 更新过滤器下拉框选项
+        if (options.filterOptions) {
+            this.updateFilterOptions(options.filterOptions);
+        }
+        
+        // 设置文件过滤器，如果提供了自定义过滤器则使用自定义过滤器
+        if (options.fileFilter) {
+            this.setFileFilter(options.fileFilter);
+        } else {
+            // 重置文件过滤器为'all'
+            this.currentFileFilter = 'all';
+        }
+        
         if (fileFilterSelect) {
-            fileFilterSelect.value = 'all';
+            fileFilterSelect.value = this.currentFileFilter;
         }
         
         // 确保模态框初始状态正确
@@ -214,7 +260,18 @@ class FileBrowser {
         addressBar.value = directory; // 同步地址栏与当前目录
         filesList.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
         
-        fetch(`/api/filebrowser/list?path=${encodeURIComponent(directory)}`)
+        // 构建查询参数，包含过滤器信息
+        let url = `/api/filebrowser/list?path=${encodeURIComponent(directory)}`;
+        if (this.currentFileFilter && this.currentFileFilter !== 'all') {
+            url += `&filter=${encodeURIComponent(this.currentFileFilter)}`;
+        }
+        
+        // 如果是自定义过滤器，添加允许的扩展名作为参数
+        if (this.currentFileFilter === 'custom' && this.fileExtensions.length > 0) {
+            url += `&extensions=${encodeURIComponent(this.fileExtensions.join(','))}`;
+        }
+        
+        fetch(url)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -291,6 +348,33 @@ class FileBrowser {
             return file.extension.toLowerCase() === '.zip';
         } else if (this.currentFileFilter === 'izakaya') {
             return file.extension.toLowerCase() === '.izakaya';
+        } else if (this.currentFileFilter === 'custom') {
+            // 对于自定义过滤器，使用允许的扩展名列表进行过滤
+            return this.fileExtensions.some(ext => 
+                file.extension.toLowerCase() === ext.toLowerCase()
+            );
+        } else if (this.currentFileFilter === 'launcher') {
+            // 启动器过滤器，使用允许的扩展名列表进行过滤
+            // 如果没有指定扩展名，则使用默认的启动器扩展名
+            if (this.fileExtensions.length === 0) {
+                const defaultLauncherExtensions = ['.exe', '.bat', '.cmd', '.lnk', '.sh', '.ps1', '.vbs', '.jar'];
+                return defaultLauncherExtensions.some(ext => 
+                    file.extension.toLowerCase() === ext.toLowerCase()
+                );
+            } else {
+                // 使用传入的扩展名进行过滤
+                return this.fileExtensions.some(ext => 
+                    file.extension.toLowerCase() === ext.toLowerCase()
+                );
+            }
+        } else if (this.currentFileFilter === 'exe') {
+            return file.extension.toLowerCase() === '.exe';
+        } else if (this.currentFileFilter === 'bat') {
+            return file.extension.toLowerCase() === '.bat';
+        } else if (this.currentFileFilter === 'cmd') {
+            return file.extension.toLowerCase() === '.cmd';
+        } else if (this.currentFileFilter === 'ps1') {
+            return file.extension.toLowerCase() === '.ps1';
         }
         
         // 默认显示所有允许的文件类型
@@ -299,13 +383,23 @@ class FileBrowser {
 
     // 选择文件
     selectFile(filePath) {
+        // 检查是否是批处理文件或其他可能含参的启动器
+        const fileExtension = filePath.toLowerCase().split('.').pop();
+        let processedFilePath = filePath;
+        
+        // 如果是批处理文件或其他脚本文件，可以考虑特殊处理
+        if (fileExtension === 'bat' || fileExtension === 'cmd' || fileExtension === 'lnk') {
+            // 对于批处理文件和快捷方式，直接使用原路径
+            processedFilePath = filePath;
+        }
+        
         if (this.onFileSelected) {
-            this.onFileSelected(filePath);
+            this.onFileSelected(processedFilePath);
         } else {
             // 默认行为：如果有id为selectedFilePath的输入框，将文件路径填充到该输入框
             const selectedFilePath = document.getElementById('selectedFilePath');
             if (selectedFilePath) {
-                selectedFilePath.value = filePath;
+                selectedFilePath.value = processedFilePath;
             }
         }
         this.close();

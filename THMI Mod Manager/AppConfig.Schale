@@ -16,7 +16,7 @@ UseMystiaCursor=False
 [Game]
 Version=0.0.1
 Status=
-GameVersion=legitimate
+GameVersion=
 CustomLauncherPath=
 
 [Dev]

@@ -24,8 +24,6 @@ function initModsPage() {
             // 确保window.fileBrowser对象存在
             if (typeof window.fileBrowser !== 'undefined' && window.fileBrowser !== null) {
                 console.log('File browser is available, configuring...');
-                // 配置文件浏览器
-                window.fileBrowser.setAllowedExtensions(['.zip', '.izakaya']);
                 window.fileBrowser.onFileSelected = function(filePath) {
                     console.log('Selected mod file:', filePath);
                     
@@ -39,7 +37,13 @@ function initModsPage() {
                 // 打开文件浏览器，设置标题和过滤器
                 window.fileBrowser.open('file', {
                     title: 'Select Mod File',
-                    extensions: ['.zip', '.izakaya']
+                    fileFilter: 'custom', // 使用自定义过滤器
+                    extensions: ['.zip', '.izakaya'], // 支持Mod文件格式
+                    filterOptions: [
+                        { value: 'custom', label: 'Mod Files' },
+                        { value: 'zip', label: 'Zip Files' },
+                        { value: 'izakaya', label: 'Izakaya Files' }
+                    ]
                 });
                 console.log('File browser opened');
             } else {

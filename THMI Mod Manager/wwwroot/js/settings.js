@@ -228,7 +228,8 @@ function validateExe(input) {
             const isModManagerExe = fileName === 'thmi mod manager.exe' || fileName === 'thmi_mod_manager.exe';
             
             if (isModManagerExe) {
-                errorElement.textContent = '@AppConfig.GetLocalized("Settings:ProhibitionText", "Cannot select the Mod Manager\'s own executable file.")';
+                const localizedProhibitionText = document.getElementById('localizedProhibitionText')?.value || 'Cannot select the Mod Manager\'s own executable file.';
+                errorElement.textContent = localizedProhibitionText;
                 input.value = '';
                 customLauncherPath.value = '';
             } else {
@@ -265,7 +266,8 @@ function openFileBrowser(type) {
                 const isModManagerExe = fileName === 'thmi mod manager.exe' || fileName === 'thmi_mod_manager.exe';
                 
                 if (isModManagerExe) {
-                    errorElement.textContent = 'Cannot select the Mod Manager\'s own executable file.';
+                    const localizedProhibitionText = document.getElementById('localizedProhibitionText')?.value || 'Cannot select the Mod Manager\'s own executable file.';
+                    errorElement.textContent = localizedProhibitionText;
                     if (customLauncherPath) customLauncherPath.value = '';
                 } else {
                     errorElement.textContent = '';
@@ -276,10 +278,18 @@ function openFileBrowser(type) {
                 window.fileBrowser.onFileSelected = null;
             });
             
-            // 打开文件浏览器，设置标题和隐藏文件过滤器
+            // 打开文件浏览器，设置标题和文件过滤器
             window.fileBrowser.open('file', {
                 title: 'Select Executable File',
-                hideFileFilter: true // 隐藏文件过滤器
+                fileFilter: 'launcher', // 使用启动器过滤器
+                extensions: ['.exe', '.bat', '.cmd', '.ps1'], // 支持指定的启动器格式
+                filterOptions: [
+                    { value: 'launcher', label: 'Launcher Files' },
+                    { value: 'exe', label: 'EXE Files' },
+                    { value: 'bat', label: 'Batch Files' },
+                    { value: 'cmd', label: 'CMD Files' },
+                    { value: 'ps1', label: 'PowerShell Scripts' }
+                ]
             });
         }
     } else {
