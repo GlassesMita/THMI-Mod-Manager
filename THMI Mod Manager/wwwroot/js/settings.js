@@ -4,9 +4,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const selects = document.querySelectorAll('.form-select');
     
     // 为浏览按钮添加事件监听器
-    const browseCustomLauncher = document.getElementById('browseCustomLauncher');
-    if (browseCustomLauncher) {
-        browseCustomLauncher.addEventListener('click', () => openFileBrowser('executable'));
+    const browseLauncherPath = document.getElementById('browseLauncherPath');
+    if (browseLauncherPath) {
+        browseLauncherPath.addEventListener('click', () => openFileBrowser('executable'));
     }
     
     // 为所有下拉框添加动画效果
@@ -188,36 +188,36 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDeveloperSettings();
     }
 
-    // 初始化游戏版本设置
-    const gameVersionLegitimate = document.getElementById('gameVersionLegitimate');
-    const gameVersionPirated = document.getElementById('gameVersionPirated');
-    const customLauncherSection = document.getElementById('customLauncherSection');
+    // 初始化游戏启动模式设置
+    const launchModeSteam = document.getElementById('launchModeSteam');
+    const launchModeExternal = document.getElementById('launchModeExternal');
+    const launcherPathSection = document.getElementById('launcherPathSection');
     
-    // 确保正确的游戏版本被选中
-    if (gameVersionLegitimate && gameVersionPirated) {
+    // 确保正确的启动模式被选中
+    if (launchModeSteam && launchModeExternal) {
         // 这些值将由Razor在页面加载时设置
-        const gameVersion = document.getElementById('gameVersionHidden') ? document.getElementById('gameVersionHidden').value : 'legitimate';
-        if (gameVersion === 'legitimate') {
-            gameVersionLegitimate.checked = true;
-            customLauncherSection.style.display = 'none';
+        const launchMode = document.getElementById('launchModeHidden') ? document.getElementById('launchModeHidden').value : 'steam_launch';
+        if (launchMode === 'steam_launch') {
+            launchModeSteam.checked = true;
+            launcherPathSection.style.display = 'none';
         } else {
-            gameVersionPirated.checked = true;
-            customLauncherSection.style.display = 'block';
+            launchModeExternal.checked = true;
+            launcherPathSection.style.display = 'block';
         }
     }
 });
 
-// 游戏版本选择相关功能 - 全局函数
-function toggleCustomLauncher(element) {
-    const customLauncherSection = document.getElementById('customLauncherSection');
-    const isPirated = element.value === 'pirated';
-    customLauncherSection.style.display = isPirated ? 'block' : 'none';
+// 游戏启动模式选择相关功能 - 全局函数
+function toggleLauncherPath(element) {
+    const launcherPathSection = document.getElementById('launcherPathSection');
+    const isExternal = element.value === 'external_program';
+    launcherPathSection.style.display = isExternal ? 'block' : 'none';
 }
 
 // 验证可执行文件 - 全局函数
 function validateExe(input) {
-    const errorElement = document.getElementById('customLauncherError');
-    const customLauncherPath = document.getElementById('customLauncherPath');
+    const errorElement = document.getElementById('launcherPathError');
+    const launcherPath = document.getElementById('launcherPath');
     
     if (input.files.length > 0) {
         try {
@@ -231,18 +231,18 @@ function validateExe(input) {
                 const localizedProhibitionText = document.getElementById('localizedProhibitionText')?.value || 'Cannot select the Mod Manager\'s own executable file.';
                 errorElement.textContent = localizedProhibitionText;
                 input.value = '';
-                customLauncherPath.value = '';
+                launcherPath.value = '';
             } else {
                 errorElement.textContent = '';
                 // 使用file.path或构建完整路径
                 const filePath = file.path || '';
-                customLauncherPath.value = filePath;
+                launcherPath.value = filePath;
             }
         } catch (error) {
             // 如果发生错误，允许选择文件
             console.error('验证可执行文件时出错:', error);
             errorElement.textContent = '';
-            customLauncherPath.value = input.files[0].name;
+            launcherPath.value = input.files[0].name;
         }
     }
 }
@@ -258,8 +258,8 @@ function openFileBrowser(type) {
         // 根据类型设置相应的回调函数
         if (type === 'executable') {
             window.fileBrowser.setOnFileSelected(function(filePath) {
-                const customLauncherPath = document.getElementById('customLauncherPath');
-                const errorElement = document.getElementById('customLauncherError');
+                const launcherPath = document.getElementById('launcherPath');
+                const errorElement = document.getElementById('launcherPathError');
                 
                 // 检查是否是Mod Manager自己的可执行文件
                 const fileName = filePath.split('\\').pop().toLowerCase();
@@ -268,10 +268,10 @@ function openFileBrowser(type) {
                 if (isModManagerExe) {
                     const localizedProhibitionText = document.getElementById('localizedProhibitionText')?.value || 'Cannot select the Mod Manager\'s own executable file.';
                     errorElement.textContent = localizedProhibitionText;
-                    if (customLauncherPath) customLauncherPath.value = '';
+                    if (launcherPath) launcherPath.value = '';
                 } else {
                     errorElement.textContent = '';
-                    if (customLauncherPath) customLauncherPath.value = filePath;
+                    if (launcherPath) launcherPath.value = filePath;
                 }
                 
                 // 重置回调，避免内存泄漏

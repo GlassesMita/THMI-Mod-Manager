@@ -8,8 +8,8 @@
     var locales = LocalizationManager.GetAvailableLocales();
     var selected = AppConfig.Get("[Localization]Language", "en_US");
     var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
-    var gameVersion = AppConfig.Get("[Game]GameVersion", "legitimate");
-    var customLauncherPath = AppConfig.Get("[Game]CustomLauncherPath", "");
+    var launchMode = AppConfig.Get("[Game]LaunchMode", "steam_launch");
+    var launcherPath = AppConfig.Get("[Game]LauncherPath", "");
 }
 
 <link rel="stylesheet" href="~/css/settings.css" />
@@ -89,29 +89,34 @@
         -->
         
         <div class="mb-3 form-group-animated">
-            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:GameVersionLabel", "Game Version")</label>
+            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:LaunchModeLabel", "Launch Mode")</label>
             <div class="cursor-radio-option">
-                <input type="radio" id="gameVersionLegitimate" name="gameVersion" value="legitimate" @(Model.GameVersion == "legitimate" ? "checked" : "") onclick="toggleCustomLauncher(this)" />
-                <label for="gameVersionLegitimate" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:GameVersionLegitimate", "Legitimate (Steam)")</label>
+                <input type="radio" id="launchModeSteam" name="launchMode" value="steam_launch" @(Model.LaunchMode == "steam_launch" ? "checked" : "") onclick="toggleLauncherPath(this)" />
+                <label for="launchModeSteam" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:LaunchModeSteam", "Steam Launch")</label>
             </div>
             <div class="cursor-radio-option">
-                <input type="radio" id="gameVersionPirated" name="gameVersion" value="pirated" @(Model.GameVersion == "pirated" ? "checked" : "") onclick="toggleCustomLauncher(this)" />
-                <label for="gameVersionPirated" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:GameVersionPirated", "Pirated (Custom Launcher)")</label>
+                <input type="radio" id="launchModeExternal" name="launchMode" value="external_program" @(Model.LaunchMode == "external_program" ? "checked" : "") onclick="toggleLauncherPath(this)" />
+                <label for="launchModeExternal" class="cursor-radio-label">@AppConfig.GetLocalized("Settings:LaunchModeExternal", "User-Specified External Program")</label>
             </div>
         </div>
         <!-- Hidden fields to pass values to JavaScript -->
-        <input type="hidden" id="gameVersionHidden" value="@Model.GameVersion" />
+        <input type="hidden" id="launchModeHidden" value="@Model.LaunchMode" />
         <input type="hidden" id="localizedProhibitionText" value="@AppConfig.GetLocalized("Settings:ProhibitionText", "Cannot select the Mod Manager's own executable file.")" />
 
-        <div class="custom-launcher-section" id="customLauncherSection">
+        <div class="launcher-path-section" id="launcherPathSection">
             <div class="mb-3 form-group-animated">
-                <label for="customLauncherPath" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:CustomLauncherLabel", "Custom Launcher")</label>
+                <label for="launcherPath" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:LauncherPathLabel", "External Program Path")</label>
                 <div class="input-group">
-                    <input type="text" id="customLauncherPath" name="customLauncherPath" class="form-control" value="@Model.CustomLauncherPath" />
-                    <button type="button" class="btn btn-primary" id="browseCustomLauncher" data-title="@AppConfig.GetLocalized("FileBrowser:SelectExecutable", "Select Executable File")">@AppConfig.GetLocalized("Common:Browse", "Browse")</button>
+                    <input type="text" id="launcherPath" name="launcherPath" class="form-control" value="@Model.LauncherPath" />
+                    <button type="button" class="btn btn-primary" id="browseLauncherPath" data-title="@AppConfig.GetLocalized("FileBrowser:SelectExecutable", "Select Executable File")">@AppConfig.GetLocalized("Common:Browse", "Browse")</button>
                 </div>
-                <div id="customLauncherError" class="text-danger mt-1"></div>
-                <small id="customLauncherNote" class="form-text text-muted">@AppConfig.GetLocalized("Settings:CustomLauncherNote", "Select the executable file to launch the game. The Mod Manager's own executable is not allowed.")</small>
+                <div id="launcherPathError" class="text-danger mt-1"></div>
+                <small id="launcherPathNote" class="form-text text-muted">@AppConfig.GetLocalized("Settings:LauncherPathNote", "Select the executable file to launch the game. The Mod Manager's own executable is not allowed.")</small>
+                <div class="mt-2">
+                    <a href="https://store.steampowered.com/app/1584090/" target="_blank" rel="noopener noreferrer" class="text-info">
+                        @AppConfig.GetLocalized("Settings:PurchaseLegitimateGame", "Purchase the authorized game for a better experience.")
+                    </a>
+                </div>
             </div>
         </div>
 

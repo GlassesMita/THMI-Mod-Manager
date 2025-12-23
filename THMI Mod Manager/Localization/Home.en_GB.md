@@ -49,7 +49,7 @@ THMI Mod Manager supports multiple languages, including:
 ## 💡 Tips
 
 - If files are shown as missing, check if the game is properly installed
-- Ensure you own a legitimate copy of the game
+- Ensure you own an authorized copy of the game
 - It's recommended to close the game before running the mod manager
 
 ---

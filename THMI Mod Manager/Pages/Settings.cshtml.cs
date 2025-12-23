@@ -34,9 +34,9 @@ namespace THMI_Mod_Manager.Pages
         // 主题色属性
         public string ThemeColor { get; set; } = "#c670ff";
         
-        // 游戏版本设置属性
-        public string GameVersion { get; set; } = "legitimate"; // legitimate 或 pirated
-        public string CustomLauncherPath { get; set; } = ""; // 自定义启动器路径
+        // 游戏启动模式设置属性
+        public string LaunchMode { get; set; } = "steam_launch"; // steam_launch 或 external_program
+        public string LauncherPath { get; set; } = ""; // 用户指定外部程序路径
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -81,10 +81,10 @@ namespace THMI_Mod_Manager.Pages
                 ThemeColor = _appConfig.Get("[App]ThemeColor", "#c670ff");
                 Logger.LogInfo($"Loaded theme color: {ThemeColor}");
                 
-                // 加载游戏版本设置
-                GameVersion = _appConfig.Get("[Game]GameVersion", "legitimate");
-                CustomLauncherPath = _appConfig.Get("[Game]CustomLauncherPath", "");
-                Logger.LogInfo($"Loaded game version settings: GameVersion: {GameVersion}, CustomLauncherPath: {CustomLauncherPath}");
+                // 加载游戏启动模式设置
+                LaunchMode = _appConfig.Get("[Game]LaunchMode", "steam_launch");
+                LauncherPath = _appConfig.Get("[Game]LauncherPath", "");
+                Logger.LogInfo($"Loaded game launch mode settings: LaunchMode: {LaunchMode}, LauncherPath: {LauncherPath}");
             }
             catch (Exception ex)
             {
@@ -93,9 +93,9 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] bool useCustomCursor, [FromForm] string cursorType, [FromForm] string themeColor, [FromForm] string gameVersion, [FromForm] string customLauncherPath, [FromForm] string modsPath, [FromForm] string gamePath)
+        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] bool useCustomCursor, [FromForm] string cursorType, [FromForm] string themeColor, [FromForm] string launchMode, [FromForm] string launcherPath, [FromForm] string modsPath, [FromForm] string gamePath)
         {
-            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, GameVersion: {gameVersion}, CustomLauncherPath: {customLauncherPath}, ModsPath: {modsPath}, GamePath: {gamePath}");
+            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}");
             
             
             if (string.IsNullOrEmpty(language))
@@ -132,16 +132,16 @@ namespace THMI_Mod_Manager.Pages
                     Logger.LogInfo($"Theme color saved: {themeColor}");
                 }
                 
-                // Save game version settings
-                if (!string.IsNullOrEmpty(gameVersion))
+                // Save game launch mode settings
+                if (!string.IsNullOrEmpty(launchMode))
                 {
-                    _appConfig.Set("[Game]GameVersion", gameVersion);
-                    Logger.LogInfo($"Game version saved: {gameVersion}");
+                    _appConfig.Set("[Game]LaunchMode", launchMode);
+                    Logger.LogInfo($"Game launch mode saved: {launchMode}");
                 }
                 
-                // Save custom launcher path
-                _appConfig.Set("[Game]CustomLauncherPath", customLauncherPath);
-                Logger.LogInfo($"Custom launcher path saved: {customLauncherPath}");
+                // Save user-specified external program path
+                _appConfig.Set("[Game]LauncherPath", launcherPath);
+                Logger.LogInfo($"User-specified external program path saved: {launcherPath}");
 
                 // Save custom cursor setting
                 _appConfig.Set("[Cursor]UseCustomCursor", useCustomCursor.ToString());

@@ -1,4 +1,4 @@
-﻿[App]
+[App]
 Version=0.0.1
 VersionCode=1
 ThemeColor=#c670ff
@@ -16,8 +16,7 @@ UseMystiaCursor=False
 [Game]
 Version=0.0.1
 Status=
-GameVersion=
-CustomLauncherPath=
+LauncherPath=
 
 [Dev]
 IsDevBuild=False
