@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Hosting.Server;
 using THMI_Mod_Manager.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,6 +50,82 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.SystemInfoLogger>(provid
     }
     return new THMI_Mod_Manager.Services.SystemInfoLogger(logger, appConfigManager, env.ContentRootPath);
 });
+
+// 检查端口是否可用
+bool IsPortAvailable(int port)
+{
+    try
+    {
+        using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Any, port);
+        listener.Start();
+        listener.Stop();
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+// 获取可用的端口号
+int GetAvailablePort(int preferredPort, int minPort = 5000, int maxPort = 65535)
+{
+    // 首先尝试首选端口
+    if (IsPortAvailable(preferredPort))
+    {
+        return preferredPort;
+    }
+    
+    // 首选端口被占用，随机选择一个可用端口
+    var random = new Random();
+    int attempts = 0;
+    int maxAttempts = 100;
+    
+    while (attempts < maxAttempts)
+    {
+        int randomPort = random.Next(minPort, maxPort + 1);
+        if (IsPortAvailable(randomPort))
+        {
+            return randomPort;
+        }
+        attempts++;
+    }
+    
+    // 如果随机尝试失败，尝试从minPort开始顺序查找
+    for (int port = minPort; port <= maxPort; port++)
+    {
+        if (IsPortAvailable(port))
+        {
+            return port;
+        }
+    }
+    
+    // 如果所有端口都被占用，返回首选端口（让应用自己处理错误）
+    return preferredPort;
+}
+
+// 设置应用URL
+var configuration = builder.Configuration;
+var configuredUrls = configuration["urls"] ?? configuration["Urls"];
+int portToUse = 5500;
+
+if (!string.IsNullOrEmpty(configuredUrls))
+{
+    // 如果配置了URL，尝试解析端口
+    var url = configuredUrls.Split(';').FirstOrDefault() ?? "http://localhost:5500";
+    var uri = new Uri(url);
+    portToUse = uri.Port;
+    
+    // 如果端口是80或0，使用5500作为默认值
+    if (portToUse == 80 || portToUse == 0)
+    {
+        portToUse = 5500;
+    }
+}
+
+// 检查端口是否可用，如果不可用则随机选择一个
+int availablePort = GetAvailablePort(portToUse);
+builder.WebHost.UseUrls($"http://localhost:{availablePort}");
 
 var app = builder.Build();
 
@@ -124,19 +201,19 @@ lifetime.ApplicationStarted.Register(() =>
         var systemInfoLogger = app.Services.GetRequiredService<THMI_Mod_Manager.Services.SystemInfoLogger>();
         systemInfoLogger.LogApplicationStartup();
         
-        // 从配置获取端口信息
-        var configuration = app.Services.GetRequiredService<IConfiguration>();
-        var urls = configuration["urls"] ?? configuration["Urls"] ?? "http://localhost:5000";
+        // 从服务器特性获取实际使用的端口
+        var serverFeature = app.Services.GetRequiredService<IServer>();
+        var addresses = serverFeature.Features.Get<IServerAddressesFeature>();
+        var port = 5500;
         
-        // 解析URL获取端口
-        var url = urls.Split(';').FirstOrDefault() ?? "http://localhost:5225";
-        var uri = new Uri(url);
-        var port = uri.Port;
-        
-        // 确保端口为5000，如果URL中没有明确指定
-        if (port == 80 || port == 0) // 默认HTTP端口或未指定
+        if (addresses != null && addresses.Addresses.Any())
         {
-            port = 5000;
+            var address = addresses.Addresses.FirstOrDefault();
+            if (address != null)
+            {
+                var uri = new Uri(address);
+                port = uri.Port;
+            }
         }
         
         // 从本地化文件读取消息
