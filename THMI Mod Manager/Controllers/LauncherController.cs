@@ -35,9 +35,11 @@ namespace THMI_Mod_Manager.Controllers
                     return BadRequest("Process is already running");
                 }
 
-                // Read launch mode from configuration
-                string launchMode = _appConfig.Get("[Game]LaunchMode", "steam_launch");
-                string userSpecifiedExePath = _appConfig.Get("[Game]LauncherPath", "");
+                var launchModeValue = _appConfig.Get("[Game]LaunchMode", "steam_launch");
+                string launchMode = launchModeValue ?? "steam_launch";
+                
+                var userSpecifiedExePathValue = _appConfig.Get("[Game]LauncherPath", "");
+                string userSpecifiedExePath = userSpecifiedExePathValue ?? "";
 
                 _logger.LogInformation($"Launch mode: {launchMode}");
 
@@ -218,7 +220,7 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
-        private string FindSteamExecutable()
+        private string? FindSteamExecutable()
         {
             try
             {

@@ -397,13 +397,17 @@ namespace THMI_Mod_Manager.Services
                 var cultureName = language.Replace('_', '-');
                 
                 // First try with the full culture name (e.g., "en-US")
-                if (!string.IsNullOrEmpty(cultureName) && _data.TryGetValue(cultureName, out var dict) && dict.TryGetValue(key, out var val))
+                if (!string.IsNullOrEmpty(cultureName) && _data.TryGetValue(cultureName, out var dict) && dict != null && !string.IsNullOrEmpty(key) && dict.TryGetValue(key, out var val))
                     return val;
 
                 // Then try with the neutral culture (e.g., "en")
-                var neutral = cultureName.Split('-')[0];
-                if (!string.IsNullOrEmpty(neutral) && _data.TryGetValue(neutral, out var dict2) && dict2.TryGetValue(key, out var val2))
-                    return val2;
+                if (!string.IsNullOrEmpty(cultureName))
+                {
+                    var parts = cultureName.Split('-');
+                    var neutral = parts.Length > 0 ? parts[0] : cultureName;
+                    if (!string.IsNullOrEmpty(neutral) && _data.TryGetValue(neutral, out var dict2) && dict2 != null && dict2.TryGetValue(key, out var val2))
+                        return val2;
+                }
 
                 // Finally try with the generic "Localization" section
                 if (_data.TryGetValue("Localization", out var dict3) && dict3.TryGetValue(key, out var val3))
@@ -456,28 +460,28 @@ namespace THMI_Mod_Manager.Services
         
         // Try to get localized value with multiple fallback strategies
         // 1. Try exact match (e.g., zh_CN)
-        if (cache.TryGetValue(language, out var dict1) && dict1.TryGetValue(key, out var value1))
+        if (!string.IsNullOrEmpty(key) && cache.TryGetValue(language, out var dict1) && dict1 != null && dict1.TryGetValue(key, out var value1))
             return value1;
             
         // 2. Try normalized format (e.g., zh-CN)
         var normalizedLanguage = language.Replace('_', '-');
-        if (normalizedLanguage != language && cache.TryGetValue(normalizedLanguage, out var dictNormalized) && dictNormalized.TryGetValue(key, out var valueNormalized))
+        if (normalizedLanguage != language && cache.TryGetValue(normalizedLanguage, out var dictNormalized) && dictNormalized != null && !string.IsNullOrEmpty(key) && dictNormalized.TryGetValue(key, out var valueNormalized))
             return valueNormalized;
             
         // 3. Try neutral culture (e.g., zh)
         if (normalizedLanguage.Contains('-'))
         {
             var neutralLanguage = normalizedLanguage.Split('-')[0];
-            if (cache.TryGetValue(neutralLanguage, out var dict3) && dict3.TryGetValue(key, out var value3))
+            if (cache.TryGetValue(neutralLanguage, out var dict3) && dict3 != null && !string.IsNullOrEmpty(key) && dict3.TryGetValue(key, out var value3))
                 return value3;
         }
             
         // 4. Try default culture (en)
-        if (cache.TryGetValue("en", out var dict4) && dict4.TryGetValue(key, out var value4))
+        if (cache.TryGetValue("en", out var dict4) && dict4 != null && !string.IsNullOrEmpty(key) && dict4.TryGetValue(key, out var value4))
             return value4;
             
         // 5. Try empty culture
-        if (cache.TryGetValue(string.Empty, out var dict5) && dict5.TryGetValue(key!, out var value5))
+        if (cache.TryGetValue(string.Empty, out var dict5) && dict5 != null && !string.IsNullOrEmpty(key) && dict5.TryGetValue(key, out var value5))
             return value5;
             
         // 6. Return default value or key as fallback

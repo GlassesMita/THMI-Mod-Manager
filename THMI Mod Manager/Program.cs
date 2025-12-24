@@ -224,7 +224,7 @@ lifetime.ApplicationStarted.Register(() =>
         var localizationFile = Path.Combine(app.Environment.ContentRootPath, "Localization", $"{currentLanguage}.ini");
         string runningMessage = $"正在 localhost:{port} 上运行"; // 默认消息
         string browserOpenedMessage = $"已自动打开浏览器: http://localhost:{port}"; // 默认消息
-        string welcomeMessage = null;
+        string? welcomeMessage = null;
         
         if (File.Exists(localizationFile))
         {

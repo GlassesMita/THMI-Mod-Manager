@@ -15,7 +15,7 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                string logPath = Logger.GetLogFilePath();
+                string? logPath = Logger.GetLogFilePath();
                 bool isActive = !string.IsNullOrEmpty(logPath) && System.IO.File.Exists(logPath);
                 
                 return Ok(new 
@@ -84,7 +84,7 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                string logPath = Logger.GetLogFilePath();
+                string? logPath = Logger.GetLogFilePath();
                 
                 if (string.IsNullOrEmpty(logPath) || !System.IO.File.Exists(logPath))
                 {
@@ -93,7 +93,8 @@ namespace THMI_Mod_Manager.Controllers
 
                 // 读取日志文件的最后几行
                 var logLines = new List<string>();
-                using (var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                string nonNullLogPath = logPath!;
+                using (var fs = new FileStream(nonNullLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (var sr = new StreamReader(fs))
                 {
                     string line;
@@ -127,7 +128,7 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                string logPath = Logger.GetLogFilePath();
+                string? logPath = Logger.GetLogFilePath();
                 
                 if (string.IsNullOrEmpty(logPath))
                 {
@@ -200,7 +201,7 @@ namespace THMI_Mod_Manager.Controllers
     // 日志请求模型
     public class LogRequest
     {
-        public string Message { get; set; }
+        public string Message { get; set; } = "";
         public string Level { get; set; } = "info";
     }
 }

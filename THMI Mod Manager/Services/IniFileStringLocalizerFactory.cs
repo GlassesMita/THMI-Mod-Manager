@@ -79,7 +79,10 @@ namespace THMI_Mod_Manager.Services
             var localizer = new IniFileStringLocalizer(_cache);
             
             // Get the configured language from AppConfigManager
-            var env = (IWebHostEnvironment)serviceProvider.GetService(typeof(IWebHostEnvironment));
+            var env = (IWebHostEnvironment?)serviceProvider.GetService(typeof(IWebHostEnvironment));
+            if (env == null)
+                return localizer;
+            
             var configPath = Path.Combine(env.ContentRootPath, "AppConfig.Schale");
             if (File.Exists(configPath))
             {

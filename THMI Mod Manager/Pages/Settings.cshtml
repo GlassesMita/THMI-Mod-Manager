@@ -82,7 +82,7 @@
         <div class="mb-3 form-group-animated">
             <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:SteamStatusLabel", "Steam Status")</label>
             <div class="checkbox-container">
-                <input type="checkbox" id="isSteam" name="isSteam" @(bool.Parse(AppConfig.Get("[App]IsSteam", "true")) ? "checked" : "") />
+                <input type="checkbox" id="isSteam" name="isSteam" @(bool.Parse(AppConfig.Get("[App]IsSteam", "true") ?? "true") ? "checked" : "") />
                 <label for="isSteam" class="checkbox-label">@AppConfig.GetLocalized("Settings:IsSteam", "Steam Version")</label>
             </div>
         </div>

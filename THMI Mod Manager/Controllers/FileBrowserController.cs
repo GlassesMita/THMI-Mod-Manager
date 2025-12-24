@@ -62,7 +62,7 @@ namespace THMI_Mod_Manager.Controllers
                 }
                 
                 // 获取父目录
-                string parentDirectory = null;
+                string? parentDirectory = null;
                 try
                 {
                     DirectoryInfo dirInfo = Directory.GetParent(path);
@@ -72,9 +72,10 @@ namespace THMI_Mod_Manager.Controllers
                 
                 // 获取目录列表
                 var directories = Directory.GetDirectories(path)
+                    .Where(dir => dir != null)
                     .Select(dir => new { 
-                        name = Path.GetFileName(dir),
-                        path = dir
+                        name = Path.GetFileName(dir!),
+                        path = dir!
                     })
                     .ToList();
                 

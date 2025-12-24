@@ -49,7 +49,7 @@ namespace THMI_Mod_Manager.Pages
                     // If no markdown file exists, provide default content
                     if (!System.IO.File.Exists(markdownFile))
                     {
-                        Content = GetDefaultContent(language);
+                        Content = GetDefaultContent(language ?? "en_US");
                         return;
                     }
                 }
@@ -70,7 +70,7 @@ namespace THMI_Mod_Manager.Pages
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error reading or parsing markdown file: {FileName}", markdownFile);
-                Content = GetErrorContent(language);
+                Content = GetErrorContent(language ?? "en_US");
             }
         }
         

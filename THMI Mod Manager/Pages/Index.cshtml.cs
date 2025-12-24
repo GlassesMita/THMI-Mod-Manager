@@ -11,7 +11,7 @@ namespace THMI_Mod_Manager.Pages
         private readonly THMI_Mod_Manager.Services.AppConfigManager _appConfig;
         private readonly IWebHostEnvironment _env;
 
-        public string Content { get; set; } = string.Empty;
+        public new string Content { get; set; } = string.Empty;
 
         public IndexModel(ILogger<IndexModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig, IWebHostEnvironment env)
         {
@@ -42,7 +42,7 @@ namespace THMI_Mod_Manager.Pages
                     // If no markdown file exists, provide default content
                     if (!System.IO.File.Exists(markdownFile))
                     {
-                        Content = GetDefaultContent(language);
+                        Content = GetDefaultContent(language ?? "en_US");
                         return;
                     }
                 }
@@ -63,7 +63,7 @@ namespace THMI_Mod_Manager.Pages
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error reading or parsing markdown file: {FileName}", markdownFile);
-                Content = GetErrorContent(language);
+                Content = GetErrorContent(language ?? "en_US");
             }
         }
         

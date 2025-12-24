@@ -51,23 +51,24 @@ namespace THMI_Mod_Manager.Pages
 
             try
             {
-                // Load current language from config
-                CurrentLanguage = _appConfig.Get("[Localization]Language", "en_US");
-                SelectedLanguage = CurrentLanguage;
+                var languageValue = _appConfig.Get("[Localization]Language", "en_US");
+                CurrentLanguage = languageValue ?? "en_US";
+                SelectedLanguage = CurrentLanguage ?? "en_US";
                 Logger.LogInfo($"Loaded language settings: {CurrentLanguage}");
 
-                // 加载开发者设置
-                IsDevMode = _appConfig.Get("[Dev]IsDevBuild", "false").ToLower() == "true";
-                ShowCVEWarning = _appConfig.Get("[Dev]ShowCVEWarning", "true").ToLower() != "false";
+                var devBuildValue = _appConfig.Get("[Dev]IsDevBuild", "false");
+                IsDevMode = devBuildValue?.ToLower() == "true";
+                
+                var cveWarningValue = _appConfig.Get("[Dev]ShowCVEWarning", "true");
+                ShowCVEWarning = cveWarningValue?.ToLower() != "false";
                 Logger.LogInfo($"Loaded developer settings - DevMode: {IsDevMode}, ShowCVEWarning: {ShowCVEWarning}");
 
-                // 加载光标设置（向后兼容）
-                UseOsuCursor = _appConfig.Get("[Cursor]UseMystiaCursor", "false").ToLower() == "true";
+                var cursorValue = _appConfig.Get("[Cursor]UseMystiaCursor", "false");
+                UseOsuCursor = cursorValue?.ToLower() == "true";
                 
-                // 加载新的光标类型设置
-                CursorType = _appConfig.Get("[Cursor]CursorType", "default");
+                var cursorTypeValue = _appConfig.Get("[Cursor]CursorType", "default");
+                CursorType = cursorTypeValue ?? "default";
                 
-                // 向后兼容：如果旧的UseOsuCursor为true，则转换为新的osu类型
                 if (UseOsuCursor && CursorType == "default")
                 {
                     CursorType = "osu";
@@ -77,13 +78,15 @@ namespace THMI_Mod_Manager.Pages
                 
                 Logger.LogInfo($"Loaded cursor settings: CursorType: {CursorType}");
                 
-                // 加载主题色设置
-                ThemeColor = _appConfig.Get("[App]ThemeColor", "#c670ff");
+                var themeColorValue = _appConfig.Get("[App]ThemeColor", "#c670ff");
+                ThemeColor = themeColorValue ?? "#c670ff";
                 Logger.LogInfo($"Loaded theme color: {ThemeColor}");
                 
-                // 加载游戏启动模式设置
-                LaunchMode = _appConfig.Get("[Game]LaunchMode", "steam_launch");
-                LauncherPath = _appConfig.Get("[Game]LauncherPath", "");
+                var launchModeValue = _appConfig.Get("[Game]LaunchMode", "steam_launch");
+                LaunchMode = launchModeValue ?? "steam_launch";
+                
+                var launcherPathValue = _appConfig.Get("[Game]LauncherPath", "");
+                LauncherPath = launcherPathValue ?? "";
                 Logger.LogInfo($"Loaded game launch mode settings: LaunchMode: {LaunchMode}, LauncherPath: {LauncherPath}");
             }
             catch (Exception ex)

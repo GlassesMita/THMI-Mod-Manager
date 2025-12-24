@@ -13,7 +13,7 @@ namespace THMI_Mod_Manager.Services
             Error
         }
         
-        private static string logFilePath;
+        private static string? logFilePath;
         private static readonly object lockObject = new object();
 
         // 静态构造函数，确保在类加载时初始化 logFilePath
@@ -58,7 +58,10 @@ namespace THMI_Mod_Manager.Services
             {
                 try
                 {
-                    File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+                    if (!string.IsNullOrEmpty(logFilePath))
+                    {
+                        File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -136,15 +139,17 @@ namespace THMI_Mod_Manager.Services
         }
 
         // 获取当前日志文件路径
-        public static string GetLogFilePath()
+        public static string? GetLogFilePath()
         {
             return logFilePath;
         }
 
         // 获取日志目录路径
-        public static string GetLogDirectory()
+        public static string? GetLogDirectory()
         {
-            return string.IsNullOrEmpty(logFilePath) ? null : Path.GetDirectoryName(logFilePath);
+            if (string.IsNullOrEmpty(logFilePath))
+                return null;
+            return Path.GetDirectoryName(logFilePath);
         }
     }
 }

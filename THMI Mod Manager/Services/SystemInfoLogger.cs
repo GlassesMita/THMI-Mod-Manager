@@ -12,10 +12,10 @@ namespace THMI_Mod_Manager.Services
     public class SystemInfoLogger
     {
         private readonly ILogger<SystemInfoLogger> _logger;
-        private readonly AppConfigManager _appConfigManager;
+        private readonly AppConfigManager? _appConfigManager;
         private readonly string _contentRootPath;
 
-        public SystemInfoLogger(ILogger<SystemInfoLogger> logger, AppConfigManager appConfigManager, string contentRootPath)
+        public SystemInfoLogger(ILogger<SystemInfoLogger> logger, AppConfigManager? appConfigManager, string contentRootPath)
         {
             _logger = logger;
             _appConfigManager = appConfigManager;
