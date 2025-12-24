@@ -51,4 +51,53 @@
 
 @section Scripts {
     <script src="~/js/mods.js"></script>
+    <script>
+        // 添加折叠功能的JavaScript代码
+        function toggleModDetails(modId) {
+            const details = document.getElementById('mod-details-' + modId);
+            const toggleIcon = document.getElementById('toggle-icon-' + modId);
+            
+            if (details.style.display === 'none' || details.style.display === '') {
+                details.style.display = 'block';
+                toggleIcon.classList.remove('bi-chevron-down');
+                toggleIcon.classList.add('bi-chevron-up');
+            } else {
+                details.style.display = 'none';
+                toggleIcon.classList.remove('bi-chevron-up');
+                toggleIcon.classList.add('bi-chevron-down');
+            }
+        }
+        
+        // 删除确认函数
+        function confirmDeleteMod(fileName) {
+            if (confirm(`确定要删除 mod "${fileName}" 吗？此操作无法撤销。`)) {
+                deleteMod(fileName);
+            }
+        }
+        
+        // 删除mod的函数
+        async function deleteMod(fileName) {
+            try {
+                const response = await fetch(`/api/mods/${encodeURIComponent(fileName)}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 重新加载mod列表
+                    modsManager.loadMods();
+                } else {
+                    alert('删除失败: ' + data.message);
+                }
+            } catch (error) {
+                console.error('删除Mod时出错:', error);
+                alert('删除Mod时出错: ' + error.message);
+            }
+        }
+    </script>
 }

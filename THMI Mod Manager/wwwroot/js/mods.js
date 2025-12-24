@@ -90,10 +90,13 @@ const modsManager = {
         const statusClass = isValid ? 'text-success' : 'text-warning';
         const statusIcon = isValid ? 'bi-check-circle' : 'bi-exclamation-circle';
         const statusText = isValid ? '已加载' : '加载失败';
-        const isDisabled = mod.fileName.endsWith('.disabled');
+        const isDisabled = mod.isDisabled; // Use the new IsDisabled property
         const buttonClass = isDisabled ? 'btn-success' : 'btn-warning';
         const buttonText = isDisabled ? '启用' : '禁用';
         const buttonIcon = isDisabled ? 'bi-play-fill' : 'bi-pause-fill';
+        
+        // Generate a unique ID for this mod item
+        const modId = this.generateModId(mod.fileName);
         
         return `
             <div class="mod-item ${isValid ? '' : 'border-warning'} ${isDisabled ? 'disabled' : ''}">
@@ -107,13 +110,20 @@ const modsManager = {
                             </span>
                         </div>
                         <div class="mod-item-actions">
-                            <button class="btn ${buttonClass} btn-sm" onclick="modsManager.toggleMod('${this.escapeHtml(mod.fileName)}')">
+                            <button class="btn btn-outline-secondary btn-sm me-2" onclick="toggleModDetails('${modId}')">
+                                <i class="bi bi-chevron-down" id="toggle-icon-${modId}"></i>
+                            </button>
+                            <button class="btn ${buttonClass} btn-sm me-2" onclick="modsManager.toggleMod('${this.escapeHtml(mod.fileName)}')">
                                 <i class="bi ${buttonIcon}"></i>
                                 ${buttonText}
                             </button>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDeleteMod('${this.escapeHtml(mod.fileName)}')">
+                                <i class="bi bi-trash-fill"></i>
+                                删除
+                            </button>
                         </div>
                     </div>
-                    <div class="mod-item-body">
+                    <div class="mod-item-body" id="mod-details-${modId}" style="display: none;">
                         ${mod.version ? `<span class="mod-item-info"><strong>版本:</strong> ${this.escapeHtml(mod.version)}</span>` : ''}
                         ${mod.author ? `<span class="mod-item-info"><strong>作者:</strong> ${this.escapeHtml(mod.author)}</span>` : ''}
                         ${mod.uniqueId ? `<span class="mod-item-info"><strong>ID:</strong> <code>${this.escapeHtml(mod.uniqueId)}</code></span>` : ''}
@@ -134,6 +144,11 @@ const modsManager = {
                 </div>
             </div>
         `;
+    },
+    
+    generateModId: function(fileName) {
+        // Generate a unique ID based on the filename
+        return fileName.replace(/[^a-zA-Z0-9]/g, '_');
     },
     
     toggleMod: async function(fileName) {

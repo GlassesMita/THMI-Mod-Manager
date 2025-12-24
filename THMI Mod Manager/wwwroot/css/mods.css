@@ -293,6 +293,31 @@
     font-size: 0.85rem;
 }
 
+/* 折叠按钮样式 */
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* 删除按钮样式 */
+.btn-danger {
+    color: #fff;
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    color: #fff;
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .mod-item-header {
@@ -308,6 +333,10 @@
     .mod-item-footer {
         flex-direction: column;
         align-items: flex-start;
+    }
+    
+    .mod-item-actions button {
+        margin-bottom: 0.25rem;
     }
 }
 
