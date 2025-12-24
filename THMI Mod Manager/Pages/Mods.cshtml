@@ -14,7 +14,7 @@
         <div class="mods-actions">
             <button id="refreshModsButton" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-clockwise"></i>
-                <span>@AppConfig.GetLocalized("Mods:Refresh", "刷新")</span>
+                <span>@AppConfig.GetLocalized("Mods:RefreshButton", "刷新")</span>
             </button>
         </div>
     </div>
@@ -70,7 +70,8 @@
         
         // 删除确认函数
         function confirmDeleteMod(fileName) {
-            if (confirm(`确定要删除 mod "${fileName}" 吗？此操作无法撤销。`)) {
+            const confirmMessage = '@Html.Raw(AppConfig.GetLocalized("Mods:DeleteConfirm", "Are you sure you want to delete the mod"))'.replace("{0}", fileName);
+            if (confirm(confirmMessage)) {
                 deleteMod(fileName);
             }
         }
@@ -92,11 +93,13 @@
                     // 重新加载mod列表
                     modsManager.loadMods();
                 } else {
-                    alert('删除失败: ' + data.message);
+                    const errorMessage = '@Html.Raw(AppConfig.GetLocalized("Mods:DeleteFailed", "Failed to delete Mod"))' + ': ' + data.message;
+                    alert(errorMessage);
                 }
             } catch (error) {
                 console.error('删除Mod时出错:', error);
-                alert('删除Mod时出错: ' + error.message);
+                const errorMessage = '@Html.Raw(AppConfig.GetLocalized("Mods:DeleteError", "Error deleting Mod"))'.replace("{0}", error.message);
+                alert(errorMessage);
             }
         }
     </script>

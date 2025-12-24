@@ -247,6 +247,28 @@
     font-size: 1.25rem;
     font-weight: 600;
     color: #212529;
+    margin: 0;
+    position: relative;
+}
+
+.mod-title-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.mod-version-badge {
+    position: absolute;
+    top: 0;
+    right: -10px;
+    background-color: #6c757d;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    transform: translate(100%, -30%);
+    z-index: 1;
+    white-space: nowrap;
 }
 
 .mod-item-actions {

@@ -10,11 +10,13 @@ namespace THMI_Mod_Manager.Controllers
     {
         private readonly ILogger<ModsController> _logger;
         private readonly ModService _modService;
+        private readonly AppConfigManager _appConfig;
 
-        public ModsController(ILogger<ModsController> logger, ModService modService)
+        public ModsController(ILogger<ModsController> logger, ModService modService, AppConfigManager appConfig)
         {
             _logger = logger;
             _modService = modService;
+            _appConfig = appConfig;
         }
 
         [HttpGet]
@@ -129,10 +131,50 @@ namespace THMI_Mod_Manager.Controllers
                 return StatusCode(500, new { success = false, message = $"Failed to toggle mod: {ex.Message}" });
             }
         }
+        
+        [HttpGet("game-status")]
+        public IActionResult GetGameStatus()
+        {
+            try
+            {
+                // Call the launcher controller's method to check game status
+                var launcherController = new LauncherController(_logger as ILogger<LauncherController>, _appConfig);
+                var gameStatus = launcherController.GetStatus();
+                return gameStatus;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting game status");
+                return StatusCode(500, new { success = false, message = $"Failed to get game status: {ex.Message}" });
+            }
+        }
+        
+        [HttpGet("localized-strings")]
+        public IActionResult GetLocalizedStrings()
+        {
+            try
+            {
+                var localizedStrings = new
+                {
+                    gameRunningWarning = _appConfig.GetLocalized("Mods:GameRunningWarning", "游戏正在运行，无法修改Mod状态"),
+                    gameRunningTooltip = _appConfig.GetLocalized("Mods:GameRunningTooltip", "游戏运行时无法执行此操作"),
+                    enableButton = _appConfig.GetLocalized("Mods:EnableButton", "启用"),
+                    disableButton = _appConfig.GetLocalized("Mods:DisableButton", "禁用"),
+                    deleteButton = _appConfig.GetLocalized("Mods:DeleteButton", "删除")
+                };
+                
+                return Ok(localizedStrings);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting localized strings");
+                return StatusCode(500, new { success = false, message = $"Failed to get localized strings: {ex.Message}" });
+            }
+        }
     }
 
     public class ToggleModRequest
     {
-        public string FileName { get; set; }
+        public string FileName { get; set; } = string.Empty;
     }
 }
