@@ -9,43 +9,37 @@
 <input type="hidden" id="themeColorHidden" value="@themeColor" />
 
 <div class="mods-container">
-    <h1 class="mods-title">@AppConfig.GetLocalized("Mods:Header", "Mod 管理")</h1>
+    <div class="mods-header">
+        <h1 class="mods-title">@AppConfig.GetLocalized("Mods:Header", "Mod 管理")</h1>
+        <div class="mods-actions">
+            <button id="refreshModsButton" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span>@AppConfig.GetLocalized("Mods:Refresh", "刷新")</span>
+            </button>
+        </div>
+    </div>
     
     <div class="mods-content">
-        <div class="install-section">
-            <button id="installModButton" class="btn btn-primary">@AppConfig.GetLocalized("Mods:Install", "安装 Mod")</button>
-        </div>
-        
-        <div class="coming-soon-card">
-            <div class="card-icon">🎮</div>
-            <h2>@AppConfig.GetLocalized("Mods:ComingSoon", "即将到来")</h2>
-            <p>@AppConfig.GetLocalized("Mods:ComingSoonDesc", "Mod 管理功能正在开发中，敬请期待！")</p>
-            <div class="feature-list">
-                <div class="feature-item">
-                    <span class="feature-icon">✓</span>
-                    <span>@AppConfig.GetLocalized("Mods:Feature1", "一键安装/卸载 Mod")</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">✓</span>
-                    <span>@AppConfig.GetLocalized("Mods:Feature2", "Mod 版本管理")</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">✓</span>
-                    <span>@AppConfig.GetLocalized("Mods:Feature3", "依赖关系检查")</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">✓</span>
-                    <span>@AppConfig.GetLocalized("Mods:Feature4", "自动更新功能")</span>
+        <div id="modsList" class="mods-list">
+            <div class="text-center py-5">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">@AppConfig.GetLocalized("Mods:Loading", "加载中...")</span>
                 </div>
             </div>
         </div>
         
-        <div class="placeholder-section">
-            <h3>@AppConfig.GetLocalized("Mods:PlaceholderTitle", "当前状态")</h3>
-            <p>@AppConfig.GetLocalized("Mods:PlaceholderDesc", "由于生产环境尚未提供实际可用的 Mod，此页面暂时作为占位符。")</p>
-            <div class="status-indicator">
-                <span class="status-dot"></span>
-                <span>@AppConfig.GetLocalized("Mods:Status", "功能开发中")</span>
+        <div id="modsEmpty" class="mods-empty" style="display: none;">
+            <div class="empty-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <h2>@AppConfig.GetLocalized("Mods:NoMods", "暂无 Mod")</h2>
+            <p>@AppConfig.GetLocalized("Mods:NoModsDesc", "BepInEx/plugins 目录中没有找到任何 Mod 文件。")</p>
+        </div>
+        
+        <div id="modsError" class="mods-error" style="display: none;">
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span id="modsErrorMessage">@AppConfig.GetLocalized("Mods:LoadError", "加载 Mod 时发生错误")</span>
             </div>
         </div>
     </div>

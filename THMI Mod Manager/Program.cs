@@ -34,6 +34,9 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.AppConfigManager>(provid
 // Register LocalizationManager
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.LocalizationManager>();
 
+// Register ModService
+builder.Services.AddSingleton<THMI_Mod_Manager.Services.ModService>();
+
 // Register SystemInfoLogger
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.SystemInfoLogger>(provider => 
 {

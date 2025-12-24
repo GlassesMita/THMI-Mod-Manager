@@ -45,6 +45,24 @@ namespace THMI_Mod_Manager.Controllers
 
                 if (launchMode == "steam_launch")
                 {
+                    if (!IsSteamRunning())
+                    {
+                        _logger.LogInformation("Steam is not running, will attempt to start Steam and then launch the game");
+                        bool steamStarted = await StartSteamAsync();
+                        if (!steamStarted)
+                        {
+                            _logger.LogWarning("Failed to start Steam, but will attempt to launch game anyway");
+                        }
+                        else
+                        {
+                            await Task.Delay(3000);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Steam is already running");
+                    }
+
                     // Launch game using Steam official protocol
                     var steamUrl = $"steam://rungameid/{STEAM_APP_ID}";
                     _logger.LogInformation($"[Compliance Notice] Initiating Steam official protocol: {steamUrl}, user must ensure they have valid authorization for this game");
@@ -201,6 +219,13 @@ namespace THMI_Mod_Manager.Controllers
             return Ok(new { isRunning });
         }
 
+        [HttpGet("steam-status")]
+        public IActionResult GetSteamStatus()
+        {
+            bool isRunning = IsSteamRunning();
+            return Ok(new { isRunning });
+        }
+
         private bool IsProcessRunning()
         {
             try
@@ -220,11 +245,124 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
+        private bool IsSteamRunning()
+        {
+            try
+            {
+                var steamProcesses = Process.GetProcessesByName("steam");
+                
+                if (steamProcesses.Length == 0)
+                {
+                    return false;
+                }
+
+                var steamExecutable = FindSteamExecutable();
+                if (string.IsNullOrEmpty(steamExecutable))
+                {
+                    if (System.Diagnostics.Debugger.IsAttached)
+                    {
+                        _logger.LogDebug("Steam executable not found, using basic process detection");
+                    }
+                    return steamProcesses.Length > 0;
+                }
+
+                foreach (var process in steamProcesses)
+                {
+                    try
+                    {
+                        var mainModule = process.MainModule;
+                        if (mainModule != null && !string.IsNullOrEmpty(mainModule.FileName))
+                        {
+                            var fileName = Path.GetFileName(mainModule.FileName);
+                            var directory = Path.GetDirectoryName(mainModule.FileName);
+                            
+                            if (fileName.Equals("steam.exe", StringComparison.OrdinalIgnoreCase) &&
+                                directory != null &&
+                                directory.Contains("Steam", StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                if (System.IO.File.Exists(steamExecutable))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while checking Steam process status");
+                return false;
+            }
+        }
+
+        private async Task<bool> StartSteamAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Attempting to start Steam...");
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = "powershell.exe",
+                        Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"& \\\"$((gp 'HKLM:\\SOFTWARE\\WOW6432Node\\Valve\\Steam').InstallPath)\\steam.exe\\\"\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    };
+
+                    var process = Process.Start(psi);
+                    if (process != null)
+                    {
+                        _logger.LogInformation($"Steam launch process started with PID: {process.Id}");
+
+                        await Task.Delay(5000);
+
+                        if (!process.HasExited)
+                        {
+                            _logger.LogInformation("Steam appears to be starting successfully");
+                            return true;
+                        }
+                        else
+                        {
+                            var error = await process.StandardError.ReadToEndAsync();
+                            _logger.LogError($"Steam launch failed. Exit code: {process.ExitCode}, Error: {error}");
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogError("Failed to start Steam process");
+                        return false;
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Steam auto-start is only supported on Windows");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while starting Steam");
+                return false;
+            }
+        }
+
         private string? FindSteamExecutable()
         {
             try
             {
-                // Common Steam installation paths
                 var steamPaths = new[]
                 {
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Steam", STEAM_EXE_NAME),
@@ -237,12 +375,10 @@ namespace THMI_Mod_Manager.Controllers
                 {
                     if (System.IO.File.Exists(path))
                     {
-                        _logger.LogInformation($"Found Steam executable: {path}");
                         return path;
                     }
                 }
 
-                // If file does not exist, try finding through process
                 var steamProcesses = Process.GetProcessesByName("steam");
                 if (steamProcesses.Length > 0)
                 {
@@ -251,17 +387,18 @@ namespace THMI_Mod_Manager.Controllers
                         var steamPath = steamProcesses[0].MainModule?.FileName;
                         if (!string.IsNullOrEmpty(steamPath))
                         {
-                            _logger.LogInformation($"Found Steam executable through process: {steamPath}");
                             return steamPath;
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning($"Unable to get Steam process path: {ex.Message}");
+                        if (System.Diagnostics.Debugger.IsAttached)
+                        {
+                            _logger.LogDebug($"Unable to get Steam process path: {ex.Message}");
+                        }
                     }
                 }
 
-                _logger.LogWarning("Steam executable not found");
                 return null;
             }
             catch (Exception ex)

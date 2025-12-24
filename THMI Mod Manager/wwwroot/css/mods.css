@@ -192,6 +192,125 @@
     }
 }
 
+/* Mod 列表样式 */
+.mod-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.mod-item {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.mod-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.mod-item.border-warning {
+    border-color: #ffc107;
+    background-color: #fffdf5;
+}
+
+.mod-item.disabled {
+    opacity: 0.7;
+    background-color: #f8f9fa;
+}
+
+.mod-item-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.mod-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mod-item-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.mod-item-title h5 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.mod-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mod-item-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-top: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.mod-item-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.mod-item-info code {
+    background-color: #e9ecef;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+}
+
+.mod-item-description {
+    width: 100%;
+    margin-top: 0.5rem;
+    line-height: 1.6;
+}
+
+.mod-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .mod-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .mod-item-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .mod-item-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .mods-container {

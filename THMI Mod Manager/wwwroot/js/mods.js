@@ -1,62 +1,195 @@
-// 动态设置主题色变量
-function initThemeColor() {
-    const themeColorElement = document.getElementById('themeColorHidden');
-    if (themeColorElement) {
-        const themeColor = themeColorElement.value;
-        document.documentElement.style.setProperty('--theme-color', themeColor);
-    }
-}
-
-// 初始化Mods页面功能
-function initModsPage() {
-    initThemeColor();
+const modsManager = {
+    apiEndpoint: '/api/mods',
+    modsList: [],
     
-    // 获取安装按钮
-    const installButton = document.getElementById('installModButton');
+    init: function() {
+        this.loadMods();
+        this.bindEvents();
+    },
     
-    // 添加点击事件处理
-    if (installButton) {
-        installButton.addEventListener('click', function() {
-            console.log('Install button clicked, checking for file browser...');
-            console.log('window.fileBrowser:', window.fileBrowser);
-            console.log('typeof window.fileBrowser:', typeof window.fileBrowser);
+    bindEvents: function() {
+        const refreshButton = document.getElementById('refreshModsButton');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', () => {
+                this.loadMods();
+            });
+        }
+    },
+    
+    loadMods: async function() {
+        const modsListElement = document.getElementById('modsList');
+        const modsEmptyElement = document.getElementById('modsEmpty');
+        const modsErrorElement = document.getElementById('modsError');
+        
+        if (!modsListElement) return;
+        
+        modsListElement.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+            </div>
+        `;
+        
+        modsEmptyElement.style.display = 'none';
+        modsErrorElement.style.display = 'none';
+        
+        try {
+            const response = await fetch(this.apiEndpoint);
             
-            // 确保window.fileBrowser对象存在
-            if (typeof window.fileBrowser !== 'undefined' && window.fileBrowser !== null) {
-                console.log('File browser is available, configuring...');
-                window.fileBrowser.onFileSelected = function(filePath) {
-                    console.log('Selected mod file:', filePath);
-                    
-                    // 这里可以添加实际的Mod安装逻辑
-                    alert('Selected file: ' + filePath);
-                    
-                    // 重置回调，避免内存泄漏
-                    window.fileBrowser.onFileSelected = null;
-                };
-                
-                // 打开文件浏览器，设置标题和过滤器
-                window.fileBrowser.open('file', {
-                    title: 'Select Mod File',
-                    fileFilter: 'custom', // 使用自定义过滤器
-                    extensions: ['.zip', '.izakaya'], // 支持Mod文件格式
-                    filterOptions: [
-                        { value: 'custom', label: 'Mod Files' },
-                        { value: 'zip', label: 'Zip Files' },
-                        { value: 'izakaya', label: 'Izakaya Files' }
-                    ]
-                });
-                console.log('File browser opened');
-            } else {
-                console.error('File browser is not available');
-                alert('File browser is not available. Please refresh the page and try again.');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.modsList = data.mods || [];
+                this.renderMods();
+            } else {
+                throw new Error(data.message || '加载失败');
+            }
+        } catch (error) {
+            console.error('加载Mod失败:', error);
+            modsListElement.innerHTML = '';
+            modsErrorElement.style.display = 'block';
+            
+            const errorMessageElement = document.getElementById('modsErrorMessage');
+            if (errorMessageElement) {
+                errorMessageElement.textContent = `加载Mod时发生错误: ${error.message}`;
+            }
+        }
+    },
+    
+    renderMods: function() {
+        const modsListElement = document.getElementById('modsList');
+        const modsEmptyElement = document.getElementById('modsEmpty');
+        
+        if (!modsListElement) return;
+        
+        if (this.modsList.length === 0) {
+            modsListElement.innerHTML = '';
+            modsEmptyElement.style.display = 'block';
+            return;
+        }
+        
+        modsEmptyElement.style.display = 'none';
+        
+        let html = '<div class="mod-list">';
+        
+        this.modsList.forEach(mod => {
+            html += this.renderModItem(mod);
         });
+        
+        html += '</div>';
+        modsListElement.innerHTML = html;
+    },
+    
+    renderModItem: function(mod) {
+        const isValid = mod.isValid;
+        const statusClass = isValid ? 'text-success' : 'text-warning';
+        const statusIcon = isValid ? 'bi-check-circle' : 'bi-exclamation-circle';
+        const statusText = isValid ? '已加载' : '加载失败';
+        const isDisabled = mod.fileName.endsWith('.disabled');
+        const buttonClass = isDisabled ? 'btn-success' : 'btn-warning';
+        const buttonText = isDisabled ? '启用' : '禁用';
+        const buttonIcon = isDisabled ? 'bi-play-fill' : 'bi-pause-fill';
+        
+        return `
+            <div class="mod-item ${isValid ? '' : 'border-warning'} ${isDisabled ? 'disabled' : ''}">
+                <div class="mod-item-main">
+                    <div class="mod-item-header">
+                        <div class="mod-item-title">
+                            <h5 class="mb-0">${this.escapeHtml(mod.name || mod.fileName)}</h5>
+                            <span class="badge ${isValid ? 'bg-success' : 'bg-warning'}">
+                                <i class="bi ${statusIcon}"></i>
+                                ${statusText}
+                            </span>
+                        </div>
+                        <div class="mod-item-actions">
+                            <button class="btn ${buttonClass} btn-sm" onclick="modsManager.toggleMod('${this.escapeHtml(mod.fileName)}')">
+                                <i class="bi ${buttonIcon}"></i>
+                                ${buttonText}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mod-item-body">
+                        ${mod.version ? `<span class="mod-item-info"><strong>版本:</strong> ${this.escapeHtml(mod.version)}</span>` : ''}
+                        ${mod.author ? `<span class="mod-item-info"><strong>作者:</strong> ${this.escapeHtml(mod.author)}</span>` : ''}
+                        ${mod.uniqueId ? `<span class="mod-item-info"><strong>ID:</strong> <code>${this.escapeHtml(mod.uniqueId)}</code></span>` : ''}
+                        ${mod.description ? `<p class="mod-item-description text-muted small mb-0">${this.escapeHtml(mod.description)}</p>` : ''}
+                    </div>
+                    <div class="mod-item-footer">
+                        <span class="small text-muted">
+                            <i class="bi bi-file-earmark-code"></i>
+                            ${this.escapeHtml(mod.fileName)}
+                        </span>
+                        ${!isValid && mod.errorMessage ? `
+                            <span class="text-warning small">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                ${this.escapeHtml(mod.errorMessage)}
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+    
+    toggleMod: async function(fileName) {
+        try {
+            const response = await fetch(`${this.apiEndpoint}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ fileName: fileName })
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server error:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                await this.loadMods();
+            } else {
+                alert('操作失败: ' + data.message);
+            }
+        } catch (error) {
+            console.error('切换Mod状态时出错:', error);
+            alert('切换Mod状态时出错: ' + error.message);
+        }
+    },
+    
+    formatFileSize: function(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
+    
+    formatDate: function(dateString) {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        } catch (error) {
+            return dateString;
+        }
+    },
+    
+    escapeHtml: function(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
-}
+};
 
-// 页面加载完成后初始化
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initModsPage);
-} else {
-    initModsPage();
-}
+document.addEventListener('DOMContentLoaded', function() {
+    modsManager.init();
+});
