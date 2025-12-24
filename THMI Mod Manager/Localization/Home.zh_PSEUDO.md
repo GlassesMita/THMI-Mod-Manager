@@ -1,8 +1,8 @@
-# THMI Mod Manager - ホーム
+# THMI Mod Manager - home
 
 **THMI Mod Manager**欢迎！此东方夜雀食堂専用Mod管理tool。
 
-## 🎮 游戏文件検证
+## 🎮 游戏文件验证
 
 Mod Manager正确动作、游戏file完全确保必要。system以下文件自动check：
 

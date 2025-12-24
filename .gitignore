@@ -360,3 +360,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# BepInEx Plugin folder
+BepInEx/plugins/*.dll

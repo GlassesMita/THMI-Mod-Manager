@@ -124,9 +124,11 @@ const modsManager = {
                         </div>
                     </div>
                     <div class="mod-item-body" id="mod-details-${modId}" style="display: none;">
+                        ${mod.modLink ? `<span class="mod-item-info"><strong>Link:</strong> <a href="${this.escapeHtml(mod.modLink)}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(mod.modLink)}</a></span><br />` : ''}
                         ${mod.author ? `<span class="mod-item-info"><strong>${this.localizedStrings.authorLabel || '作者'}:</strong> ${this.escapeHtml(mod.author)}</span>` : ''}
+                        <br />
                         ${mod.uniqueId ? `<span class="mod-item-info"><strong>ID:</strong> <code>${this.escapeHtml(mod.uniqueId)}</code></span>` : ''}
-                        ${mod.description ? `<p class="mod-item-description text-muted small mb-0">${this.escapeHtml(mod.description)}</p>` : ''}
+                        ${mod.description ? `<p class="mod-item-description text-muted small mb-0"><strong>${this.localizedStrings.descriptionLabel || 'Mod Desc'}:</strong><br /> ${this.escapeHtml(mod.description)}</p>` : ''}
                     </div>
                     <div class="mod-item-footer">
                         <span class="small text-muted">
@@ -134,7 +136,7 @@ const modsManager = {
                             ${this.escapeHtml(mod.fileName)}
                         </span>
                         <div class="mod-footer-right">
-                            ${mod.version ? `<span class="mod-version-footer">${this.escapeHtml(mod.version)}</span>` : ''}
+                            ${mod.version ? `<span class="mod-version-footer">${this.escapeHtml(mod.version)}${mod.versionCode ? ` (${mod.versionCode})` : ''}</span>` : ''}
                             ${!isValid && mod.errorMessage ? `
                                 <span class="text-warning small">
                                     <i class="bi bi-exclamation-triangle-fill"></i>

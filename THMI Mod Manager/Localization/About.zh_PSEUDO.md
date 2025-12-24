@@ -4,7 +4,7 @@ THMI Mod Manager东方Mystia居酒屋Mods管理为application。
 
 ## 机能
 
-- **Mods管理**：东方Mystia居酒屋Mods簡単install、update、uninstall
+- **Mods管理**：东方Mystia居酒屋Mods简单install、update、uninstall
 - **多言语対応**：English、日本语、中国语等多言语利用可能
 - **使い易interface**：使い易考虑simple且直感interface
 - **Steam连携**：Steam seamless连携简单游戏管理

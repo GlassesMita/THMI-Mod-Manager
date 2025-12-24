@@ -93,9 +93,11 @@ namespace THMI_Mod_Manager.Services
                 {
                     var modNameField = modInfoType.GetField("ModName", BindingFlags.Public | BindingFlags.Static);
                     var modVersionField = modInfoType.GetField("ModVersion", BindingFlags.Public | BindingFlags.Static);
+                    var modVersionCodeField = modInfoType.GetField("ModVersionCode", BindingFlags.Public | BindingFlags.Static);
                     var modAuthorField = modInfoType.GetField("ModAuthor", BindingFlags.Public | BindingFlags.Static);
                     var modUniqueIdField = modInfoType.GetField("ModUniqueId", BindingFlags.Public | BindingFlags.Static);
                     var modDescriptionField = modInfoType.GetField("ModDescription", BindingFlags.Public | BindingFlags.Static);
+                    var modLinkField = modInfoType.GetField("ModLink", BindingFlags.Public | BindingFlags.Static);
 
                     if (modNameField != null)
                     {
@@ -105,6 +107,15 @@ namespace THMI_Mod_Manager.Services
                     if (modVersionField != null)
                     {
                         modInfo.Version = modVersionField.GetValue(null)?.ToString() ?? string.Empty;
+                    }
+
+                    if (modVersionCodeField != null)
+                    {
+                        var versionCodeValue = modVersionCodeField.GetValue(null);
+                        if (versionCodeValue is uint code)
+                        {
+                            modInfo.VersionCode = code;
+                        }
                     }
 
                     if (modAuthorField != null)
@@ -120,6 +131,15 @@ namespace THMI_Mod_Manager.Services
                     if (modDescriptionField != null)
                     {
                         modInfo.Description = modDescriptionField.GetValue(null)?.ToString() ?? string.Empty;
+                    }
+
+                    if (modLinkField != null)
+                    {
+                        var linkValue = modLinkField.GetValue(null)?.ToString();
+                        if (!string.IsNullOrWhiteSpace(linkValue))
+                        {
+                            modInfo.ModLink = linkValue;
+                        }
                     }
 
                     modInfo.IsValid = true;

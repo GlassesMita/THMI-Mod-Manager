@@ -160,7 +160,9 @@ namespace THMI_Mod_Manager.Controllers
                     gameRunningTooltip = _appConfig.GetLocalized("Mods:GameRunningTooltip", "游戏运行时无法执行此操作"),
                     enableButton = _appConfig.GetLocalized("Mods:EnableButton", "启用"),
                     disableButton = _appConfig.GetLocalized("Mods:DisableButton", "禁用"),
-                    deleteButton = _appConfig.GetLocalized("Mods:DeleteButton", "删除")
+                    deleteButton = _appConfig.GetLocalized("Mods:DeleteButton", "删除"),
+                    authorLabel = _appConfig.GetLocalized("AuthorLabel", "作者"),
+                    descriptionLabel = _appConfig.GetLocalized("DescriptionLabel", "Mod Desc")
                 };
                 
                 return Ok(localizedStrings);

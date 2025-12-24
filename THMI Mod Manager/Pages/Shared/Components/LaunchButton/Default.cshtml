@@ -11,6 +11,10 @@
 <script>
     // 使用函数作用域避免全局变量冲突
     (function() {
+        const localizedStrings = {
+            launchText: '@Html.Raw(Model.LaunchText)',
+            stopText: '@Html.Raw(Model.StopText)'
+        };
         let launchButtonComponentCurrentIsRunning = @(Model.IsProcessRunning.ToString().ToLower());
         
         // 将状态检查函数暴露到全局作用域
@@ -79,11 +83,11 @@
         if (isRunning) {
             button.className = 'btn btn-danger';
             buttonIcon.className = 'bi bi-stop-fill';
-            buttonText.textContent = 'Stop';
+            buttonText.textContent = localizedStrings.stopText;
         } else {
             button.className = 'btn btn-success';
             buttonIcon.className = 'bi bi-play-fill';
-            buttonText.textContent = 'Launch';
+            buttonText.textContent = localizedStrings.launchText;
         }
     }
     

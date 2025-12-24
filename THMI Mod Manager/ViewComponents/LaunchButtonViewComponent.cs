@@ -24,7 +24,9 @@ namespace THMI_Mod_Manager.ViewComponents
                 SteamAppId = "1584090",
                 ProcessName = "Touhou Mystia Izakaya",
                 ConfirmStopTitle = _appConfig.GetLocalized("Buttons:ConfirmStopTitle", "Confirm Stop"),
-                ConfirmStopMessage = _appConfig.GetLocalized("Buttons:ConfirmStopMessage", "Forcefully stopping the game may cause unsaved progress to be lost.\n\nAre you sure you want to stop the game?")
+                ConfirmStopMessage = _appConfig.GetLocalized("Buttons:ConfirmStopMessage", "Forcefully stopping the game may cause unsaved progress to be lost.\n\nAre you sure you want to stop the game?"),
+                LaunchText = _appConfig.GetLocalized("Buttons:Launch", "Launch"),
+                StopText = _appConfig.GetLocalized("Buttons:Stop", "Stop")
             };
 
             // 设置按钮状态
@@ -69,5 +71,7 @@ namespace THMI_Mod_Manager.ViewComponents
         public string ProcessName { get; set; } = "Touhou Mystia Izakaya";
         public string ConfirmStopTitle { get; set; } = "Confirm Stop";
         public string ConfirmStopMessage { get; set; } = "Forcefully stopping the game may cause unsaved progress to be lost.\n\nAre you sure you want to stop the game?";
+        public string LaunchText { get; set; } = "Launch";
+        public string StopText { get; set; } = "Stop";
     }
 }
