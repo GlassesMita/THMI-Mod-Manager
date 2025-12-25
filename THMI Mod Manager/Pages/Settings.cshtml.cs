@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Diagnostics;
 using THMI_Mod_Manager.Services;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace THMI_Mod_Manager.Pages
 {
@@ -37,6 +38,9 @@ namespace THMI_Mod_Manager.Pages
         // 游戏启动模式设置属性
         public string LaunchMode { get; set; } = "steam_launch"; // steam_launch 或 external_program
         public string LauncherPath { get; set; } = ""; // 用户指定外部程序路径
+        
+        // 修改应用标题设置属性
+        public bool ModifyTitle { get; set; } = true; // 是否修改应用标题
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -87,7 +91,10 @@ namespace THMI_Mod_Manager.Pages
                 
                 var launcherPathValue = _appConfig.Get("[Game]LauncherPath", "");
                 LauncherPath = launcherPathValue ?? "";
-                Logger.LogInfo($"Loaded game launch mode settings: LaunchMode: {LaunchMode}, LauncherPath: {LauncherPath}");
+                
+                var modifyTitleValue = _appConfig.Get("[Game]ModifyTitle", "true");
+                ModifyTitle = modifyTitleValue?.ToLower() != "false";
+                Logger.LogInfo($"Loaded game launch mode settings: LaunchMode: {LaunchMode}, LauncherPath: {LauncherPath}, ModifyTitle: {ModifyTitle}");
             }
             catch (Exception ex)
             {
@@ -96,9 +103,9 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] bool useCustomCursor, [FromForm] string cursorType, [FromForm] string themeColor, [FromForm] string launchMode, [FromForm] string launcherPath, [FromForm] string modsPath, [FromForm] string gamePath)
+        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] bool useCustomCursor, [FromForm] string cursorType, [FromForm] string themeColor, [FromForm] string launchMode, [FromForm] string launcherPath, [FromForm] string modsPath, [FromForm] string gamePath, [FromForm] bool modifyTitle)
         {
-            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}");
+            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}, ModifyTitle: {modifyTitle}");
             
             
             if (string.IsNullOrEmpty(language))
@@ -145,6 +152,10 @@ namespace THMI_Mod_Manager.Pages
                 // Save user-specified external program path
                 _appConfig.Set("[Game]LauncherPath", launcherPath);
                 Logger.LogInfo($"User-specified external program path saved: {launcherPath}");
+                
+                // Save modify title setting
+                _appConfig.Set("[Game]ModifyTitle", modifyTitle.ToString());
+                Logger.LogInfo($"Modify title setting saved: {modifyTitle}");
 
                 // Save custom cursor setting
                 _appConfig.Set("[Cursor]UseCustomCursor", useCustomCursor.ToString());
@@ -168,15 +179,15 @@ namespace THMI_Mod_Manager.Pages
                 // Optionally reload configuration
                 _appConfig.Reload();
                 Logger.LogInfo("Configuration reloaded successfully");
+                
+                // Return success response for AJAX request
+                return new JsonResult(new { success = true, message = "Settings saved successfully!" });
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Error saving settings: {ex.Message}");
-                throw;
+                return new JsonResult(new { success = false, message = $"Error saving settings: {ex.Message}" });
             }
-
-            // Redirect to GET to show updated selection
-            return RedirectToPage();
         }
 
         public IActionResult OnPostSaveCursorSettings([FromForm] string cursorType)

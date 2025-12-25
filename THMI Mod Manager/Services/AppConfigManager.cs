@@ -394,7 +394,7 @@ namespace THMI_Mod_Manager.Services
             try
             {
                 // Convert to standard format (e.g., en-US)
-                var cultureName = language.Replace('_', '-');
+                var cultureName = language?.Replace('_', '-') ?? string.Empty;
                 
                 // First try with the full culture name (e.g., "en-US")
                 if (!string.IsNullOrEmpty(cultureName) && _data.TryGetValue(cultureName, out var dict) && dict != null && !string.IsNullOrEmpty(key) && dict.TryGetValue(key, out var val))
@@ -460,11 +460,11 @@ namespace THMI_Mod_Manager.Services
         
         // Try to get localized value with multiple fallback strategies
         // 1. Try exact match (e.g., zh_CN)
-        if (!string.IsNullOrEmpty(key) && cache.TryGetValue(language, out var dict1) && dict1 != null && dict1.TryGetValue(key, out var value1))
+        if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(language) && cache.TryGetValue(language, out var dict1) && dict1 != null && dict1.TryGetValue(key, out var value1))
             return value1;
             
         // 2. Try normalized format (e.g., zh-CN)
-        var normalizedLanguage = language.Replace('_', '-');
+        var normalizedLanguage = language?.Replace('_', '-') ?? string.Empty;
         if (normalizedLanguage != language && cache.TryGetValue(normalizedLanguage, out var dictNormalized) && dictNormalized != null && !string.IsNullOrEmpty(key) && dictNormalized.TryGetValue(key, out var valueNormalized))
             return valueNormalized;
             

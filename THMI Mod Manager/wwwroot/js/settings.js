@@ -22,15 +22,40 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     form.addEventListener('submit', function(e) {
+        e.preventDefault(); // 阻止默认表单提交
+        
         // 添加保存动画
         const submitButton = form.querySelector('.btn-primary');
+        const saveText = document.getElementById('saveText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        
         submitButton.classList.add('loading');
         submitButton.disabled = true;
+        saveText.style.display = 'none';
+        loadingSpinner.style.display = 'inline-block';
         
-        // 模拟表单提交过程
-        setTimeout(function() {
+        // 创建表单数据
+        const formData = new FormData(form);
+        
+        // 确保包含所有必要的字段
+        const modifyTitle = document.getElementById('modifyTitle').checked;
+        formData.set('modifyTitle', modifyTitle);
+        
+        // 发送到后端保存
+        fetch('/settings?handler=SaveLanguage', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            }
+        })
+        .then(response => response.json ? response.json() : response.text())
+        .then(data => {
+            // 移除加载动画
             submitButton.classList.remove('loading');
             submitButton.disabled = false;
+            saveText.style.display = 'inline';
+            loadingSpinner.style.display = 'none';
             
             // 显示成功提示
             successToast.classList.add('show');
@@ -44,7 +69,24 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
                 successToast.classList.remove('show');
             }, 3000);
-        }, 1000);
+            
+            // 重新加载页面以显示更新后的设置
+            setTimeout(function() {
+                window.location.reload();
+            }, 1500);
+        })
+        .catch(error => {
+            console.error('保存设置失败:', error);
+            
+            // 移除加载动画
+            submitButton.classList.remove('loading');
+            submitButton.disabled = false;
+            saveText.style.display = 'inline';
+            loadingSpinner.style.display = 'none';
+            
+            // 显示错误提示
+            alert('保存设置失败，请重试: ' + error.message);
+        });
     });
     
     // 为光标选项添加交互效果

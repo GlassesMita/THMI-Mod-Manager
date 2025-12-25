@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ModifyTitle Functionality</title>
+</head>
+<body>
+    <h1>Test ModifyTitle Setting</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Test the ModifyTitle functionality
+        async function testModifyTitle() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                // Test 1: Check if the setting exists in AppConfig.Schale
+                resultDiv.innerHTML += '<h3>Testing ModifyTitle Setting:</h3>';
+                
+                // Test 2: Test the JavaScript form submission
+                resultDiv.innerHTML += '<p>Testing form submission...</p>';
+                
+                // Create test form data
+                const formData = new FormData();
+                formData.append('language', 'en_US');
+                formData.append('themeColor', '#c670ff');
+                formData.append('cursorType', 'default');
+                formData.append('launchMode', 'steam_launch');
+                formData.append('launcherPath', '');
+                formData.append('modifyTitle', 'true');
+                
+                // Test the fetch request
+                const response = await fetch('/settings?handler=SaveLanguage', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': 'test-token'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML += '<p style="color: green;">✓ Form submission successful: ' + data.message + '</p>';
+                } else {
+                    resultDiv.innerHTML += '<p style="color: red;">✗ Form submission failed: ' + response.status + '</p>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += '<p style="color: red;">✗ Error: ' + error.message + '</p>';
+            }
+        }
+        
+        // Run the test
+        testModifyTitle();
+    </script>
+</body>
+</html>

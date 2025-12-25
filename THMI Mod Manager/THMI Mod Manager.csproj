@@ -6,10 +6,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>THMI_Mod_Manager</RootNamespace>
 	  <IsPackable>true</IsPackable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.44.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
   </ItemGroup>
 
 </Project>

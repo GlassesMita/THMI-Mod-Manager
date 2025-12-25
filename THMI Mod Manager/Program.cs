@@ -5,6 +5,24 @@ using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Hosting.Server;
 using THMI_Mod_Manager.Middleware;
+using System.Diagnostics;
+using THMI_Mod_Manager;
+
+// 简单的权限检查 - 仅使用管理员权限运行
+Console.WriteLine("正在检查权限状态...");
+
+// 检查是否以管理员身份运行
+bool isAdmin = PermissionHelper.IsRunAsAdmin();
+Console.WriteLine($"管理员权限: {isAdmin}");
+
+if (!isAdmin)
+{
+    Console.WriteLine("需要管理员权限，正在重新启动...");
+    PermissionHelper.RestartAsAdministrator();
+    Environment.Exit(0);
+}
+
+Console.WriteLine("已获得管理员权限，继续启动应用...");
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,14 +1,46 @@
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Collections.Concurrent;
 using THMI_Mod_Manager.Models;
 
 namespace THMI_Mod_Manager.Services
 {
-    public class ModService
+    public class ModServiceOptimized
     {
-        private readonly ILogger<ModService> _logger;
+        private readonly ILogger<ModServiceOptimized> _logger;
         private readonly AppConfigManager _appConfig;
+        
+        // Cache for compiled delegates
+        private static readonly ConcurrentDictionary<string, ModInfoDelegates> _delegateCache = new();
+        
+        // Cache for mod info data to avoid repeated assembly loading
+        private static readonly ConcurrentDictionary<string, CachedModInfo> _modInfoCache = new();
+        
+        // Cache timeout (5 minutes)
+        private static readonly TimeSpan _cacheTimeout = TimeSpan.FromMinutes(5);
 
-        public ModService(ILogger<ModService> logger, AppConfigManager appConfig)
+        // Delegates for fast field access
+        private class ModInfoDelegates
+        {
+            public Func<object, string?>? ModNameGetter { get; set; }
+            public Func<object, string?>? ModVersionGetter { get; set; }
+            public Func<object, uint>? ModVersionCodeGetter { get; set; }
+            public Func<object, string?>? ModAuthorGetter { get; set; }
+            public Func<object, string?>? ModUniqueIdGetter { get; set; }
+            public Func<object, string?>? ModDescriptionGetter { get; set; }
+            public Func<object, string?>? ModLinkGetter { get; set; }
+        }
+
+        // Cached mod info with timestamp
+        private class CachedModInfo
+        {
+            public ModInfo ModInfo { get; set; } = new();
+            public DateTime CacheTime { get; set; }
+            public long FileSize { get; set; }
+            public DateTime LastModified { get; set; }
+        }
+
+        public ModServiceOptimized(ILogger<ModServiceOptimized> logger, AppConfigManager appConfig)
         {
             _logger = logger;
             _appConfig = appConfig;
@@ -38,7 +70,7 @@ namespace THMI_Mod_Manager.Services
 
                 foreach (var dllFile in allFiles)
                 {
-                    var modInfo = ExtractModInfo(dllFile);
+                    var modInfo = ExtractModInfoOptimized(dllFile);
                     mods.Add(modInfo);
                 }
             }
@@ -50,96 +82,67 @@ namespace THMI_Mod_Manager.Services
             return mods;
         }
 
-        public ModInfo ExtractModInfo(string dllPath)
+        public ModInfo ExtractModInfoOptimized(string dllPath)
         {
+            var fileInfo = new FileInfo(dllPath);
+            var fileSize = fileInfo.Length;
+            var lastModified = fileInfo.LastWriteTime;
+
+            // Check cache first
+            var cacheKey = dllPath.ToLowerInvariant();
+            if (_modInfoCache.TryGetValue(cacheKey, out var cachedInfo))
+            {
+                // Check if cache is still valid (file hasn't changed)
+                if (cachedInfo.FileSize == fileSize && cachedInfo.LastModified == lastModified && 
+                    DateTime.UtcNow - cachedInfo.CacheTime < _cacheTimeout)
+                {
+                    _logger.LogInformation($"Using cached mod info for: {dllPath}");
+                    return cachedInfo.ModInfo;
+                }
+                
+                // Cache is invalid, remove it
+                _modInfoCache.TryRemove(cacheKey, out _);
+            }
+
             var modInfo = new ModInfo
             {
                 FilePath = dllPath,
                 FileName = Path.GetFileName(dllPath),
-                FileSize = new FileInfo(dllPath).Length,
-                LastModified = File.GetLastWriteTime(dllPath),
+                FileSize = fileSize,
+                LastModified = lastModified,
                 IsValid = false
             };
 
             try
             {
-                // If the file is a .disabled file, we need to temporarily rename it to load the assembly
-                string tempPath = null;
-                string originalPath = dllPath;
-                
-                if (dllPath.EndsWith(".disabled"))
-                {
-                    // Create a temporary path without the .disabled extension to load the assembly
-                    string enabledPath = dllPath.Substring(0, dllPath.Length - ".disabled".Length);
-                    string tempDir = Path.GetDirectoryName(dllPath) ?? string.Empty;
-                    string tempFileName = Path.GetFileName(enabledPath);
-                    tempPath = Path.Combine(tempDir, tempFileName);
-                }
-
-                // For .disabled files, we'll copy to temp location to read metadata
-                string assemblyPath = dllPath;
-                
-                // For .disabled files, we need to temporarily make a copy to read metadata
-                if (dllPath.EndsWith(".disabled"))
-                {
-                    // For .disabled files, we'll try to load metadata directly from the .disabled file
-                    // .NET can load assemblies with any extension
-                }
-
                 var assembly = Assembly.LoadFrom(dllPath);
                 var modInfoType = assembly.GetType("Meta.ModInfo");
 
                 if (modInfoType != null)
                 {
-                    var modNameField = modInfoType.GetField("ModName", BindingFlags.Public | BindingFlags.Static);
-                    var modVersionField = modInfoType.GetField("ModVersion", BindingFlags.Public | BindingFlags.Static);
-                    var modVersionCodeField = modInfoType.GetField("ModVersionCode", BindingFlags.Public | BindingFlags.Static);
-                    var modAuthorField = modInfoType.GetField("ModAuthor", BindingFlags.Public | BindingFlags.Static);
-                    var modUniqueIdField = modInfoType.GetField("ModUniqueId", BindingFlags.Public | BindingFlags.Static);
-                    var modDescriptionField = modInfoType.GetField("ModDescription", BindingFlags.Public | BindingFlags.Static);
-                    var modLinkField = modInfoType.GetField("ModLink", BindingFlags.Public | BindingFlags.Static);
+                    // Get or create compiled delegates for this type
+                    var delegates = GetOrCreateDelegates(modInfoType);
+                    
+                    // Create instance (null for static fields)
+                    var instance = Activator.CreateInstance(modInfoType, true);
 
-                    if (modNameField != null)
+                    // Use compiled delegates for fast field access
+                    modInfo.Name = delegates.ModNameGetter?.Invoke(instance ?? new object()) ?? string.Empty;
+                    modInfo.Version = delegates.ModVersionGetter?.Invoke(instance ?? new object()) ?? string.Empty;
+                    
+                    if (delegates.ModVersionCodeGetter != null)
                     {
-                        modInfo.Name = modNameField.GetValue(null)?.ToString() ?? string.Empty;
+                        modInfo.VersionCode = delegates.ModVersionCodeGetter.Invoke(instance ?? new object());
                     }
-
-                    if (modVersionField != null)
+                    
+                    modInfo.Author = delegates.ModAuthorGetter?.Invoke(instance ?? new object()) ?? string.Empty;
+                    modInfo.UniqueId = delegates.ModUniqueIdGetter?.Invoke(instance ?? new object()) ?? string.Empty;
+                    modInfo.Description = delegates.ModDescriptionGetter?.Invoke(instance ?? new object()) ?? string.Empty;
+                    
+                    var linkValue = delegates.ModLinkGetter?.Invoke(instance ?? new object());
+                    if (!string.IsNullOrWhiteSpace(linkValue))
                     {
-                        modInfo.Version = modVersionField.GetValue(null)?.ToString() ?? string.Empty;
-                    }
-
-                    if (modVersionCodeField != null)
-                    {
-                        var versionCodeValue = modVersionCodeField.GetValue(null);
-                        if (versionCodeValue is uint code)
-                        {
-                            modInfo.VersionCode = code;
-                        }
-                    }
-
-                    if (modAuthorField != null)
-                    {
-                        modInfo.Author = modAuthorField.GetValue(null)?.ToString() ?? string.Empty;
-                    }
-
-                    if (modUniqueIdField != null)
-                    {
-                        modInfo.UniqueId = modUniqueIdField.GetValue(null)?.ToString() ?? string.Empty;
-                    }
-
-                    if (modDescriptionField != null)
-                    {
-                        modInfo.Description = modDescriptionField.GetValue(null)?.ToString() ?? string.Empty;
-                    }
-
-                    if (modLinkField != null)
-                    {
-                        var linkValue = modLinkField.GetValue(null)?.ToString();
-                        if (!string.IsNullOrWhiteSpace(linkValue))
-                        {
-                            modInfo.ModLink = linkValue;
-                        }
+                        modInfo.ModLink = linkValue;
                     }
 
                     modInfo.IsValid = true;
@@ -153,11 +156,9 @@ namespace THMI_Mod_Manager.Services
             }
             catch (FileLoadException ex)
             {
-                // This might happen with .disabled files due to their extension
                 modInfo.ErrorMessage = $"Error loading DLL: {ex.Message}";
                 _logger.LogWarning($"Could not load assembly from {dllPath}, attempting to extract basic info: {ex.Message}");
                 
-                // Try to extract basic info from the filename
                 var fileName = Path.GetFileNameWithoutExtension(dllPath);
                 if (fileName.EndsWith(".dll"))
                 {
@@ -173,7 +174,101 @@ namespace THMI_Mod_Manager.Services
                 _logger.LogError(ex, $"Error extracting mod info from {dllPath}");
             }
 
+            // Cache the result
+            var newCachedInfo = new CachedModInfo
+            {
+                ModInfo = modInfo,
+                CacheTime = DateTime.UtcNow,
+                FileSize = fileSize,
+                LastModified = lastModified
+            };
+            
+            _modInfoCache.AddOrUpdate(cacheKey, newCachedInfo, (key, old) => newCachedInfo);
+            
             return modInfo;
+        }
+
+        private ModInfoDelegates GetOrCreateDelegates(Type modInfoType)
+        {
+            var typeName = modInfoType.AssemblyQualifiedName ?? modInfoType.FullName ?? modInfoType.Name;
+            
+            return _delegateCache.GetOrAdd(typeName, key =>
+            {
+                _logger.LogInformation($"Creating compiled delegates for type: {typeName}");
+                
+                var delegates = new ModInfoDelegates();
+                
+                // Compile delegates for each field
+                delegates.ModNameGetter = CreateFieldGetter(modInfoType, "ModName");
+                delegates.ModVersionGetter = CreateFieldGetter(modInfoType, "ModVersion");
+                delegates.ModVersionCodeGetter = CreateFieldGetter<uint>(modInfoType, "ModVersionCode");
+                delegates.ModAuthorGetter = CreateFieldGetter(modInfoType, "ModAuthor");
+                delegates.ModUniqueIdGetter = CreateFieldGetter(modInfoType, "ModUniqueId");
+                delegates.ModDescriptionGetter = CreateFieldGetter(modInfoType, "ModDescription");
+                delegates.ModLinkGetter = CreateFieldGetter(modInfoType, "ModLink");
+                
+                return delegates;
+            });
+        }
+
+        private Func<object, string?>? CreateFieldGetter(Type type, string fieldName)
+        {
+            try
+            {
+                var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static);
+                if (field == null) return null;
+
+                // Create parameter expression for the instance (even though it's static, we need it for the delegate signature)
+                var instanceParam = Expression.Parameter(typeof(object), "instance");
+                
+                // Create field access expression
+                var fieldAccess = Expression.Field(null, field); // null for static fields
+                
+                // Convert to string if necessary
+                Expression result = fieldAccess;
+                if (field.FieldType != typeof(string))
+                {
+                    result = Expression.Call(fieldAccess, "ToString", Type.EmptyTypes);
+                }
+                
+                // Create lambda expression
+                var lambda = Expression.Lambda<Func<object, string?>>(result, instanceParam);
+                
+                // Compile to delegate
+                return lambda.Compile();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Could not create getter for field {fieldName} in type {type.Name}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private Func<object, T>? CreateFieldGetter<T>(Type type, string fieldName)
+        {
+            try
+            {
+                var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static);
+                if (field == null) return null;
+
+                var instanceParam = Expression.Parameter(typeof(object), "instance");
+                var fieldAccess = Expression.Field(null, field); // null for static fields
+                
+                // Convert to target type if necessary
+                Expression result = fieldAccess;
+                if (field.FieldType != typeof(T))
+                {
+                    result = Expression.Convert(fieldAccess, typeof(T));
+                }
+                
+                var lambda = Expression.Lambda<Func<object, T>>(result, instanceParam);
+                return lambda.Compile();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Could not create typed getter for field {fieldName} in type {type.Name}: {ex.Message}");
+                return null;
+            }
         }
 
         private string GetPluginsPath()
@@ -220,6 +315,10 @@ namespace THMI_Mod_Manager.Services
             {
                 if (File.Exists(filePath))
                 {
+                    // Remove from cache when deleting
+                    var cacheKey = filePath.ToLowerInvariant();
+                    _modInfoCache.TryRemove(cacheKey, out _);
+                    
                     File.Delete(filePath);
                     _logger.LogInformation($"Successfully deleted mod: {filePath}");
                     return true;
@@ -269,6 +368,11 @@ namespace THMI_Mod_Manager.Services
                 }
 
                 File.Move(fullPath, newFilePath);
+                
+                // Remove from cache when toggling
+                var cacheKey = fullPath.ToLowerInvariant();
+                _modInfoCache.TryRemove(cacheKey, out _);
+                
                 _logger.LogInformation($"Successfully toggled mod: {newFilePath}");
                 return true;
             }

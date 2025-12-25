@@ -103,6 +103,15 @@
         <input type="hidden" id="launchModeHidden" value="@Model.LaunchMode" />
         <input type="hidden" id="localizedProhibitionText" value="@AppConfig.GetLocalized("Settings:ProhibitionText", "Cannot select the Mod Manager's own executable file.")" />
 
+        <!-- 修改应用标题开关 -->
+        <div class="mb-3 form-group-animated">
+            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:ModifyTitleLabel", "Modify Application Title")</label>
+            <div class="checkbox-container">
+                <input type="checkbox" id="modifyTitle" name="modifyTitle" @(Model.ModifyTitle ? "checked" : "") />
+                <label for="modifyTitle" class="checkbox-label">@AppConfig.GetLocalized("Settings:ModifyTitleDescription", "Add 'Modded' prefix to game window title")</label>
+            </div>
+        </div>
+
         <div class="launcher-path-section" id="launcherPathSection">
             <div class="mb-3 form-group-animated">
                 <label for="launcherPath" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:LauncherPathLabel", "External Program Path")</label>
