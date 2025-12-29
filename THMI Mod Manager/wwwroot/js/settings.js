@@ -247,6 +247,101 @@ document.addEventListener('DOMContentLoaded', function() {
             launcherPathSection.style.display = 'block';
         }
     }
+
+    // 更新检查功能
+    const checkNowButton = document.getElementById('checkNowButton');
+    const updateStatus = document.getElementById('updateStatus');
+    const updateResult = document.getElementById('updateResult');
+    const autoCheckUpdates = document.getElementById('autoCheckUpdates');
+
+    if (checkNowButton && updateStatus && updateResult) {
+        checkNowButton.addEventListener('click', function() {
+            performUpdateCheck();
+        });
+    }
+
+    function performUpdateCheck() {
+        if (checkNowButton) checkNowButton.disabled = true;
+        if (updateStatus) updateStatus.style.display = 'block';
+        if (updateResult) updateResult.style.display = 'none';
+
+        fetch('/api/update/check', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (updateStatus) updateStatus.style.display = 'none';
+            if (updateResult) {
+                updateResult.style.display = 'block';
+                
+                if (data.updateAvailable) {
+                    updateResult.innerHTML = `
+                        <div class="alert alert-info">
+                            <h6>${getLocalizedString('Updates:UpdateAvailable', 'Update available: Version {0}').replace('{0}', data.latestVersion)}</h6>
+                            <p>${data.releaseNotes || getLocalizedString('Updates:NoReleaseNotes', 'No release notes available')}</p>
+                            <div class="mt-2">
+                                <a href="${data.downloadUrl}" target="_blank" class="btn btn-primary btn-sm">
+                                    ${getLocalizedString('Updates:DownloadUpdate', 'Download Update')}
+                                </a>
+                                <a href="${data.releaseUrl}" target="_blank" class="btn btn-outline-secondary btn-sm ms-2">
+                                    ${getLocalizedString('Updates:ViewReleaseNotes', 'View Release Notes')}
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Dispatch custom event for global update notification
+                    const event = new CustomEvent('updateCheckCompleted', {
+                        detail: data
+                    });
+                    document.dispatchEvent(event);
+                } else {
+                    updateResult.innerHTML = `
+                        <div class="alert alert-success">
+                            ${getLocalizedString('Updates:NoUpdatesAvailable', 'No updates available. You are using the latest version.')}
+                        </div>
+                    `;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Update check failed:', error);
+            if (updateStatus) updateStatus.style.display = 'none';
+            if (updateResult) {
+                updateResult.style.display = 'block';
+                updateResult.innerHTML = `
+                    <div class="alert alert-danger">
+                        ${getLocalizedString('Updates:UpdateCheckFailed', 'Update check failed')}: ${error.message}
+                    </div>
+                `;
+            }
+        })
+        .finally(() => {
+            if (checkNowButton) checkNowButton.disabled = false;
+        });
+    }
+
+    // 自动检查更新设置变更
+    if (autoCheckUpdates) {
+        autoCheckUpdates.addEventListener('change', function() {
+            // 更新设置将通过表单提交保存
+            console.log('Auto check updates setting changed to:', this.checked);
+        });
+    }
+
+    // 获取本地化字符串的辅助函数
+    function getLocalizedString(key, defaultValue) {
+        // 从页面元素获取本地化字符串
+        const localizedElement = document.querySelector(`[data-localized="${key}"]`);
+        if (localizedElement) {
+            return localizedElement.textContent || localizedElement.value || defaultValue;
+        }
+        return defaultValue;
+    }
 });
 
 // 游戏启动模式选择相关功能 - 全局函数

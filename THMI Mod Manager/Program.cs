@@ -72,6 +72,10 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.SystemInfoLogger>(provid
     return new THMI_Mod_Manager.Services.SystemInfoLogger(logger, appConfigManager, env.ContentRootPath);
 });
 
+// Register UpdateCheckService
+builder.Services.AddHttpClient<THMI_Mod_Manager.Services.UpdateCheckService>();
+builder.Services.AddSingleton<THMI_Mod_Manager.Services.UpdateCheckService>();
+
 // 检查端口是否可用
 bool IsPortAvailable(int port)
 {

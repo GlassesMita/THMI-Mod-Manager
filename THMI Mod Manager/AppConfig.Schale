@@ -19,6 +19,13 @@ Status=
 LauncherPath=
 ModifyTitle=true
 
+[Updates]
+CheckForUpdates=True
+UpdateCheckType=GitHub
+UpdateCheckInterval=24
+AutoDownloadUpdates=False
+UpdateSource=MetaMikuAI/MetaIzakaya
+
 [Dev]
 IsDevBuild=False
 ShowCVEWarning=True

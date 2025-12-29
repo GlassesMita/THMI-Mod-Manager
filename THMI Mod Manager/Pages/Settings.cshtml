@@ -112,6 +112,36 @@
             </div>
         </div>
 
+        <!-- 更新检查部分 -->
+        <div class="mb-3 form-group-animated">
+            <label class="form-label clickable-label">@AppConfig.GetLocalized("Updates:Title", "Updates")</label>
+            <div class="update-section">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="autoCheckUpdates" name="autoCheckUpdates" @(Model.AutoCheckUpdates ? "checked" : "") />
+                    <label for="autoCheckUpdates" class="checkbox-label">@AppConfig.GetLocalized("Updates:AutoCheckUpdates", "Automatically check for updates")</label>
+                </div>
+                <div class="update-info mt-2">
+                    <div class="current-version">
+                        <small class="text-muted">
+                            @string.Format(AppConfig.GetLocalized("Updates:CurrentVersionInfo", "Current version: {0} {1}"), Model.ModName, Model.ModVersion)
+                        </small>
+                    </div>
+                    <div class="update-status mt-2" id="updateStatus" style="display: none;">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">@AppConfig.GetLocalized("Common:Loading", "Loading...")</span>
+                        </div>
+                        <span class="ms-2">@AppConfig.GetLocalized("Updates:CheckForUpdates", "Checking for updates...")</span>
+                    </div>
+                    <div class="update-result mt-2" id="updateResult" style="display: none;">
+                        <!-- Update result will be displayed here -->
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm mt-2" id="checkNowButton">
+                    @AppConfig.GetLocalized("Updates:CheckNowButton", "Check Now")
+                </button>
+            </div>
+        </div>
+
         <div class="launcher-path-section" id="launcherPathSection">
             <div class="mb-3 form-group-animated">
                 <label for="launcherPath" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:LauncherPathLabel", "External Program Path")</label>

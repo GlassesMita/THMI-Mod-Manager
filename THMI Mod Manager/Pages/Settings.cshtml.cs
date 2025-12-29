@@ -41,6 +41,13 @@ namespace THMI_Mod_Manager.Pages
         
         // 修改应用标题设置属性
         public bool ModifyTitle { get; set; } = true; // 是否修改应用标题
+        
+        // 更新检查设置属性
+        public bool AutoCheckUpdates { get; set; } = true; // 是否自动检查更新
+        
+        // Mod信息属性
+        public string ModName { get; set; } = "MetaIzakaya";
+        public string ModVersion { get; set; } = "0.7.0";
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -95,6 +102,23 @@ namespace THMI_Mod_Manager.Pages
                 var modifyTitleValue = _appConfig.Get("[Game]ModifyTitle", "true");
                 ModifyTitle = modifyTitleValue?.ToLower() != "false";
                 Logger.LogInfo($"Loaded game launch mode settings: LaunchMode: {LaunchMode}, LauncherPath: {LauncherPath}, ModifyTitle: {ModifyTitle}");
+                
+                var autoCheckUpdatesValue = _appConfig.Get("[Updates]CheckForUpdates", "true");
+                AutoCheckUpdates = autoCheckUpdatesValue?.ToLower() != "false";
+                Logger.LogInfo($"Loaded update settings: AutoCheckUpdates: {AutoCheckUpdates}");
+                
+                // Load mod information
+                try
+                {
+                    ModName = "MetaIzakaya";
+                    ModVersion = "0.7.0";
+                    Logger.LogInfo($"Loaded mod information: {ModName} v{ModVersion}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"Error loading mod information: {ex.Message}");
+                    // Keep default values
+                }
             }
             catch (Exception ex)
             {
@@ -103,9 +127,9 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage([FromForm] string language, [FromForm] string status, [FromForm] bool useOsuCursor, [FromForm] bool useCustomCursor, [FromForm] string cursorType, [FromForm] string themeColor, [FromForm] string launchMode, [FromForm] string launcherPath, [FromForm] string modsPath, [FromForm] string gamePath, [FromForm] bool modifyTitle)
+        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates)
         {
-            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}, ModifyTitle: {modifyTitle}");
+            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}, ModifyTitle: {modifyTitle}, AutoCheckUpdates: {autoCheckUpdates}");
             
             
             if (string.IsNullOrEmpty(language))
@@ -157,6 +181,10 @@ namespace THMI_Mod_Manager.Pages
                 _appConfig.Set("[Game]ModifyTitle", modifyTitle.ToString());
                 Logger.LogInfo($"Modify title setting saved: {modifyTitle}");
 
+                // Save auto check updates setting
+                _appConfig.Set("[Updates]CheckForUpdates", autoCheckUpdates.ToString());
+                Logger.LogInfo($"Auto check updates setting saved: {autoCheckUpdates}");
+
                 // Save custom cursor setting
                 _appConfig.Set("[Cursor]UseCustomCursor", useCustomCursor.ToString());
                 Logger.LogInfo($"Custom cursor setting saved: {useCustomCursor}");
@@ -190,7 +218,7 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveCursorSettings([FromForm] string cursorType)
+        public IActionResult OnPostSaveCursorSettings(string cursorType)
         {
             Logger.LogInfo($"Saving cursor settings - CursorType: {cursorType}");
             
@@ -220,7 +248,7 @@ namespace THMI_Mod_Manager.Pages
             return new JsonResult(new { success = true, message = "Cursor settings saved successfully!" });
         }
 
-        public IActionResult OnPostSaveDeveloperSettings([FromForm] bool devMode, [FromForm] bool showCVEWarning)
+        public IActionResult OnPostSaveDeveloperSettings(bool devMode, bool showCVEWarning)
         {
             Logger.LogInfo($"Saving developer settings - DevMode: {devMode}, ShowCVEWarning: {showCVEWarning}");
             

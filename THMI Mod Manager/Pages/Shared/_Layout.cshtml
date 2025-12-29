@@ -133,7 +133,11 @@
                         <a class="nav-link text-dark" asp-area="" asp-page="/Mods"><i class="bi bi-box-seam"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Settings"><i class="bi bi-gear"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span></a>
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Settings">
+                            <i class="bi bi-gear"></i> 
+                            <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
+                            <span id="settingsUpdateBadge" class="badge bg-danger ms-1" style="display: none;">!</span>
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-dark" asp-area="" asp-page="/About"><i class="bi bi-info-circle"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
@@ -174,7 +178,11 @@
                         <a class="nav-link text-dark" asp-area="" asp-page="/Mods"><i class="bi bi-box-seam"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Settings"><i class="bi bi-gear"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span></a>
+                        <a class="nav-link text-dark" asp-area="" asp-page="/Settings">
+                            <i class="bi bi-gear"></i> 
+                            <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
+                            <span id="settingsUpdateBadgeOffcanvas" class="badge bg-danger ms-1" style="display: none;">!</span>
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-dark" asp-area="" asp-page="/About"><i class="bi bi-info-circle"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
@@ -202,6 +210,23 @@
 
         <!-- Main content -->
         <div id="mainContent" class="flex-grow-1" style="position:relative; min-height:100vh;">
+            <!-- Update notification banner -->
+            <div id="updateNotificationBanner" class="alert alert-info alert-dismissible fade show" style="display: none; border-radius: 0; margin: 0; position: sticky; top: 0; z-index: 1050;">
+                <div class="container d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-bell-fill me-2"></i>
+                        <span id="updateNotificationText"></span>
+                    </div>
+                    <div>
+                        <a id="updateDownloadLink" href="#" class="btn btn-primary btn-sm me-2" target="_blank">
+                            <i class="bi bi-download me-1"></i>
+                            <span id="updateDownloadText">Download</span>
+                        </a>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+            
             <div class="container py-3" style="padding-bottom:80px;">
                 <main role="main" class="pb-3">
                     @RenderBody()
@@ -213,6 +238,24 @@
                     &copy; @year - THMI Mod Manager - <a asp-area="" asp-page="/Privacy">@AppConfig.GetLocalized("Sidebar:Privacy", "Privacy")</a>
                 </div>
             </footer>
+
+            <!-- Toast notification container -->
+            <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+                <div id="updateToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <i class="bi bi-bell-fill text-primary me-2"></i>
+                        <strong class="me-auto">@AppConfig.GetLocalized("Updates:UpdateNotificationTitle", "Update Available")</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        <span id="updateToastMessage"></span>
+                        <div class="mt-2 pt-2 border-top">
+                            <button type="button" class="btn btn-primary btn-sm" id="updateToastDownload">@AppConfig.GetLocalized("Common:Download", "Download")</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="toast">@AppConfig.GetLocalized("Common:Later", "Later")</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
