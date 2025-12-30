@@ -265,8 +265,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (updateStatus) updateStatus.style.display = 'block';
         if (updateResult) updateResult.style.display = 'none';
 
-        fetch('/api/update/check', {
-            method: 'POST',
+        fetch('/api/update/check-program', {
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (updateResult) {
                 updateResult.style.display = 'block';
                 
-                if (data.updateAvailable) {
+                if (data.success && data.isUpdateAvailable) {
                     updateResult.innerHTML = `
                         <div class="alert alert-info">
                             <h6>${getLocalizedString('Updates:UpdateAvailable', 'Update available: Version {0}').replace('{0}', data.latestVersion)}</h6>
@@ -286,9 +286,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="mt-2">
                                 <a href="${data.downloadUrl}" target="_blank" class="btn btn-primary btn-sm">
                                     ${getLocalizedString('Updates:DownloadUpdate', 'Download Update')}
-                                </a>
-                                <a href="${data.releaseUrl}" target="_blank" class="btn btn-outline-secondary btn-sm ms-2">
-                                    ${getLocalizedString('Updates:ViewReleaseNotes', 'View Release Notes')}
                                 </a>
                             </div>
                         </div>
@@ -299,10 +296,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         detail: data
                     });
                     document.dispatchEvent(event);
-                } else {
+                } else if (data.success && !data.isUpdateAvailable) {
                     updateResult.innerHTML = `
                         <div class="alert alert-success">
                             ${getLocalizedString('Updates:NoUpdatesAvailable', 'No updates available. You are using the latest version.')}
+                        </div>
+                    `;
+                } else if (data.updateCheckingDisabled) {
+                    updateResult.innerHTML = `
+                        <div class="alert alert-warning">
+                            ${data.message || getLocalizedString('Updates:UpdateCheckingDisabled', 'Update checking is disabled')}
+                        </div>
+                    `;
+                } else {
+                    updateResult.innerHTML = `
+                        <div class="alert alert-danger">
+                            ${getLocalizedString('Updates:UpdateCheckFailed', 'Update check failed')}: ${data.error || data.message}
                         </div>
                     `;
                 }

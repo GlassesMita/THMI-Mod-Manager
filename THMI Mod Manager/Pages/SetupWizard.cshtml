@@ -1,0 +1,115 @@
+@page
+@model SetupWizardModel
+@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+@inject THMI_Mod_Manager.Services.LocalizationManager LocalizationManager
+@{
+    ViewData["Title"] = AppConfig.GetLocalized("SetupWizard:Title", "设置向导");
+    Layout = "_SetupWizardLayout";
+    var locales = LocalizationManager.GetAvailableLocales();
+}
+
+<style>
+    .setup-wizard-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+    }
+    .setup-wizard-card {
+        max-width: 500px;
+        width: 100%;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    .wizard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 2rem;
+        text-align: center;
+    }
+    .wizard-body {
+        padding: 2rem;
+    }
+</style>
+
+<div class="setup-wizard-container">
+    <div class="card setup-wizard-card">
+        <div class="wizard-header">
+            <h2>@Model.GetLocalizedForLanguage("SetupWizard:Welcome", Model.SelectedLanguage, "欢迎使用")</h2>
+            <p class="mb-0">@Model.GetLocalizedForLanguage("SetupWizard:Subtitle", Model.SelectedLanguage, "THMI Mod Manager 初始设置")</p>
+        </div>
+        <div class="wizard-body">
+            @if (!string.IsNullOrEmpty(Model.Message))
+            {
+                <div class="alert alert-@Model.MessageType alert-dismissible fade show" role="alert">
+                    @Model.Message
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <form method="post" id="setupWizardForm">
+                <div class="mb-4">
+                    <label for="languageSelect" class="form-label fw-bold">@Model.GetLocalizedForLanguage("SetupWizard:LanguageLabel", Model.SelectedLanguage, "选择语言 / Select Language")</label>
+                    <select id="languageSelect" name="language" class="form-select" onchange="handleLanguageChange()">
+                        @foreach (var loc in locales)
+                        {
+                            var fileName = loc.FileName;
+                            <option value="@fileName" selected="@(fileName == Model.SelectedLanguage ? "selected" : null)">@loc.FriendlyName</option>
+                        }
+                    </select>
+                    <input type="hidden" asp-for="SelectedLanguage" id="SelectedLanguage" />
+                </div>
+
+                <div class="mb-4">
+                    <label for="themeColor" class="form-label fw-bold">@Model.GetLocalizedForLanguage("SetupWizard:ThemeLabel", Model.SelectedLanguage, "选择主题色 / Select Theme Color")</label>
+                    <div class="input-group">
+                        <input type="color" id="themeColor" name="themeColor" class="form-control form-control-color" value="@Model.ThemeColor" title="Choose your theme color" />
+                        <input type="text" id="themeColorText" name="themeColorText" class="form-control" value="@Model.ThemeColor" />
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        @Model.GetLocalizedForLanguage("SetupWizard:CompleteButton", Model.SelectedLanguage, "完成设置 / Complete Setup")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleLanguageChange() {
+        const languageSelect = document.getElementById('languageSelect');
+        const selectedLanguage = languageSelect.value;
+        document.getElementById('SelectedLanguage').value = selectedLanguage;
+        
+        location.href = `?language=${encodeURIComponent(selectedLanguage)}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeColor = document.getElementById('themeColor');
+        const themeColorText = document.getElementById('themeColorText');
+
+        themeColor.addEventListener('input', function() {
+            themeColorText.value = this.value;
+        });
+
+        themeColorText.addEventListener('input', function() {
+            if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+                themeColor.value = this.value;
+            }
+        });
+
+        themeColorText.addEventListener('change', function() {
+            if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+                themeColor.value = this.value;
+            } else {
+                this.value = themeColor.value;
+            }
+        });
+    });
+</script>

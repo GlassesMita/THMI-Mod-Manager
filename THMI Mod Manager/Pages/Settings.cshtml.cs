@@ -107,16 +107,16 @@ namespace THMI_Mod_Manager.Pages
                 AutoCheckUpdates = autoCheckUpdatesValue?.ToLower() != "false";
                 Logger.LogInfo($"Loaded update settings: AutoCheckUpdates: {AutoCheckUpdates}");
                 
-                // Load mod information
+                // Load program version information from AppConfig
                 try
                 {
-                    ModName = "MetaIzakaya";
-                    ModVersion = "0.7.0";
-                    Logger.LogInfo($"Loaded mod information: {ModName} v{ModVersion}");
+                    ModName = _appConfig.Get("[App]Name", "THMI Mod Manager");
+                    ModVersion = _appConfig.Get("[App]Version", "0.0.1");
+                    Logger.LogInfo($"Loaded program information: {ModName} v{ModVersion}");
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError($"Error loading mod information: {ex.Message}");
+                    Logger.LogError($"Error loading program information: {ex.Message}");
                     // Keep default values
                 }
             }

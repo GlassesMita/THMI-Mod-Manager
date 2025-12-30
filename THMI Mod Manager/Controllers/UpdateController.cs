@@ -29,6 +29,113 @@ namespace THMI_Mod_Manager.Controllers
         }
 
         /// <summary>
+        /// Check for updates for the program itself
+        /// </summary>
+        /// <returns>Program update check result</returns>
+        [HttpGet("check-program")]
+        public async Task<IActionResult> CheckForProgramUpdates()
+        {
+            try
+            {
+                // Check if update checking is enabled
+                var updatesSection = _appConfigManager.GetSection("Updates");
+                if (!bool.TryParse(updatesSection.TryGetValue("CheckForUpdates", out var checkEnabled) ? checkEnabled : "True", out var isEnabled) || !isEnabled)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        updateCheckingDisabled = true,
+                        message = _localizer["UpdateCheckingDisabled"]
+                    });
+                }
+
+                // Get program information from AppConfig
+                var appSection = _appConfigManager.GetSection("App");
+                var programName = appSection.TryGetValue("Name", out var name) ? name : "THMI Mod Manager";
+                var currentVersion = appSection.TryGetValue("Version", out var version) ? version : "0.0.1";
+                
+                // Get update source configuration - use program-specific source if available
+                var updateSource = updatesSection.TryGetValue("ProgramUpdateSource", out var programSource) ? programSource : "GlassesMita/THMI-Mod-Manager";
+
+                _logger.LogInformation($"Checking for program updates. Current version: {currentVersion}, Source: {updateSource}");
+
+                // Perform update check
+                var result = await _updateCheckService.CheckForUpdatesAsync(currentVersion, updateSource);
+
+                if (result.Success)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        isUpdateAvailable = result.IsUpdateAvailable,
+                        currentVersion = result.CurrentVersion,
+                        latestVersion = result.LatestVersion,
+                        releaseNotes = result.ReleaseNotes,
+                        downloadUrl = result.DownloadUrl,
+                        publishedAt = result.PublishedAt,
+                        message = result.IsUpdateAvailable 
+                            ? _localizer["UpdateAvailable", result.LatestVersion] 
+                            : _localizer["NoUpdatesAvailable"]
+                    });
+                }
+                else
+                {
+                    return Ok(new
+                    {
+                        success = false,
+                        error = result.ErrorMessage,
+                        message = _localizer["UpdateCheckFailed"]
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during program update check");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    error = ex.Message,
+                    message = _localizer["UpdateCheckError"]
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get current program version information
+        /// </summary>
+        /// <returns>Current program version info</returns>
+        [HttpGet("program-version")]
+        public IActionResult GetProgramVersion()
+        {
+            try
+            {
+                var appSection = _appConfigManager.GetSection("App");
+                var programName = appSection.TryGetValue("Name", out var name) ? name : "THMI Mod Manager";
+                var version = appSection.TryGetValue("Version", out var versionValue) ? versionValue : "0.0.1";
+                var versionCode = appSection.TryGetValue("VersionCode", out var code) ? code : "1";
+
+                return Ok(new
+                {
+                    success = true,
+                    programName = programName,
+                    version = version,
+                    versionCode = versionCode,
+                    message = _localizer["CurrentVersionInfo", programName, version]
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting program version information");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    error = ex.Message,
+                    message = _localizer["VersionInfoError"]
+                });
+            }
+        }
+
+        /// <summary>
         /// Check for updates for the MetaIzakaya mod
         /// </summary>
         /// <returns>Update check result</returns>

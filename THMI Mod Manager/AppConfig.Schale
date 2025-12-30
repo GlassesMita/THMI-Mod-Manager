@@ -1,12 +1,14 @@
-[App]
-Version=0.0.1
+﻿[App]
+Name=THMI Mod Manager
+Version=0.2.0
 VersionCode=1
+IsFirstRun=True
 ThemeColor=#c670ff
 ModsPath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\Mods
 GamePath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\
 
 [Localization]
-Language=en_US
+Language=en_GB
 
 [Cursor]
 UseCustomCursor=False
@@ -14,7 +16,6 @@ CursorType=default
 UseMystiaCursor=False
 
 [Game]
-Version=0.0.1
 Status=
 LauncherPath=
 ModifyTitle=true
@@ -24,7 +25,7 @@ CheckForUpdates=True
 UpdateCheckType=GitHub
 UpdateCheckInterval=24
 AutoDownloadUpdates=False
-UpdateSource=MetaMikuAI/MetaIzakaya
+ProgramUpdateSource=GlassesMita/THMI-Mod-Manager
 
 [Dev]
 IsDevBuild=False

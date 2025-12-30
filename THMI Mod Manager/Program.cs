@@ -206,6 +206,9 @@ app.UseDynamicLocalization();
 // 应用请求本地化
 app.UseRequestLocalization(requestLocalizationOptions);
 
+// 使用设置向导中间件，检查是否为首次运行
+app.UseSetupWizard();
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
