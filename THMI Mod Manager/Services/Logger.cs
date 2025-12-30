@@ -52,7 +52,7 @@ namespace THMI_Mod_Manager.Services
             }
 
             string tag = GetLevelShortTag(level);
-            string logMessage = $"[{DateTime.Now:yyyy/MM/dd HH:mm:ss}][{tag}] {message}";
+            string logMessage = $"[{tag}][{DateTime.Now:yyyy/MM/dd HH:mm:ss.ffff}] {message}";
             
             lock (lockObject)
             {

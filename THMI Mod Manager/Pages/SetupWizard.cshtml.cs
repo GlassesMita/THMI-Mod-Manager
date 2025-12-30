@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Diagnostics;
 using System.Globalization;
+using System.Reflection;
 using System.Text;
 using THMI_Mod_Manager.Services;
 
@@ -112,7 +114,11 @@ namespace THMI_Mod_Manager.Pages
                 _appConfig.Set("[App]ThemeColor", ThemeColor);
                 _appConfig.Set("[App]IsFirstRun", "False");
 
-                _logger.LogInformation("Setup wizard completed. Language: {Language}, ThemeColor: {ThemeColor}", SelectedLanguage, ThemeColor);
+                var assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
+                var semanticVersion = $"{assemblyVersion?.Major ?? 0}.{assemblyVersion?.Minor ?? 0}.{assemblyVersion?.Build ?? 0}";
+                _appConfig.Set("[App]Version", semanticVersion);
+
+                _logger.LogInformation("Setup wizard completed. Language: {Language}, ThemeColor: {ThemeColor}, Version: {Version}", SelectedLanguage, ThemeColor, semanticVersion);
 
                 return RedirectToPage("/Index");
             }
