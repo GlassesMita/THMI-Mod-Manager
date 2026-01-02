@@ -1,0 +1,605 @@
+@page
+@model DebugModel
+@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+@inject THMI_Mod_Manager.Services.LocalizationManager LocalizationManager
+@{
+    ViewData["Title"] = "Debug";
+    var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
+}
+
+<link rel="stylesheet" href="~/css/settings.css" />
+
+<style>
+    .debug-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .debug-section {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .debug-section h3 {
+        color: @themeColor;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid @themeColor;
+    }
+    
+    .debug-info {
+        background: #f8f9fa;
+        border-left: 4px solid @themeColor;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .debug-info code {
+        background: #e9ecef;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .debug-toggle {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .debug-toggle input[type="checkbox"] {
+        margin-right: 10px;
+        width: 20px;
+        height: 20px;
+    }
+    
+    .debug-toggle label {
+        margin: 0;
+        cursor: pointer;
+    }
+    
+    .debug-button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .debug-button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .debug-button-primary {
+        background: @themeColor;
+        color: white;
+    }
+    
+    .debug-button-primary:hover {
+        opacity: 0.9;
+    }
+    
+    .debug-button-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .debug-button-secondary:hover {
+        background: #5a6268;
+    }
+    
+    .debug-button-danger {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .debug-button-danger:hover {
+        background: #c82333;
+    }
+    
+    .debug-output {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 15px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    .debug-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    
+    .debug-table th,
+    .debug-table td {
+        border: 1px solid #dee2e6;
+        padding: 8px;
+        text-align: left;
+    }
+    
+    .debug-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    .debug-table tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .debug-status {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .debug-status-success {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .debug-status-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .debug-status-error {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .debug-status-info {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+</style>
+
+<div class="debug-container">
+    <h1 class="mods-title" style="cursor: default;">@AppConfig.GetLocalized("Debug:Header", "Debug Panel")</h1>
+    <p class="text-muted">@AppConfig.GetLocalized("Debug:Subtitle", "Web Based App Debug Settings & Tools")</p>
+    
+    <div class="debug-section">
+        <h3><i class="bi bi-info-circle"></i> @AppConfig.GetLocalized("Debug:SystemInformation", "System Information")</h3>
+        <div class="debug-info">
+            <p><strong>@AppConfig.GetLocalized("Debug:Application", "Application"):</strong> @Model.AppName v@Model.AppVersion</p>
+            <p><strong>@AppConfig.GetLocalized("Debug:Runtime", ".NET 版本"):</strong> @Model.RuntimeVersion</p>
+            <p><strong>@AppConfig.GetLocalized("Debug:OS", "OS"):</strong> @Model.OSProductName (@Model.OSFriendlyName)</p>
+            <p><strong>@AppConfig.GetLocalized("Debug:BaseDirectory", "Base Directory"):</strong> <code>@Model.BaseDirectory</code></p>
+            <p><strong>@AppConfig.GetLocalized("Debug:CurrentTime", "Current Time"):</strong> <span id="currentTime">@Model.CurrentTime</span></p>
+        </div>
+    </div>
+    
+    <div class="debug-section">
+        <h3><i class="bi bi-gear"></i> @AppConfig.GetLocalized("Debug:DeveloperMode", "Developer Mode")</h3>
+        <div class="debug-toggle">
+            <input type="checkbox" id="devMode" @(Model.IsDevMode ? "checked" : "") onchange="toggleDevMode(this)" />
+            <label for="devMode">@AppConfig.GetLocalized("Debug:EnableDeveloperMode", "Enable Developer Mode")</label>
+        </div>
+        <div class="debug-toggle">
+            <input type="checkbox" id="showCVEWarning" @(Model.ShowCVEWarning ? "checked" : "") onchange="toggleCVEWarning(this)" />
+            <label for="showCVEWarning">@AppConfig.GetLocalized("Debug:ShowCVEWarning", "Show CVE Warning")</label>
+        </div>
+        <div class="debug-toggle">
+            <input type="checkbox" id="enableVerboseLogging" @(Model.EnableVerboseLogging ? "checked" : "") onchange="toggleVerboseLogging(this)" />
+            <label for="enableVerboseLogging">@AppConfig.GetLocalized("Debug:EnableVerboseLogging", "Enable Verbose Logging")</label>
+        </div>
+        <div class="debug-toggle">
+            <input type="checkbox" id="disableCache" @(Model.DisableCache ? "checked" : "") onchange="toggleDisableCache(this)" />
+            <label for="disableCache">@AppConfig.GetLocalized("Debug:DisableCache", "Disable Browser Cache")</label>
+        </div>
+    </div>
+    
+    <div class="debug-section">
+        <h3><i class="bi bi-bug"></i> @AppConfig.GetLocalized("Debug:APITesting", "API Testing")</h3>
+        <div class="mb-3">
+            <label for="apiEndpoint" class="form-label">@AppConfig.GetLocalized("Debug:APIEndpoint", "API Endpoint")</label>
+            <input type="text" id="apiEndpoint" class="form-control" value="/api/launcher/status" placeholder="@AppConfig.GetLocalized("Debug:Endpoint", "Enter API endpoint")" />
+        </div>
+        <div class="mb-3">
+            <label for="apiMethod" class="form-label">@AppConfig.GetLocalized("Debug:HTTPMethod", "HTTP Method")</label>
+            <select id="apiMethod" class="form-select">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+            </select>
+        </div>
+        <div class="debug-button-group">
+            <button type="button" class="debug-button debug-button-primary" onclick="testAPI()">
+                <i class="bi bi-play-fill"></i> @AppConfig.GetLocalized("Debug:TestAPI", "Test API")
+            </button>
+            <button type="button" class="debug-button debug-button-secondary" onclick="clearAPIOutput()">
+                <i class="bi bi-x-circle"></i> @AppConfig.GetLocalized("Debug:ClearOutput", "Clear Output")
+            </button>
+        </div>
+        <div id="apiOutput" class="debug-output" style="display: none;"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3><i class="bi bi-file-earmark-code"></i> @AppConfig.GetLocalized("Debug:Configuration", "Configuration")</h3>
+        <div class="debug-info">
+            <p><strong>@AppConfig.GetLocalized("Debug:ConfigFile", "Config File"):</strong> <code>@Model.ConfigFilePath</code></p>
+            <p><strong>@AppConfig.GetLocalized("Debug:LastModified", "Last Modified"):</strong> @Model.ConfigLastModified</p>
+        </div>
+        <div class="debug-button-group">
+            <button type="button" class="debug-button debug-button-primary" onclick="reloadConfig()">
+                <i class="bi bi-arrow-repeat"></i> @AppConfig.GetLocalized("Debug:ReloadConfig", "Reload Configuration")
+            </button>
+            <button type="button" class="debug-button debug-button-secondary" onclick="viewConfig()">
+                <i class="bi bi-eye"></i> @AppConfig.GetLocalized("Debug:ViewConfig", "View Configuration")
+            </button>
+        </div>
+        <div id="configOutput" class="debug-output" style="display: none;"></div>
+        <textarea id="configEditor" class="config-editor" readonly style="display: none; width: 100%; height: 400px; background: #1e1e1e; color: #d4d4d4; border: none; padding: 15px; font-family: 'Courier New', monospace; font-size: 12px; resize: vertical;"></textarea>
+    </div>
+    
+    <div class="debug-section">
+        <h3><i class="bi bi-journal-code"></i> @AppConfig.GetLocalized("Debug:Logs", "Logs")</h3>
+        <div class="debug-info">
+            <p><strong>@AppConfig.GetLocalized("Debug:LogFile", "Log File"):</strong> <code>@Model.LogFilePath</code></p>
+            <p><strong>@AppConfig.GetLocalized("Debug:LogSize", "Log Size"):</strong> @Model.LogFileSize</p>
+        </div>
+        <div class="debug-button-group">
+            <button type="button" class="debug-button debug-button-primary" onclick="viewLogs()">
+                <i class="bi bi-eye"></i> @AppConfig.GetLocalized("Debug:ViewLogs", "View Logs")
+            </button>
+            <button type="button" class="debug-button debug-button-secondary" onclick="downloadLogs()">
+                <i class="bi bi-download"></i> @AppConfig.GetLocalized("Debug:DownloadLogs", "Download Logs")
+            </button>
+            <button type="button" class="debug-button debug-button-danger" onclick="clearLogs()">
+                <i class="bi bi-trash"></i> @AppConfig.GetLocalized("Debug:ClearLogs", "Clear Logs")
+            </button>
+        </div>
+        <div id="logOutput" class="debug-output" style="display: none;"></div>
+    </div>
+    
+
+    <div class="debug-section">
+        <h3><i class="bi bi-exclamation-triangle"></i> @AppConfig.GetLocalized("Debug:DangerZone", "Danger Zone")</h3>
+        <div class="debug-info" style="border-left-color: #dc3545;">
+            <p><strong>@AppConfig.GetLocalized("Debug:Warning", "Warning"):</strong> @AppConfig.GetLocalized("Debug:DangerWarning", "These actions are irreversible and may cause data loss or application instability.")</p>
+        </div>
+        <div class="debug-button-group">
+            <button type="button" class="debug-button debug-button-danger" onclick="resetAllSettings()">
+                <i class="bi bi-arrow-counterclockwise"></i> @AppConfig.GetLocalized("Debug:ResetAllSettings", "Reset All Settings")
+            </button>
+            <button type="button" class="debug-button debug-button-danger" onclick="clearBrowserStorage()">
+                <i class="bi bi-trash"></i> @AppConfig.GetLocalized("Debug:ClearBrowserStorage", "Clear Browser Storage")
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCurrentTime();
+        
+        setInterval(updateCurrentTime, 1000);
+        
+        setTimeout(updateCurrentTime, 0);
+    });
+
+    function updateCurrentTime() {
+        const now = new Date();
+        const timeString = now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0') + ' ' +
+            String(now.getHours()).padStart(2, '0') + ':' +
+            String(now.getMinutes()).padStart(2, '0') + ':' +
+            String(now.getSeconds()).padStart(2, '0');
+        const currentTimeElement = document.getElementById('currentTime');
+        if (currentTimeElement) {
+            currentTimeElement.textContent = timeString;
+        }
+    }
+
+
+
+    async function toggleDevMode(checkbox) {
+        try {
+            const response = await fetch('/Debug?handler=ToggleDevMode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ enabled: checkbox.checked })
+            });
+            
+            if (response.ok) {
+                showToast('Developer mode ' + (checkbox.checked ? 'enabled' : 'disabled'));
+            } else {
+                showToast('Failed to toggle developer mode', 'error');
+                checkbox.checked = !checkbox.checked;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error toggling developer mode', 'error');
+            checkbox.checked = !checkbox.checked;
+        }
+    }
+
+    async function toggleCVEWarning(checkbox) {
+        try {
+            const response = await fetch('/Debug?handler=ToggleCVEWarning', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ enabled: checkbox.checked })
+            });
+            
+            if (response.ok) {
+                showToast('CVE warning ' + (checkbox.checked ? 'enabled' : 'disabled'));
+            } else {
+                showToast('Failed to toggle CVE warning', 'error');
+                checkbox.checked = !checkbox.checked;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error toggling CVE warning', 'error');
+            checkbox.checked = !checkbox.checked;
+        }
+    }
+
+    async function toggleVerboseLogging(checkbox) {
+        try {
+            const response = await fetch('/Debug?handler=ToggleVerboseLogging', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ enabled: checkbox.checked })
+            });
+            
+            if (response.ok) {
+                showToast('Verbose logging ' + (checkbox.checked ? 'enabled' : 'disabled'));
+            } else {
+                showToast('Failed to toggle verbose logging', 'error');
+                checkbox.checked = !checkbox.checked;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error toggling verbose logging', 'error');
+            checkbox.checked = !checkbox.checked;
+        }
+    }
+
+    async function toggleDisableCache(checkbox) {
+        try {
+            const response = await fetch('/Debug?handler=ToggleDisableCache', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ enabled: checkbox.checked })
+            });
+            
+            if (response.ok) {
+                showToast('Cache ' + (checkbox.checked ? 'disabled' : 'enabled'));
+            } else {
+                showToast('Failed to toggle cache', 'error');
+                checkbox.checked = !checkbox.checked;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error toggling cache', 'error');
+            checkbox.checked = !checkbox.checked;
+        }
+    }
+
+
+
+    async function testAPI() {
+        const endpoint = document.getElementById('apiEndpoint').value;
+        const method = document.getElementById('apiMethod').value;
+        const output = document.getElementById('apiOutput');
+        
+        output.style.display = 'block';
+        output.textContent = 'Testing ' + method + ' ' + endpoint + '...\n';
+        
+        try {
+            const startTime = performance.now();
+            const response = await fetch(endpoint, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            const endTime = performance.now();
+            
+            const data = await response.json();
+            
+            output.textContent += 'Status: ' + response.status + ' ' + response.statusText + '\n';
+            output.textContent += 'Time: ' + Math.round(endTime - startTime) + ' ms\n';
+            output.textContent += 'Response:\n' + JSON.stringify(data, null, 2);
+        } catch (error) {
+            output.textContent += 'Error: ' + error.message;
+        }
+    }
+
+    function clearAPIOutput() {
+        document.getElementById('apiOutput').style.display = 'none';
+        document.getElementById('apiOutput').textContent = '';
+    }
+
+    async function reloadConfig() {
+        try {
+            const response = await fetch('/Debug?handler=ReloadConfig', {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                showToast('Configuration reloaded successfully');
+            } else {
+                showToast('Failed to reload configuration', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error reloading configuration', 'error');
+        }
+    }
+
+    async function viewConfig() {
+        const output = document.getElementById('configOutput');
+        const editor = document.getElementById('configEditor');
+        output.style.display = 'block';
+        output.textContent = 'Loading configuration...\n';
+        
+        try {
+            const response = await fetch('/Debug?handler=ViewConfigRaw');
+            
+            if (response.ok) {
+                const text = await response.text();
+                output.style.display = 'none';
+                editor.style.display = 'block';
+                editor.value = text;
+            } else {
+                const errorText = await response.text();
+                output.textContent = 'Error: Failed to load configuration\nStatus: ' + response.status + '\nDetails: ' + errorText;
+                editor.style.display = 'none';
+            }
+        } catch (error) {
+            output.textContent = 'Error: ' + error.message;
+            editor.style.display = 'none';
+        }
+    }
+
+    async function viewLogs() {
+        const output = document.getElementById('logOutput');
+        output.style.display = 'block';
+        output.textContent = 'Loading logs...\n';
+        
+        try {
+            const response = await fetch('/Debug?handler=ViewLogs');
+            
+            if (response.ok) {
+                const data = await response.json();
+                output.textContent = data.logs || 'No logs available';
+            } else {
+                output.textContent = 'Error: Failed to load logs';
+            }
+        } catch (error) {
+            output.textContent = 'Error: ' + error.message;
+        }
+    }
+
+    function downloadLogs() {
+        window.open('/Debug?handler=DownloadLogs', '_blank');
+    }
+
+    async function clearLogs() {
+        if (!confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/Debug?handler=ClearLogs', {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                showToast('Logs cleared successfully');
+                document.getElementById('logOutput').textContent = '';
+            } else {
+                showToast('Failed to clear logs', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error clearing logs', 'error');
+        }
+    }
+
+    async function resetAllSettings() {
+        if (!confirm('Are you sure you want to reset all settings to default? This action cannot be undone.')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/Debug?handler=ResetAllSettings', {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                showToast('All settings reset to default');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Failed to reset settings', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error resetting settings', 'error');
+        }
+    }
+
+    function clearBrowserStorage() {
+        if (!confirm('Are you sure you want to clear all browser storage including cookies? This action cannot be undone.')) {
+            return;
+        }
+        
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            showToast('Browser storage cleared successfully');
+        } catch (error) {
+            showToast('Error clearing browser storage: ' + error.message);
+        }
+    }
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'debug-toast';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: ${type === 'success' ? '#28a745' : '#dc3545'};
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 9999;
+            animation: slideIn 0.3s ease-out;
+        `;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @@keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @@keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+</script>

@@ -2,13 +2,13 @@
 Name=THMI Mod Manager
 Version=0.2.0
 VersionCode=1
-IsFirstRun=True
+IsFirstRun=False
 ThemeColor=#c670ff
 ModsPath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\Mods
 GamePath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\
 
 [Localization]
-Language=en_GB
+Language=zh_HANS
 
 [Cursor]
 UseCustomCursor=False

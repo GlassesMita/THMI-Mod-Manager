@@ -71,13 +71,15 @@ class FileBrowser {
         const fileFilterSelect = document.getElementById('fileFilterSelect');
         if (!fileFilterSelect) return;
         
+        const allText = window.localizedStrings?.all || 'All';
+        
         // 清空现有选项
         fileFilterSelect.innerHTML = '';
         
         // 添加"All"选项
         const allOption = document.createElement('option');
         allOption.value = 'all';
-        allOption.textContent = 'All';
+        allOption.textContent = allText;
         fileFilterSelect.appendChild(allOption);
         
         // 添加自定义选项
@@ -194,17 +196,23 @@ class FileBrowser {
 
     // 获取默认标题
     getDefaultTitle(type) {
-        let title = 'Select File';
+        const selectFile = window.localizedStrings?.selectFile || 'Select File';
+        const selectExecutable = window.localizedStrings?.selectExecutable || 'Select Executable File';
+        const selectModsFolder = window.localizedStrings?.selectModsFolder || 'Select Mods Folder';
+        const selectGameFolder = window.localizedStrings?.selectGameFolder || 'Select Game Folder';
+        const selectFolder = window.localizedStrings?.selectFolder || 'Select Folder';
+        
+        let title = selectFile;
         if (type === 'executable') {
-            title = 'Select Executable File';
+            title = selectExecutable;
         } else if (type === 'modsPath') {
-            title = 'Select Mods Folder';
+            title = selectModsFolder;
         } else if (type === 'gamePath') {
-            title = 'Select Game Folder';
+            title = selectGameFolder;
         } else if (type === 'file') {
-            title = 'Select File';
+            title = selectFile;
         } else if (type === 'folder') {
-            title = 'Select Folder';
+            title = selectFolder;
         }
         return title;
     }
@@ -258,7 +266,8 @@ class FileBrowser {
         const addressBar = document.getElementById('addressBar');
         
         addressBar.value = directory; // 同步地址栏与当前目录
-        filesList.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        const loadingText = window.localizedStrings?.loading || 'Loading...';
+        filesList.innerHTML = `<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">${loadingText}</span></div></div>`;
         
         // 构建查询参数，包含过滤器信息
         let url = `/api/filebrowser/list?path=${encodeURIComponent(directory)}`;

@@ -102,6 +102,13 @@
         <!-- Hidden fields to pass values to JavaScript -->
         <input type="hidden" id="launchModeHidden" value="@Model.LaunchMode" />
         <input type="hidden" id="localizedProhibitionText" value="@AppConfig.GetLocalized("Settings:ProhibitionText", "Cannot select the Mod Manager's own executable file.")" />
+        <!-- Hidden fields for update check localization -->
+        <input type="hidden" id="localizedUpdateAvailable" value="@AppConfig.GetLocalized("Updates:UpdateAvailable", "Update available: Version {0}")" />
+        <input type="hidden" id="localizedNoReleaseNotes" value="@AppConfig.GetLocalized("Updates:NoReleaseNotes", "No release notes available")" />
+        <input type="hidden" id="localizedDownloadUpdate" value="@AppConfig.GetLocalized("Updates:DownloadUpdate", "Download Update")" />
+        <input type="hidden" id="localizedNoUpdatesAvailable" value="@AppConfig.GetLocalized("Updates:NoUpdatesAvailable", "No updates available. You are using the latest version.")" />
+        <input type="hidden" id="localizedUpdateCheckingDisabled" value="@AppConfig.GetLocalized("Updates:UpdateCheckingDisabled", "Update checking is disabled")" />
+        <input type="hidden" id="localizedUpdateCheckFailed" value="@AppConfig.GetLocalized("Updates:UpdateCheckFailed", "Update check failed")" />
 
         <!-- 修改应用标题开关 -->
         <div class="mb-3 form-group-animated">

@@ -115,6 +115,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化时调用
     initThemeColor();
 
+    // 标题点击事件 - 重定向到 Debug 页面
+    const settingsTitle = document.getElementById('settingsTitle');
+    const clickCounter = document.getElementById('clickCounter');
+    const clickCountSpan = document.getElementById('clickCount');
+    
+    if (settingsTitle && clickCounter && clickCountSpan) {
+        let clickCount = 0;
+        
+        settingsTitle.addEventListener('click', function() {
+            clickCount++;
+            clickCountSpan.textContent = clickCount;
+            clickCounter.classList.add('show');
+            
+            if (clickCount >= 10) {
+                window.location.href = '/DebugPage';
+            }
+            
+            // 3秒后隐藏计数器
+            setTimeout(function() {
+                if (clickCount < 10) {
+                    clickCounter.classList.remove('show');
+                }
+            }, 3000);
+        });
+    }
+
     // 主题色选择器
     const themeColorPicker = document.getElementById('themeColorPicker');
     const colorPreview = document.getElementById('colorPreview');
@@ -126,108 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
             colorPreview.style.backgroundColor = color;
             colorPreviewText.textContent = color;
         });
-    }
-
-    // 从配置加载开发者设置
-    function loadDeveloperSettings() {
-        // 从AppConfig加载实际的设置值
-        const isDevMode = document.getElementById('devMode') ? document.getElementById('devMode').checked : false;
-        const showCVE = document.getElementById('showCVEWarning') ? document.getElementById('showCVEWarning').checked : false;
-        
-        // 这些值将由Razor在页面加载时设置
-    }
-    
-    // 保存开发者设置
-    window.saveDeveloperSettings = function() {
-        const devMode = document.getElementById('devMode').checked;
-        const showCVEWarning = document.getElementById('showCVEWarning').checked;
-        
-        // 创建表单数据
-        const formData = new FormData();
-        formData.append('devMode', devMode);
-        formData.append('showCVEWarning', showCVEWarning);
-        
-        // 发送到后端保存
-        fetch('/settings?handler=SaveDeveloperSettings', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // 保存到本地存储
-                localStorage.setItem('developerMode', devMode);
-                localStorage.setItem('showCVEWarning', showCVEWarning);
-                
-                // 如果开发模式开启，立即显示开发者设置
-                if (devMode) {
-                    const developerSection = document.getElementById('developerSection');
-                    if (developerSection) developerSection.classList.add('show');
-                }
-                
-                // 显示成功提示
-                const successToast = document.getElementById('successToast');
-                successToast.textContent = data.message || '开发者设置已保存！';
-                successToast.classList.add('show');
-                
-                setTimeout(function() {
-                    successToast.classList.remove('show');
-                    successToast.textContent = '设置保存成功！';
-                }, 3000);
-            }
-        })
-        .catch(error => {
-            console.error('保存开发者设置失败:', error);
-            alert('保存失败，请重试');
-        });
-    };
-    
-    // 标题点击事件
-    const settingsTitle = document.getElementById('settingsTitle');
-    const clickCounter = document.getElementById('clickCounter');
-    const clickCountSpan = document.getElementById('clickCount');
-    const developerSection = document.getElementById('developerSection');
-    
-    if (settingsTitle && clickCounter && clickCountSpan && developerSection) {
-        let clickCount = 0;
-        
-        settingsTitle.addEventListener('click', function() {
-            clickCount++;
-            clickCountSpan.textContent = clickCount;
-            clickCounter.classList.add('show');
-            
-            if (clickCount >= 10) {
-                developerSection.classList.add('show');
-                clickCounter.style.display = 'none';
-                loadDeveloperSettings();
-                
-                // 显示解锁提示
-                const successToast = document.getElementById('successToast');
-                successToast.textContent = '🔓 开发者选项已解锁！';
-                successToast.classList.add('show');
-                
-                setTimeout(function() {
-                    successToast.classList.remove('show');
-                    successToast.textContent = '设置保存成功！';
-                }, 3000);
-            }
-            
-            // 3秒后隐藏计数器
-            setTimeout(function() {
-                if (clickCount < 10) {
-                    clickCounter.classList.remove('show');
-                }
-            }, 3000);
-        });
-    }
-    
-    // 初始化开发者设置（如果已解锁）
-    if (localStorage.getItem('developerMode') === 'true') {
-        if (developerSection) developerSection.classList.add('show');
-        loadDeveloperSettings();
     }
 
     // 初始化游戏启动模式设置
@@ -278,14 +202,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (updateResult) {
                 updateResult.style.display = 'block';
                 
+                const localizedUpdateAvailable = document.getElementById('localizedUpdateAvailable')?.value || 'Update available: Version {0}';
+                const localizedNoReleaseNotes = document.getElementById('localizedNoReleaseNotes')?.value || 'No release notes available';
+                const localizedDownloadUpdate = document.getElementById('localizedDownloadUpdate')?.value || 'Download Update';
+                const localizedNoUpdatesAvailable = document.getElementById('localizedNoUpdatesAvailable')?.value || 'No updates available. You are using the latest version.';
+                const localizedUpdateCheckingDisabled = document.getElementById('localizedUpdateCheckingDisabled')?.value || 'Update checking is disabled';
+                const localizedUpdateCheckFailed = document.getElementById('localizedUpdateCheckFailed')?.value || 'Update check failed';
+                
                 if (data.success && data.isUpdateAvailable) {
                     updateResult.innerHTML = `
                         <div class="alert alert-info">
-                            <h6>${getLocalizedString('Updates:UpdateAvailable', 'Update available: Version {0}').replace('{0}', data.latestVersion)}</h6>
-                            <p>${data.releaseNotes || getLocalizedString('Updates:NoReleaseNotes', 'No release notes available')}</p>
+                            <h6>${localizedUpdateAvailable.replace('{0}', data.latestVersion)}</h6>
+                            <p>${data.releaseNotes || localizedNoReleaseNotes}</p>
                             <div class="mt-2">
                                 <a href="${data.downloadUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                    ${getLocalizedString('Updates:DownloadUpdate', 'Download Update')}
+                                    ${localizedDownloadUpdate}
                                 </a>
                             </div>
                         </div>
@@ -299,19 +230,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (data.success && !data.isUpdateAvailable) {
                     updateResult.innerHTML = `
                         <div class="alert alert-success">
-                            ${getLocalizedString('Updates:NoUpdatesAvailable', 'No updates available. You are using the latest version.')}
+                            ${localizedNoUpdatesAvailable}
                         </div>
                     `;
                 } else if (data.updateCheckingDisabled) {
                     updateResult.innerHTML = `
                         <div class="alert alert-warning">
-                            ${data.message || getLocalizedString('Updates:UpdateCheckingDisabled', 'Update checking is disabled')}
+                            ${data.message || localizedUpdateCheckingDisabled}
                         </div>
                     `;
                 } else {
                     updateResult.innerHTML = `
                         <div class="alert alert-danger">
-                            ${getLocalizedString('Updates:UpdateCheckFailed', 'Update check failed')}: ${data.error || data.message}
+                            ${localizedUpdateCheckFailed}: ${data.error || data.message}
                         </div>
                     `;
                 }
@@ -322,9 +253,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (updateStatus) updateStatus.style.display = 'none';
             if (updateResult) {
                 updateResult.style.display = 'block';
+                const localizedUpdateCheckFailed = document.getElementById('localizedUpdateCheckFailed')?.value || 'Update check failed';
                 updateResult.innerHTML = `
                     <div class="alert alert-danger">
-                        ${getLocalizedString('Updates:UpdateCheckFailed', 'Update check failed')}: ${error.message}
+                        ${localizedUpdateCheckFailed}: ${error.message}
                     </div>
                 `;
             }

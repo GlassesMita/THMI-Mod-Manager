@@ -6,6 +6,7 @@
 @inject AppConfigManager AppConfig
 @{
     var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
+    var appVersion = AppConfig.Get("[App]Version", "0.0.1");
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -235,7 +236,7 @@
 
             <footer class="border-top footer text-muted" style="position:absolute; bottom:0; width:100%; height:60px; line-height:60px;">
                 <div class="container">
-                    &copy; @year - THMI Mod Manager - <a asp-area="" asp-page="/Privacy">@AppConfig.GetLocalized("Sidebar:Privacy", "Privacy")</a>
+                    &copy; @year - @AppConfig.GetLocalized("App:Name", "THMI Mod Manager") <small class="text-muted ms-1">v@appVersion</small> - <a asp-area="" asp-page="/Privacy">@AppConfig.GetLocalized("Sidebar:Privacy", "Privacy")</a>
                 </div>
             </footer>
 
@@ -269,6 +270,22 @@
         var configManager = Context.RequestServices.GetService(typeof(THMI_Mod_Manager.Services.AppConfigManager)) as THMI_Mod_Manager.Services.AppConfigManager;
         var cursorType = configManager?.Get("[Cursor]CursorType", "default");
     }
+    <script>
+        window.localizedStrings = {
+            loading: '@Html.Raw(AppConfig.GetLocalized("Common:Loading", "Loading..."))',
+            selectFile: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:SelectFile", "Select File"))',
+            selectExecutable: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:SelectExecutable", "Select Executable File"))',
+            selectModsFolder: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:SelectModsFolder", "Select Mods Folder"))',
+            selectGameFolder: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:SelectGameFolder", "Select Game Folder"))',
+            selectFolder: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:SelectFolder", "Select Folder"))',
+            cancel: '@Html.Raw(AppConfig.GetLocalized("Common:Cancel", "Cancel"))',
+            drive: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:Drive", "Drive"))',
+            filter: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:Filter", "Filter"))',
+            addressBarPlaceholder: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:AddressBarPlaceholder", "Enter path..."))',
+            go: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:Go", "Go"))',
+            all: '@Html.Raw(AppConfig.GetLocalized("FileBrowser:All", "All"))'
+        };
+    </script>
     <script src="~/js/file-browser.js" asp-append-version="true"></script>
     
     <!-- 全局文件浏览器模态框 -->
@@ -280,26 +297,26 @@
             </div>
             <div class="file-browser-body">
                 <div class="drive-selector">
-                    <label for="driveSelector">Drive:</label>
+                    <label for="driveSelector">@AppConfig.GetLocalized("FileBrowser:Drive", "Drive"):</label>
                     <select id="driveSelector"></select>
                     <div id="driveInfo" class="drive-info"></div>
                 </div>
                 <div class="file-explorer">
                     <div class="address-bar">
-                        <input type="text" id="addressBar" class="address-input" placeholder="Enter path..." />
-                        <button type="button" onclick="window.fileBrowser.navigateToAddress()" class="address-btn">Go</button>
+                        <input type="text" id="addressBar" class="address-input" placeholder="@AppConfig.GetLocalized("FileBrowser:AddressBarPlaceholder", "Enter path...")" />
+                        <button type="button" onclick="window.fileBrowser.navigateToAddress()" class="address-btn">@AppConfig.GetLocalized("FileBrowser:Go", "Go")</button>
                     </div>
                     <div class="file-filter-container">
-                        <label for="fileFilterSelect">Filter:</label>
+                        <label for="fileFilterSelect">@AppConfig.GetLocalized("FileBrowser:Filter", "Filter"):</label>
                         <select id="fileFilterSelect"></select>
                     </div>
                     <div class="file-list" id="filesList">
-                        <div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>
+                        <div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">@AppConfig.GetLocalized("Common:Loading", "Loading...")</span></div></div>
                     </div>
                 </div>
             </div>
             <div class="file-browser-footer">
-                <button type="button" onclick="window.fileBrowser.close()" class="btn btn-secondary">Cancel</button>
+                <button type="button" onclick="window.fileBrowser.close()" class="btn btn-secondary">@AppConfig.GetLocalized("Common:Cancel", "Cancel")</button>
             </div>
         </div>
     </div>

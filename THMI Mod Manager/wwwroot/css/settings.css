@@ -269,6 +269,13 @@
     color: #495057;
 }
 
+/* 保存按钮样式 */
+.save-button {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    width: 100%;
+}
+
 /* Bootstrap 按钮样式增强 */
 .btn {
     display: inline-block;
@@ -322,6 +329,7 @@
     background-color: #fff;
     border-radius: 0.5rem;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 5rem;
 }
 
 /* 响应式设计 */
