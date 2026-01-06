@@ -219,6 +219,9 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapControllers(); // 添加API控制器支持
 
+// Handle 404 - Page not found
+app.MapFallbackToPage("/404");
+
 // 在应用启动后输出运行信息
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 lifetime.ApplicationStarted.Register(() =>
