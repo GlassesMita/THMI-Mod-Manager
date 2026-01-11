@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (updateStatus) updateStatus.style.display = 'block';
         if (updateResult) updateResult.style.display = 'none';
 
-        fetch('/api/update/check-program', {
+        fetch(window.location.origin + '/api/update/check-program', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

@@ -219,7 +219,7 @@ class FileBrowser {
 
     // 加载驱动器列表
     loadDrives() {
-        fetch('/api/filebrowser/drives')
+        fetch(window.location.origin + '/api/filebrowser/drives')
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -243,7 +243,7 @@ class FileBrowser {
 
     // 加载应用运行目录
     loadAppDirectory() {
-        fetch('/api/filebrowser/appdirectory')
+        fetch(window.location.origin + '/api/filebrowser/appdirectory')
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -270,7 +270,7 @@ class FileBrowser {
         filesList.innerHTML = `<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">${loadingText}</span></div></div>`;
         
         // 构建查询参数，包含过滤器信息
-        let url = `/api/filebrowser/list?path=${encodeURIComponent(directory)}`;
+        let url = `${window.location.origin}/api/filebrowser/list?path=${encodeURIComponent(directory)}`;
         if (this.currentFileFilter && this.currentFileFilter !== 'all') {
             url += `&filter=${encodeURIComponent(this.currentFileFilter)}`;
         }

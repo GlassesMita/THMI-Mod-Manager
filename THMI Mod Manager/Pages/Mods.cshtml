@@ -79,7 +79,7 @@
         // 删除mod的函数
         async function deleteMod(fileName) {
             try {
-                const response = await fetch(`/api/mods/${encodeURIComponent(fileName)}`, {
+                const response = await fetch(`${window.location.origin}/api/mods/${encodeURIComponent(fileName)}`, {
                     method: 'DELETE'
                 });
                 

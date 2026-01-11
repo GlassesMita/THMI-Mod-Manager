@@ -132,19 +132,19 @@ int GetAvailablePort(int preferredPort, int minPort = 5000, int maxPort = 65535)
 // 设置应用URL
 var configuration = builder.Configuration;
 var configuredUrls = configuration["urls"] ?? configuration["Urls"];
-int portToUse = 5500;
+int portToUse = 5000;
 
 if (!string.IsNullOrEmpty(configuredUrls))
 {
     // 如果配置了URL，尝试解析端口
-    var url = configuredUrls.Split(';').FirstOrDefault() ?? "http://localhost:5500";
+    var url = configuredUrls.Split(';').FirstOrDefault() ?? "http://localhost:5000";
     var uri = new Uri(url);
     portToUse = uri.Port;
     
-    // 如果端口是80或0，使用5500作为默认值
+    // 如果端口是80或0，使用5000作为默认值
     if (portToUse == 80 || portToUse == 0)
     {
-        portToUse = 5500;
+        portToUse = 5000;
     }
 }
 
@@ -216,8 +216,8 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-app.MapRazorPages();
 app.MapControllers(); // 添加API控制器支持
+app.MapRazorPages();
 
 // Handle 404 - Page not found
 app.MapFallbackToPage("/404");
@@ -235,7 +235,7 @@ lifetime.ApplicationStarted.Register(() =>
         // 从服务器特性获取实际使用的端口
         var serverFeature = app.Services.GetRequiredService<IServer>();
         var addresses = serverFeature.Features.Get<IServerAddressesFeature>();
-        var port = 5500;
+        var port = 5000;
         
         if (addresses != null && addresses.Addresses.Any())
         {

@@ -35,7 +35,7 @@ const UpdateNotification = {
     },
     
     performUpdateCheck: function() {
-        fetch('/api/update/check', {
+        fetch(window.location.origin + '/api/update/check', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

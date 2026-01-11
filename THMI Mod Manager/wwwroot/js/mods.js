@@ -1,5 +1,5 @@
 const modsManager = {
-    apiEndpoint: '/api/mods',
+    apiEndpoint: window.location.origin + '/api/mods',
     modsList: [],
     
     init: function() {
@@ -38,6 +38,9 @@ const modsManager = {
         
         try {
             const response = await fetch(this.apiEndpoint);
+            console.log('API Request URL:', this.apiEndpoint);
+            console.log('Response status:', response.status);
+            console.log('Response type:', response.headers.get('content-type'));
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -210,7 +213,7 @@ const modsManager = {
     
     loadLocalizedStrings: async function() {
         try {
-            const response = await fetch('/api/mods/localized-strings');
+            const response = await fetch(window.location.origin + '/api/mods/localized-strings');
             const data = await response.json();
             this.localizedStrings = data;
         } catch (error) {
@@ -228,7 +231,7 @@ const modsManager = {
     
     checkGameStatus: async function() {
         try {
-            const response = await fetch('/api/mods/game-status');
+            const response = await fetch(window.location.origin + '/api/mods/game-status');
             const data = await response.json();
             const gameRunning = data.isRunning;
             
