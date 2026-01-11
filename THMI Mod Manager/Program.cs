@@ -8,6 +8,12 @@ using THMI_Mod_Manager.Middleware;
 using System.Diagnostics;
 using THMI_Mod_Manager;
 
+#if DEBUG
+Console.Title = "THMI Mod Manager - Console (Debug Build)";
+#else
+Console.Title = "THMI Mod Manager - Console";
+#endif
+
 // 简单的权限检查 - 仅使用管理员权限运行
 Console.WriteLine("正在检查权限状态...");
 
