@@ -1,6 +1,7 @@
 const modsManager = {
     apiEndpoint: window.location.origin + '/api/mods',
     modsList: [],
+    sortOrder: 'name', // 'name' or 'date'
     
     init: function() {
         this.loadLocalizedStrings().then(() => {
@@ -16,6 +17,11 @@ const modsManager = {
                 this.loadMods();
             });
         }
+    },
+    
+    changeSortOrder: function(order) {
+        this.sortOrder = order;
+        this.loadMods();
     },
     
     loadMods: async function() {
@@ -139,6 +145,7 @@ const modsManager = {
                             ${this.escapeHtml(mod.fileName)}
                         </span>
                         <div class="mod-footer-right">
+                            ${mod.installTime ? `<span class="mod-install-time"><i class="bi bi-clock-history"></i> ${this.formatInstallTime(mod.installTime)}</span>` : ''}
                             ${mod.version ? `<span class="mod-version-footer">${this.escapeHtml(mod.version)}${mod.versionCode ? ` (${mod.versionCode})` : ''}</span>` : ''}
                             ${!isValid && mod.errorMessage ? `
                                 <span class="text-warning small">
@@ -199,6 +206,21 @@ const modsManager = {
         try {
             const date = new Date(dateString);
             return date.toLocaleString();
+        } catch (error) {
+            return dateString;
+        }
+    },
+    
+    formatInstallTime: function(dateString) {
+        try {
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
         } catch (error) {
             return dateString;
         }

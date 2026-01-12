@@ -58,6 +58,7 @@ namespace THMI_Mod_Manager.Services
                 FileName = Path.GetFileName(dllPath),
                 FileSize = new FileInfo(dllPath).Length,
                 LastModified = File.GetLastWriteTime(dllPath),
+                InstallTime = File.GetCreationTime(dllPath),
                 IsValid = false
             };
 

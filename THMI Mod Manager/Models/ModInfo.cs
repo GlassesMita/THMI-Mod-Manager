@@ -15,6 +15,7 @@ namespace THMI_Mod_Manager.Models
         public DateTime LastModified { get; set; }
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
+        public DateTime InstallTime { get; set; }
         
         // Property to indicate if the mod is currently disabled
         public bool IsDisabled => FileName.EndsWith(".disabled");

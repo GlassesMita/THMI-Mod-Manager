@@ -12,6 +12,12 @@
     <FileVersion>0.2.0.0</FileVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <OutDir>F:\SteamLibrary\steamapps\common\Touhou Mystia Izakaya\</OutDir>
+    <UseCommonOutputDirectory>false</UseCommonOutputDirectory>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.44.0" />
   </ItemGroup>
