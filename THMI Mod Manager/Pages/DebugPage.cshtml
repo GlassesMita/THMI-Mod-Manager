@@ -205,6 +205,21 @@
     </div>
     
     <div class="debug-section">
+        <h3><i class="bi bi-wifi"></i> @AppConfig.GetLocalized("Debug:NetworkStatus", "Network Status")</h3>
+        <div class="debug-info">
+            <p><strong>@AppConfig.GetLocalized("Debug:ConnectionStatus", "Connection Status"):</strong> <span id="connectionStatus" class="debug-status debug-status-info">@AppConfig.GetLocalized("Debug:Checking", "Checking...")</span></p>
+            <p><strong>@AppConfig.GetLocalized("Debug:ActiveInterfaces", "Active Interfaces"):</strong> <span id="activeInterfaces">-</span></p>
+            <p><strong>@AppConfig.GetLocalized("Debug:ProxyStatus", "Proxy Status"):</strong> <span id="proxyStatus">-</span></p>
+        </div>
+        <div class="debug-button-group">
+            <button type="button" class="debug-button debug-button-primary" onclick="checkNetworkStatus()">
+                <i class="bi bi-arrow-repeat"></i> @AppConfig.GetLocalized("Debug:CheckNetwork", "Check Network")
+            </button>
+        </div>
+        <div id="networkResults" class="debug-output" style="display: none;"></div>
+    </div>
+    
+    <div class="debug-section">
         <h3><i class="bi bi-bug"></i> @AppConfig.GetLocalized("Debug:APITesting", "API Testing")</h3>
         <div class="mb-3">
             <label for="apiEndpoint" class="form-label">@AppConfig.GetLocalized("Debug:APIEndpoint", "API Endpoint")</label>
@@ -293,6 +308,21 @@
         
         setTimeout(updateCurrentTime, 0);
     });
+
+    var localizedStrings = {
+        checkingNetwork: '@AppConfig.GetLocalized("Debug:CheckingNetwork", "Checking network status...")',
+        checking: '@AppConfig.GetLocalized("Debug:Checking", "Checking...")',
+        connected: '@AppConfig.GetLocalized("Debug:Connected", "Connected")',
+        disconnected: '@AppConfig.GetLocalized("Debug:Disconnected", "Disconnected")',
+        proxyEnabled: '@AppConfig.GetLocalized("Debug:ProxyEnabled", "Enabled")',
+        proxyDisabled: '@AppConfig.GetLocalized("Debug:ProxyDisabled", "Disabled")',
+        pingResults: '@AppConfig.GetLocalized("Debug:PingResults", "Ping Results:")',
+        success: '@AppConfig.GetLocalized("Debug:Success", "Success")',
+        failed: '@AppConfig.GetLocalized("Debug:Failed", "Failed")',
+        checkFailed: '@AppConfig.GetLocalized("Debug:CheckFailed", "Check failed: ")',
+        checkError: '@AppConfig.GetLocalized("Debug:CheckError", "Error checking network status: ")',
+        error: '@AppConfig.GetLocalized("Debug:Error", "Error")'
+    };
 
     function updateCurrentTime() {
         const now = new Date();
@@ -402,6 +432,81 @@
         }
     }
 
+    async function checkNetworkStatus() {
+        const output = document.getElementById('networkResults');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const activeInterfaces = document.getElementById('activeInterfaces');
+        const proxyStatus = document.getElementById('proxyStatus');
+        
+        output.style.display = 'block';
+        output.textContent = localizedStrings.checkingNetwork;
+        connectionStatus.textContent = localizedStrings.checking;
+        connectionStatus.className = 'debug-status debug-status-info';
+        
+        try {
+            const response = await fetch('/Debug?handler=CheckNetworkStatus');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const networkInfo = data.data;
+                
+                if (networkInfo.IsConnected) {
+                    connectionStatus.textContent = localizedStrings.connected;
+                    connectionStatus.className = 'debug-status debug-status-success';
+                } else {
+                    connectionStatus.textContent = localizedStrings.disconnected;
+                    connectionStatus.className = 'debug-status debug-status-error';
+                }
+                
+                activeInterfaces.textContent = `${networkInfo.ActiveInterfaces} / ${networkInfo.TotalInterfaces}`;
+                
+                if (networkInfo.IsUsingProxy) {
+                    proxyStatus.textContent = localizedStrings.proxyEnabled;
+                    proxyStatus.className = 'debug-status debug-status-warning';
+                } else {
+                    proxyStatus.textContent = localizedStrings.proxyDisabled;
+                    proxyStatus.className = 'debug-status debug-status-success';
+                }
+                
+                let resultText = localizedStrings.pingResults + '\n\n';
+                
+                networkInfo.PingResults.forEach(ping => {
+                    resultText += `${ping.Name} (${ping.Url}):\n`;
+                    if (ping.IsSuccess) {
+                        resultText += `  Status: ${localizedStrings.success}\n`;
+                        resultText += `  Response Time: ${ping.ResponseTime} ms\n`;
+                        resultText += `  Status Code: ${ping.StatusCode}\n`;
+                    } else {
+                        resultText += `  Status: ${localizedStrings.failed}\n`;
+                        resultText += `  Error: ${ping.ErrorMessage}\n`;
+                    }
+                    resultText += '\n';
+                });
+                
+                output.textContent = resultText;
+            } else {
+                const errorMsg = data.message || 'Unknown error';
+                output.textContent = localizedStrings.checkFailed + errorMsg;
+                connectionStatus.textContent = localizedStrings.error;
+                connectionStatus.className = 'debug-status debug-status-error';
+                activeInterfaces.textContent = '-';
+                proxyStatus.textContent = '-';
+            }
+        } catch (error) {
+            console.error('Network check error:', error);
+            const errorMsg = error.message || 'Unknown error';
+            output.textContent = localizedStrings.checkError + errorMsg;
+            connectionStatus.textContent = localizedStrings.error;
+            connectionStatus.className = 'debug-status debug-status-error';
+            activeInterfaces.textContent = '-';
+            proxyStatus.textContent = '-';
+        }
+    }
 
 
     async function testAPI() {

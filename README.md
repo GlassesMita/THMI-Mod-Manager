@@ -15,22 +15,46 @@ A mod manager for Touhou Mystia Izakaya game.
 - 📦 **Mod Management** (In Development) - Install and uninstall mods with a single step
 - 🔧 **Mod Compatibility** (In Development) - Check mod compatibility & conflicts
 - 🌐 **Multi-language Support** - Localization system with multiple language packs
+  - Supports both **.ini** and **.toml** formats for localization files
+  - Automatic file format detection and parsing
 
 ## Requirements
 
-- .NET 8.0 SDK or later
+- .NET 10.0 SDK
 - Windows 10 or later (may not work well on Windows 10 or earlier Windows)
-- A game installation copy
+- A legal game installation copy
 - Web browser that supports modern web standards (Google Chrome, Microsoft Edge, Mozilla Firefox, etc.)
-- Internet connection for downloading mods (optional)
+- Stable Internet connection for downloading mods (optional) *(Note: Some high school may block Github via school firewall, you can try to use proxy to download mods.)*
 
 ## Build from Source
 
-Prerequisites:
+### Prerequisites:
 
-- Installed .NET 8.0 SDK from [Microsoft .NET Download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-- Installed Git from [Git SCM](https://git-scm.com/)
-- Installed Visual Studio 2022 and selected ".NET desktop development", "Node.js development" (optional) and "ASP.NET and web development" workloads.
+1. Install .NET 10.0 SDK
+ - Manual download and installation from [Microsoft .NET Download](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+ - Using WinGet command (Windows Package Manager)
+```bash
+winget install --id Microsoft.DotNet.SDK.10 --source winget
+```
+- *Note: you need to run PowerShell as administrator to install .NET SDK using WinGet. If you enabled Sudo in Windows Settings, you can run the command line bottom in normal user privilege.*
+```bash
+sudo winget install --id Microsoft.DotNet.SDK.10 --source winget
+```
+2. Install Git from [Git SCM](https://git-scm.com/)
+ - Manual download and installation from [Git SCM](https://git-scm.com/)
+ - Using WinGet command (Windows Package Manager)
+```bash
+winget install --id Git.Git --source winget
+```
+- *Note: you need to run PowerShell as administrator to install Git using WinGet. If you enabled Sudo in Windows Settings, you can run the command line bottom in normal user privilege.*
+```bash
+sudo winget install --id Git.Git --source winget
+```
+3. Install Development Environment
+ - (If you prefer Visual Studio 2022) Install Visual Studio 2022 and selected ".NET desktop development", "Node.js development" (optional) and "ASP.NET and web development" workloads.
+ - (If you prefer Visual Studio Code) Install Visual Studio Code and install "C# Dev Kit", "C#", "IntelliCode for C# Dev Kit", ".NET Install Tool" extensions.
+ - (If you prefer Trae) Install Trae and open Trae Settings, then click "General" tab, and click Preferences -> "Go to Settings", search "Market", then input `https://marketplace.visualstudio.com/` in Application Extension Market Url config section, and restart Trae. After reboot, install "C# Dev Kit", "C#", "IntelliCode for C# Dev Kit", ".NET Install Tool" extensions.
+### Build Steps:
 
 1. Clone the repository:
 
@@ -48,95 +72,17 @@ git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
 Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
 ```
 
-2. Build the application via DotNet CLI:
+2. Open `THMI Mod Manager.csproj`, and modify the `<OutDir>` property to your legal Touhou Mystia Izakaya game installation directory.
+
+3. Build the application via DotNet CLI:
 
 Using Command Prompt or PowerShell:
 
 ```bash
-dotnet build --configuration Release
+dotnet build --configuration Release --no-incremental
 ```
 
-3. Copy required files: **Localization** and **wwwroot** folder and **AppConfig.Schale** to the build output:
-
-Using Command Prompt:
-
-```bash
-# Copy localization files
-xcopy /E /I /Y ".\Localization" ".\bin\Release\net8.0\Localization"
-            
-# Copy web assets
-xcopy /E /I /Y ".\wwwroot" ".\bin\Release\net8.0\wwwroot"
-            
-# Copy configuration file
-copy /Y ".\AppConfig.Schale" ".\bin\Release\net8.0\AppConfig.Schale"
-``` 
-
-Using PowerShell:
-
-```bash
-# Copy localization files
-Copy-Item -Path ".\Localization" -Destination ".\bin\Release\net8.0\Localization" -Recurse
-            
-# Copy web assets
-Copy-Item -Path ".\wwwroot" -Destination ".\bin\Release\net8.0\wwwroot" -Recurse
-            
-# Copy configuration file
-Copy-Item -Path ".\AppConfig.Schale" -Destination ".\bin\Release\net8.0\AppConfig.Schale"
-```
-
-Or you can copy the files to build output directory manually.
-
-4. Copy build output to game directory:
-
-*Assume the game is installed in `C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya`. This path may vary depending on your installation location, and operating `Program Files` folder may need administrator privileges to copy files.*
-
-*If your game is installed in a different location(e.g. `D:\SteamLibrary\steamapps\common\Touhou Mystia Izakaya`), it may will not need administrator privileges to copy files.*
-
-Using Command Prompt:
-
-```bash
-# Copy build output to game directory
-xcopy /E /I /Y ".\bin\Release\net8.0" "C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya"
-```
-
-Using PowerShell:
-
-```bash
-# Copy build output to game directory
-Copy-Item -Path ".\bin\Release\net8.0" -Destination "C:\Program Files (x86)\Steam\steamapps\common\Touhou Mystia Izakaya" -Recurse
-```
-
-5. Run the application:
-
-Using Command Prompt:
-
-```bash
-# Run the application
-cd ".\bin\Release\net8.0"
-dotnet "THMI Mod Manager.dll"
-```
-
-### Development Build
-
-For development, you can also run directly from source, but it may not work well with the Web UI because there is no localization files:
-
-Using Command Prompt:
-
-```bash
-# Run the application in development build
-git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
-cd './THMI-Mod-Manager/THMI Mod Manager'
-dotnet run --configuration Debug
-```
-
-Using PowerShell:
-
-```bash
-# Run the application in development build
-git clone https://github.com/GlassesMita/THMI-Mod-Manager.git
-Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
-dotnet run --configuration Debug
-```
+The build process automatically copies localization files, web assets, and configuration files to the output directory.
 
 ## Usage
 

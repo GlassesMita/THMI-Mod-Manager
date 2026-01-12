@@ -8,16 +8,19 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
+using System.Net.NetworkInformation;
+using System.Net.Http;
+using System.Net;
 using static Microsoft.Win32.Registry;
 
 namespace THMI_Mod_Manager.Pages
 {
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    [IgnoreAntiforgeryToken]
     public class DebugModel : PageModel
     {
         private readonly ILogger<DebugModel> _logger;
         private readonly THMI_Mod_Manager.Services.AppConfigManager _appConfig;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public string AppName { get; set; } = "THMI Mod Manager";
         public string AppVersion { get; set; } = "0.0.1";
@@ -38,10 +41,11 @@ namespace THMI_Mod_Manager.Pages
         public string LogFilePath { get; set; } = "";
         public string LogFileSize { get; set; } = "";
 
-        public DebugModel(ILogger<DebugModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
+        public DebugModel(ILogger<DebugModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _appConfig = appConfig;
+            _httpClientFactory = httpClientFactory;
         }
 
         public void OnGet()
@@ -367,6 +371,117 @@ namespace THMI_Mod_Manager.Pages
                 _logger.LogError($"Error resetting settings: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
+        }
+
+        public async Task<IActionResult> OnGetCheckNetworkStatus()
+        {
+            try
+            {
+                var networkInfo = new NetworkStatusInfo();
+
+                var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+                var activeInterfaces = networkInterfaces.Where(ni => ni.OperationalStatus == OperationalStatus.Up).ToList();
+                networkInfo.IsConnected = activeInterfaces.Any();
+
+                networkInfo.ActiveInterfaces = activeInterfaces.Count();
+                networkInfo.TotalInterfaces = networkInterfaces.Count();
+
+                var proxySettings = GetProxySettings();
+                networkInfo.IsUsingProxy = proxySettings.IsUsingProxy;
+                networkInfo.ProxyServer = proxySettings.ProxyServer;
+
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(10);
+
+                var testUrls = new[]
+                {
+                    new { Name = "Google", Url = "https://www.google.com" },
+                    new { Name = "GitHub", Url = "https://github.com" },
+                    new { Name = "Steam", Url = "https://store.steampowered.com" }
+                };
+
+                var pingResults = new List<PingResult>();
+                foreach (var testUrl in testUrls)
+                {
+                    try
+                    {
+                        var stopwatch = Stopwatch.StartNew();
+                        var response = await httpClient.GetAsync(testUrl.Url);
+                        stopwatch.Stop();
+
+                        pingResults.Add(new PingResult
+                        {
+                            Name = testUrl.Name,
+                            Url = testUrl.Url,
+                            IsSuccess = response.IsSuccessStatusCode,
+                            ResponseTime = stopwatch.ElapsedMilliseconds,
+                            StatusCode = (int)response.StatusCode
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        pingResults.Add(new PingResult
+                        {
+                            Name = testUrl.Name,
+                            Url = testUrl.Url,
+                            IsSuccess = false,
+                            ResponseTime = -1,
+                            StatusCode = 0,
+                            ErrorMessage = ex.Message
+                        });
+                    }
+                }
+
+                networkInfo.PingResults = pingResults;
+
+                _logger.LogInformation($"Network status checked - Connected: {networkInfo.IsConnected}, Proxy: {networkInfo.IsUsingProxy}");
+                return new JsonResult(new { success = true, data = networkInfo });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error checking network status: {ex.Message}");
+                return new JsonResult(new { success = false, message = ex.Message });
+            }
+        }
+
+        private (bool IsUsingProxy, string ProxyServer) GetProxySettings()
+        {
+            try
+            {
+                var proxy = WebRequest.GetSystemWebProxy();
+                var proxyUri = proxy.GetProxy(new Uri("https://www.google.com"));
+                
+                if (proxyUri == null || proxyUri.IsFile || proxyUri.Scheme == "direct")
+                {
+                    return (false, "");
+                }
+
+                return (true, proxyUri.ToString());
+            }
+            catch
+            {
+                return (false, "");
+            }
+        }
+
+        public class NetworkStatusInfo
+        {
+            public bool IsConnected { get; set; }
+            public int ActiveInterfaces { get; set; }
+            public int TotalInterfaces { get; set; }
+            public bool IsUsingProxy { get; set; }
+            public string ProxyServer { get; set; } = "";
+            public List<PingResult> PingResults { get; set; } = new List<PingResult>();
+        }
+
+        public class PingResult
+        {
+            public string Name { get; set; } = "";
+            public string Url { get; set; } = "";
+            public bool IsSuccess { get; set; }
+            public long ResponseTime { get; set; }
+            public int StatusCode { get; set; }
+            public string ErrorMessage { get; set; } = "";
         }
 
         private string FormatFileSize(long bytes)

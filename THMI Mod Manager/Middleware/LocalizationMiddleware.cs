@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.IO;
+using System.Text;
 using THMI_Mod_Manager.Services;
 
 namespace THMI_Mod_Manager.Middleware
@@ -39,7 +41,7 @@ namespace THMI_Mod_Manager.Middleware
                 CultureInfo.CurrentCulture = culture;
                 CultureInfo.CurrentUICulture = culture;
             }
-
+            
             await _next(context);
         }
     }

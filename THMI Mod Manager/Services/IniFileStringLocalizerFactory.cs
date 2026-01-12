@@ -30,7 +30,7 @@ namespace THMI_Mod_Manager.Services
                 // Keep the original filename (e.g., en_US) for direct lookup
                 var cultureName = fileName;
                 
-                // Also store the normalized version (e.g., en-US) for compatibility
+                // Also store normalized version (e.g., en-US) for compatibility
                 var normalizedCulture = fileName.Replace('_', '-');
                 
                 var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -64,6 +64,54 @@ namespace THMI_Mod_Manager.Services
                     _cache[normalizedCulture] = dict;
                 }
 
+                // Also store neutral two-letter culture dict if not present
+                var neutral = normalizedCulture.Split('-')[0];
+                if (!string.IsNullOrEmpty(neutral) && !_cache.ContainsKey(neutral))
+                {
+                    // copy entries
+                    _cache[neutral] = new Dictionary<string, string>(dict, StringComparer.OrdinalIgnoreCase);
+                }
+            }
+            
+            // Also load TOML files
+            foreach (var file in Directory.GetFiles(_localizationPath, "*.toml"))
+            {
+                var fileName = Path.GetFileNameWithoutExtension(file);
+                var cultureName = fileName;
+                
+                // Also store normalized version (e.g., en-US) for compatibility
+                var normalizedCulture = fileName.Replace('_', '-');
+                
+                var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                string? currentSection = null;
+                foreach (var rawLine in File.ReadAllLines(file))
+                {
+                    var line = rawLine.Trim();
+                    if (string.IsNullOrEmpty(line)) continue;
+                    if (line.StartsWith("#") || line.StartsWith(";")) continue;
+                    
+                    // TOML section header [SectionName]
+                    if (line.StartsWith("[") && line.EndsWith("]"))
+                    {
+                        currentSection = line.Substring(1, line.Length - 2).Trim();
+                        continue;
+                    }
+
+                    // TOML key = "value" format
+                    var idx = line.IndexOf('=');
+                    if (idx <= 0) continue;
+                    var key = line.Substring(0, idx).Trim();
+                    var value = line.Substring(idx + 1).Trim();
+
+                    var storeKey = string.IsNullOrEmpty(currentSection) ? key : $"{currentSection}:{key}";
+                    dict[storeKey] = value;
+                }
+                // Store with both original filename and normalized version
+                _cache[cultureName] = dict;
+                if (cultureName != normalizedCulture)
+                {
+                    _cache[normalizedCulture] = dict;
+                }
                 // Also store neutral two-letter culture dict if not present
                 var neutral = normalizedCulture.Split('-')[0];
                 if (!string.IsNullOrEmpty(neutral) && !_cache.ContainsKey(neutral))

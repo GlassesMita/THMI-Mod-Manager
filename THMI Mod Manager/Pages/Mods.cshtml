@@ -16,6 +16,10 @@
                 <i class="bi bi-arrow-clockwise"></i>
                 <span>@AppConfig.GetLocalized("Mods:RefreshButton", "刷新")</span>
             </button>
+            <select id="sortOrder" class="form-select" onchange="modsManager.changeSortOrder(this.value)">
+                <option value="name">@AppConfig.GetLocalized("Mods:SortByName", "名称")</option>
+                <option value="date">@AppConfig.GetLocalized("Mods:SortByDate", "安装时间")</option>
+            </select>
         </div>
     </div>
     
