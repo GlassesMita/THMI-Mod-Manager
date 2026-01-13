@@ -23,12 +23,16 @@ Console.WriteLine($"管理员权限: {isAdmin}");
 
 if (!isAdmin)
 {
-    Console.WriteLine("需要管理员权限，正在重新启动...");
-    PermissionHelper.RestartAsAdministrator();
-    Environment.Exit(0);
+    Console.WriteLine("没有管理员权限，有可能会导致部分功能不可用，算了还是继续加载吧...");
+    /* PermissionHelper.RestartAsAdministrator(); */
+    /* Environment.Exit(0); */
+}
+else
+{
+    Console.WriteLine("已获得管理员权限，继续启动应用...");
 }
 
-Console.WriteLine("已获得管理员权限，继续启动应用...");
+
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -63,8 +63,8 @@ namespace THMI_Mod_Manager.Controllers
             _logger = logger;
             _appConfig = appConfig;
             
-            // 启动时检查权限
-            TryElevatePermissions();
+            // 启动时检查权限（已禁用以防止权限问题）
+            // TryElevatePermissions();
         }
 
         [HttpPost("launch")]

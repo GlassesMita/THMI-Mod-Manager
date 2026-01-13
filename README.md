@@ -1,6 +1,6 @@
 # <ruby title="You Known So Much">Tou<rt>T</rt>hou<rt>H</rt> Mystia<rt>M</rt> Izakaya<rt>I</rt></ruby> Mod Manager
 
-**This project using GNU General Public License Version 3.0 or later**
+**This project using GNU General Public License Version 3.0**
 
 A mod manager for Touhou Mystia Izakaya game.
 
@@ -21,7 +21,7 @@ A mod manager for Touhou Mystia Izakaya game.
 ## Requirements
 
 - .NET 10.0 SDK
-- Windows 10 or later (may not work well on Windows 10 or earlier Windows)
+- Windows 10 22H2 or later (may not work well on Windows 10 or earlier Windows)
 - A legal game installation copy
 - Web browser that supports modern web standards (Google Chrome, Microsoft Edge, Mozilla Firefox, etc.)
 - Stable Internet connection for downloading mods (optional) *(Note: Some high school may block Github via school firewall, you can try to use proxy to download mods.)*
@@ -31,29 +31,41 @@ A mod manager for Touhou Mystia Izakaya game.
 ### Prerequisites:
 
 1. Install .NET 10.0 SDK
- - Manual download and installation from [Microsoft .NET Download](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
- - Using WinGet command (Windows Package Manager)
+
+- Manual download and installation from [Microsoft .NET Download](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+- Using WinGet command (Windows Package Manager)
+
 ```bash
 winget install --id Microsoft.DotNet.SDK.10 --source winget
 ```
-- *Note: you need to run PowerShell as administrator to install .NET SDK using WinGet. If you enabled Sudo in Windows Settings, you can run the command line bottom in normal user privilege.*
+
+- *Note: you need to run PowerShell as administrator to install .NET SDK using WinGet. If you did not run PowerShell as administrator, you will need to approve the UAC dialog during installation. If you enabled Sudo in Windows Settings, you can run the command line bottom in normal user privilege.*
+
 ```bash
 sudo winget install --id Microsoft.DotNet.SDK.10 --source winget
 ```
+
 2. Install Git from [Git SCM](https://git-scm.com/)
- - Manual download and installation from [Git SCM](https://git-scm.com/)
- - Using WinGet command (Windows Package Manager)
+
+- Manual download and installation from [Git SCM](https://git-scm.com/)
+- Using WinGet command (Windows Package Manager)
+
 ```bash
 winget install --id Git.Git --source winget
 ```
-- *Note: you need to run PowerShell as administrator to install Git using WinGet. If you enabled Sudo in Windows Settings, you can run the command line bottom in normal user privilege.*
+
+- *Note: you need to run PowerShell as administrator to install Git using WinGet. If you did not run PowerShell as administrator, you will need to approve the UAC dialog during installation. If you enabled Sudo in Windows Settings, you can run the command line bottom in normal user privilege.*
+
 ```bash
 sudo winget install --id Git.Git --source winget
 ```
+
 3. Install Development Environment
- - (If you prefer Visual Studio 2022) Install Visual Studio 2022 and selected ".NET desktop development", "Node.js development" (optional) and "ASP.NET and web development" workloads.
- - (If you prefer Visual Studio Code) Install Visual Studio Code and install "C# Dev Kit", "C#", "IntelliCode for C# Dev Kit", ".NET Install Tool" extensions.
- - (If you prefer Trae) Install Trae and open Trae Settings, then click "General" tab, and click Preferences -> "Go to Settings", search "Market", then input `https://marketplace.visualstudio.com/` in Application Extension Market Url config section, and restart Trae. After reboot, install "C# Dev Kit", "C#", "IntelliCode for C# Dev Kit", ".NET Install Tool" extensions.
+
+- (If you prefer Visual Studio 2022) Install Visual Studio 2022 and selected ".NET desktop development", "Node.js development" (optional) and "ASP.NET and web development" workloads.
+- (If you prefer Visual Studio Code) Install Visual Studio Code and install "C# Dev Kit", "C#", "IntelliCode for C# Dev Kit", ".NET Install Tool" extensions.
+- (If you prefer Trae) Install Trae and open Trae Settings, then click "General" tab, and click Preferences -> "Go to Settings", search "Market", then input `https://marketplace.visualstudio.com/` in Application Extension Market Url config section, and restart Trae. After reboot, install "C# Dev Kit", "C#", "IntelliCode for C# Dev Kit", ".NET Install Tool" extensions.
+
 ### Build Steps:
 
 1. Clone the repository:
