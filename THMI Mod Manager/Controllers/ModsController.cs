@@ -173,10 +173,48 @@ namespace THMI_Mod_Manager.Controllers
                 return StatusCode(500, new { success = false, message = $"Failed to get localized strings: {ex.Message}" });
             }
         }
+        
+        [HttpPost("install")]
+        public IActionResult InstallMod([FromBody] InstallModRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request?.FilePath))
+                {
+                    return BadRequest(new { success = false, message = "文件路径不能为空" });
+                }
+
+                if (!System.IO.File.Exists(request.FilePath))
+                {
+                    return BadRequest(new { success = false, message = "文件不存在" });
+                }
+
+                bool installed = _modService.InstallMod(request.FilePath);
+
+                if (installed)
+                {
+                    return Ok(new { success = true, message = "Mod 安装成功" });
+                }
+                else
+                {
+                    return StatusCode(500, new { success = false, message = "Mod 安装失败" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error installing mod from: {request?.FilePath}");
+                return StatusCode(500, new { success = false, message = $"安装 Mod 时出错: {ex.Message}" });
+            }
+        }
     }
 
     public class ToggleModRequest
     {
         public string FileName { get; set; } = string.Empty;
+    }
+    
+    public class InstallModRequest
+    {
+        public string FilePath { get; set; } = string.Empty;
     }
 }

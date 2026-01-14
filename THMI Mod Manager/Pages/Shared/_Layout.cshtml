@@ -114,7 +114,7 @@
     <!-- Top navbar for small screens: shows brand and toggle for offcanvas sidebar -->
     <nav class="navbar navbar-light bg-white border-bottom d-md-none">
         <div class="container-fluid">
-            <a class="navbar-brand" asp-area="" asp-page="/Index">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
+            <a id="navbarBrandMobile" class="navbar-brand" asp-area="" asp-page="/Index" style="cursor: default;">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
             <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
                 <i class="bi bi-list"></i>
             </button>
@@ -125,7 +125,7 @@
         <!-- Sidebar for md and up -->
         <nav id="sidebar" class="bg-white border-end d-none d-md-block" style="width:260px; height:100vh; position:fixed; top:0; left:0; overflow:hidden;">
             <div class="p-3">
-                <a class="navbar-brand d-block mb-3" asp-area="" asp-page="/Index">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
+                <a id="navbarBrandSidebar" class="navbar-brand d-block mb-3" asp-area="" asp-page="/Index" style="cursor: pointer;">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
                 <ul class="nav nav-pills flex-column">
                     <li class="nav-item">
                         <a class="nav-link text-dark" asp-area="" asp-page="/Index"><i class="bi bi-house"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
@@ -198,7 +198,7 @@
 
                 <!-- Steam Status Indicator -->
                 <div class="mt-3 mb-3">
-                    <div class="card">
+                    <div id="steamStatusIndicatorOffcanvas" class="card" style="cursor: pointer;">
                         <div class="card-body py-2 px-3">
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-steam me-2" id="steamStatusIconOffcanvas"></i>
@@ -573,6 +573,88 @@
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
                 checkSteamStatus();
+            }
+        });
+
+        const steamStatusClickHandler = {
+            sidebarClickCount: 0,
+            offcanvasClickCount: 0,
+            sidebarRequiredClicks: Math.floor(Math.random() * 6) + 5,
+            offcanvasRequiredClicks: Math.floor(Math.random() * 6) + 5,
+            storageKey: 'steamStatusClickState'
+        };
+
+        function loadClickState() {
+            try {
+                const savedState = localStorage.getItem(steamStatusClickHandler.storageKey);
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    steamStatusClickHandler.sidebarClickCount = state.sidebarClickCount || 0;
+                    steamStatusClickHandler.offcanvasClickCount = state.offcanvasClickCount || 0;
+                    steamStatusClickHandler.sidebarRequiredClicks = state.sidebarRequiredClicks || Math.floor(Math.random() * 6) + 5;
+                    steamStatusClickHandler.offcanvasRequiredClicks = state.offcanvasRequiredClicks || Math.floor(Math.random() * 6) + 5;
+                }
+            } catch (e) {
+                console.error('Failed to load click state:', e);
+            }
+        }
+
+        function saveClickState() {
+            try {
+                const state = {
+                    sidebarClickCount: steamStatusClickHandler.sidebarClickCount,
+                    offcanvasClickCount: steamStatusClickHandler.offcanvasClickCount,
+                    sidebarRequiredClicks: steamStatusClickHandler.sidebarRequiredClicks,
+                    offcanvasRequiredClicks: steamStatusClickHandler.offcanvasRequiredClicks
+                };
+                localStorage.setItem(steamStatusClickHandler.storageKey, JSON.stringify(state));
+            } catch (e) {
+                console.error('Failed to save click state:', e);
+            }
+        }
+
+        function handleSteamStatusClick(event, type) {
+            if (type === 'sidebar') {
+                steamStatusClickHandler.sidebarClickCount++;
+                
+                if (steamStatusClickHandler.sidebarClickCount >= steamStatusClickHandler.sidebarRequiredClicks) {
+                    window.location.href = '/CatastrophicInfrastructureFailure';
+                    steamStatusClickHandler.sidebarClickCount = 0;
+                    steamStatusClickHandler.sidebarRequiredClicks = Math.floor(Math.random() * 6) + 5;
+                    saveClickState();
+                } else {
+                    saveClickState();
+                }
+            } else if (type === 'offcanvas') {
+                steamStatusClickHandler.offcanvasClickCount++;
+                
+                if (steamStatusClickHandler.offcanvasClickCount >= steamStatusClickHandler.offcanvasRequiredClicks) {
+                    window.location.href = '/CatastrophicInfrastructureFailure';
+                    steamStatusClickHandler.offcanvasClickCount = 0;
+                    steamStatusClickHandler.offcanvasRequiredClicks = Math.floor(Math.random() * 6) + 5;
+                    saveClickState();
+                } else {
+                    saveClickState();
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadClickState();
+            
+            const steamStatusIndicator = document.getElementById('steamStatusIndicator');
+            const steamStatusIndicatorOffcanvas = document.getElementById('steamStatusIndicatorOffcanvas');
+            
+            if (steamStatusIndicator) {
+                steamStatusIndicator.addEventListener('click', function(event) {
+                    handleSteamStatusClick(event, 'sidebar');
+                });
+            }
+            
+            if (steamStatusIndicatorOffcanvas) {
+                steamStatusIndicatorOffcanvas.addEventListener('click', function(event) {
+                    handleSteamStatusClick(event, 'offcanvas');
+                });
             }
         });
     </script>

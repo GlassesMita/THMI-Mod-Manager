@@ -12,6 +12,10 @@
     <div class="mods-header">
         <h1 class="mods-title">@AppConfig.GetLocalized("Mods:Header", "Mod 管理")</h1>
         <div class="mods-actions">
+            <button id="installModsButton" class="btn btn-outline-success me-2">
+                <i class="bi bi-plus-circle"></i>
+                <span>@AppConfig.GetLocalized("Mods:InstallButton", "安装")</span>
+            </button>
             <button id="refreshModsButton" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-clockwise"></i>
                 <span>@AppConfig.GetLocalized("Mods:RefreshButton", "刷新")</span>
@@ -55,6 +59,56 @@
 
 @section Scripts {
     <script src="~/js/mods.js"></script>
+    <script>
+        // 初始化文件浏览器按钮事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const installModsButton = document.getElementById('installModsButton');
+            if (installModsButton) {
+                installModsButton.addEventListener('click', function() {
+                    // 使用全局文件浏览器打开
+                    if (window.fileBrowser) {
+                        window.fileBrowser.open('file', {
+                            title: '@Html.Raw(AppConfig.GetLocalized("Mods:FileBrowserTitle", "选择 Zip 文件"))',
+                            extensions: ['.zip'],
+                            onFileSelected: function(filePath) {
+                                // 文件选择后执行安装
+                                installMod(filePath);
+                            },
+                            hideFileFilter: true
+                        });
+                    }
+                });
+            }
+        });
+        
+        // 安装Mod的函数
+        async function installMod(filePath) {
+            const fileName = filePath.split(/[\\/]/).pop();
+            
+            if (confirm(`确定要安装 Mod: ${fileName} 吗？`)) {
+                try {
+                    const response = await fetch('/api/mods/install', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ filePath: filePath })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('Mod 安装成功！');
+                        modsManager.loadMods();
+                    } else {
+                        alert('Mod 安装失败: ' + (data.message || '未知错误'));
+                    }
+                } catch (error) {
+                    alert('安装 Mod 时出错: ' + error.message);
+                }
+            }
+        }
+    </script>
     <script>
         // 添加折叠功能的JavaScript代码
         function toggleModDetails(modId) {

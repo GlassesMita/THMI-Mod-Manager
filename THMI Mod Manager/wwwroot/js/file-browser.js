@@ -342,7 +342,7 @@ class FileBrowser {
             return true;
         }
         
-        // 首先检查文件扩展名是否在允许列表中
+        // 检查文件扩展名是否在允许列表中
         const isAllowedExtension = this.fileExtensions.some(ext => 
             file.extension.toLowerCase() === ext.toLowerCase()
         );

@@ -1,4 +1,5 @@
-using System.Reflection;
+using System.IO.Compression;
+using Tommy;
 using THMI_Mod_Manager.Models;
 
 namespace THMI_Mod_Manager.Services
@@ -64,101 +65,87 @@ namespace THMI_Mod_Manager.Services
 
             try
             {
-                // If the file is a .disabled file, we need to temporarily rename it to load the assembly
-                string tempPath = null;
-                string originalPath = dllPath;
+                var dllFileName = Path.GetFileNameWithoutExtension(dllPath);
+                var dllDirectory = Path.GetDirectoryName(dllPath) ?? string.Empty;
+                var modFolder = Path.Combine(dllDirectory, dllFileName);
                 
-                if (dllPath.EndsWith(".disabled"))
-                {
-                    // Create a temporary path without the .disabled extension to load the assembly
-                    string enabledPath = dllPath.Substring(0, dllPath.Length - ".disabled".Length);
-                    string tempDir = Path.GetDirectoryName(dllPath) ?? string.Empty;
-                    string tempFileName = Path.GetFileName(enabledPath);
-                    tempPath = Path.Combine(tempDir, tempFileName);
-                }
-
-                // For .disabled files, we'll copy to temp location to read metadata
-                string assemblyPath = dllPath;
+                var manifestPath = Path.Combine(modFolder, "Manifest.toml");
                 
-                // For .disabled files, we need to temporarily make a copy to read metadata
-                if (dllPath.EndsWith(".disabled"))
+                if (File.Exists(manifestPath))
                 {
-                    // For .disabled files, we'll try to load metadata directly from the .disabled file
-                    // .NET can load assemblies with any extension
-                }
-
-                var assembly = Assembly.LoadFrom(dllPath);
-                var modInfoType = assembly.GetType("Meta.ModInfo");
-
-                if (modInfoType != null)
-                {
-                    var modNameField = modInfoType.GetField("ModName", BindingFlags.Public | BindingFlags.Static);
-                    var modVersionField = modInfoType.GetField("ModVersion", BindingFlags.Public | BindingFlags.Static);
-                    var modVersionCodeField = modInfoType.GetField("ModVersionCode", BindingFlags.Public | BindingFlags.Static);
-                    var modAuthorField = modInfoType.GetField("ModAuthor", BindingFlags.Public | BindingFlags.Static);
-                    var modUniqueIdField = modInfoType.GetField("ModUniqueId", BindingFlags.Public | BindingFlags.Static);
-                    var modDescriptionField = modInfoType.GetField("ModDescription", BindingFlags.Public | BindingFlags.Static);
-                    var modLinkField = modInfoType.GetField("ModLink", BindingFlags.Public | BindingFlags.Static);
-
-                    if (modNameField != null)
+                    using var reader = new StreamReader(manifestPath);
+                    var manifestData = TOML.Parse(reader);
+                    
+                    _logger.LogInformation($"Parsed Manifest.toml from {manifestPath}");
+                    _logger.LogInformation($"Manifest sections: {string.Join(", ", manifestData.Keys)}");
+                    
+                    if (manifestData.TryGetNode("Mod", out var modNode) && modNode is TomlTable modSection)
                     {
-                        modInfo.Name = modNameField.GetValue(null)?.ToString() ?? string.Empty;
-                    }
-
-                    if (modVersionField != null)
-                    {
-                        modInfo.Version = modVersionField.GetValue(null)?.ToString() ?? string.Empty;
-                    }
-
-                    if (modVersionCodeField != null)
-                    {
-                        var versionCodeValue = modVersionCodeField.GetValue(null);
-                        if (versionCodeValue is uint code)
+                        _logger.LogInformation($"Found Mod section with {modSection.ChildrenCount} keys: {string.Join(", ", modSection.Keys)}");
+                        
+                        if (modSection.TryGetNode("Name", out var nameNode) && nameNode is TomlString nameString)
                         {
-                            modInfo.VersionCode = code;
+                            modInfo.Name = nameString.Value;
                         }
-                    }
-
-                    if (modAuthorField != null)
-                    {
-                        modInfo.Author = modAuthorField.GetValue(null)?.ToString() ?? string.Empty;
-                    }
-
-                    if (modUniqueIdField != null)
-                    {
-                        modInfo.UniqueId = modUniqueIdField.GetValue(null)?.ToString() ?? string.Empty;
-                    }
-
-                    if (modDescriptionField != null)
-                    {
-                        modInfo.Description = modDescriptionField.GetValue(null)?.ToString() ?? string.Empty;
-                    }
-
-                    if (modLinkField != null)
-                    {
-                        var linkValue = modLinkField.GetValue(null)?.ToString();
-                        if (!string.IsNullOrWhiteSpace(linkValue))
+                        
+                        if (modSection.TryGetNode("Version", out var versionNode) && versionNode is TomlString versionString)
                         {
-                            modInfo.ModLink = linkValue;
+                            modInfo.Version = versionString.Value;
                         }
+                        
+                        if (modSection.TryGetNode("VersionCode", out var versionCodeNode) && versionCodeNode is TomlInteger versionCodeInt)
+                        {
+                            modInfo.VersionCode = (uint)versionCodeInt.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("Author", out var authorNode) && authorNode is TomlString authorString)
+                        {
+                            modInfo.Author = authorString.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("UniqueId", out var uniqueIdNode) && uniqueIdNode is TomlString uniqueIdString)
+                        {
+                            modInfo.UniqueId = uniqueIdString.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("Description", out var descriptionNode) && descriptionNode is TomlString descriptionString)
+                        {
+                            modInfo.Description = descriptionString.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("Link", out var linkNode) && linkNode is TomlString linkString)
+                        {
+                            modInfo.ModLink = linkString.Value;
+                        }
+                        
+                        modInfo.IsValid = true;
+                        _logger.LogInformation($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
                     }
-
-                    modInfo.IsValid = true;
-                    _logger.LogInformation($"Successfully extracted mod info from {dllPath}: {modInfo.Name}");
+                    else
+                    {
+                        modInfo.ErrorMessage = "Mod section not found in Manifest.toml";
+                        _logger.LogWarning($"Mod section not found in {manifestPath}. Available sections: {string.Join(", ", manifestData.Keys)}");
+                    }
                 }
                 else
                 {
-                    modInfo.ErrorMessage = "Meta.ModInfo class not found";
-                    _logger.LogWarning($"Meta.ModInfo class not found in {dllPath}");
+                    modInfo.ErrorMessage = "Manifest.toml not found";
+                    _logger.LogWarning($"Manifest.toml not found at {manifestPath}");
+                    
+                    var fileName = Path.GetFileNameWithoutExtension(dllPath);
+                    if (fileName.EndsWith(".dll"))
+                    {
+                        fileName = Path.GetFileNameWithoutExtension(fileName);
+                    }
+                    
+                    modInfo.Name = fileName;
                 }
             }
-            catch (FileLoadException ex)
+            catch (Exception ex)
             {
-                // This might happen with .disabled files due to their extension
-                modInfo.ErrorMessage = $"Error loading DLL: {ex.Message}";
-                _logger.LogWarning($"Could not load assembly from {dllPath}, attempting to extract basic info: {ex.Message}");
+                modInfo.ErrorMessage = $"Error reading Manifest.toml: {ex.Message}";
+                _logger.LogError(ex, $"Error extracting mod info from {dllPath}");
                 
-                // Try to extract basic info from the filename
                 var fileName = Path.GetFileNameWithoutExtension(dllPath);
                 if (fileName.EndsWith(".dll"))
                 {
@@ -166,12 +153,6 @@ namespace THMI_Mod_Manager.Services
                 }
                 
                 modInfo.Name = fileName;
-                modInfo.IsValid = false;
-            }
-            catch (Exception ex)
-            {
-                modInfo.ErrorMessage = $"Error reading DLL: {ex.Message}";
-                _logger.LogError(ex, $"Error extracting mod info from {dllPath}");
             }
 
             return modInfo;
@@ -360,6 +341,153 @@ namespace THMI_Mod_Manager.Services
             }
 
             return null; // File not found
+        }
+
+        public bool InstallMod(string zipFilePath)
+        {
+            try
+            {
+                _logger.LogInformation($"Attempting to install mod from: {zipFilePath}");
+
+                if (!File.Exists(zipFilePath))
+                {
+                    _logger.LogError($"Zip file not found: {zipFilePath}");
+                    return false;
+                }
+
+                if (!zipFilePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogError($"File is not a zip file: {zipFilePath}");
+                    return false;
+                }
+
+                var pluginsPath = GetPluginsPath();
+                if (!Directory.Exists(pluginsPath))
+                {
+                    Directory.CreateDirectory(pluginsPath);
+                    _logger.LogInformation($"Created plugins directory: {pluginsPath}");
+                }
+
+                var tempExtractPath = Path.Combine(Path.GetTempPath(), $"THMI_Mod_Install_{Guid.NewGuid()}");
+                
+                try
+                {
+                    Directory.CreateDirectory(tempExtractPath);
+                    
+                    using (var archive = ZipFile.OpenRead(zipFilePath))
+                    {
+                        archive.ExtractToDirectory(tempExtractPath, true);
+                        _logger.LogInformation($"Extracted zip file to: {tempExtractPath}");
+                    }
+
+                    var extractedFiles = Directory.GetFiles(tempExtractPath, "*.*", SearchOption.AllDirectories);
+                    _logger.LogInformation($"Found {extractedFiles.Length} files in zip archive");
+
+                    var dllFiles = Directory.GetFiles(tempExtractPath, "*.dll", SearchOption.AllDirectories);
+                    var manifestFiles = Directory.GetFiles(tempExtractPath, "Manifest.*", SearchOption.AllDirectories);
+
+                    if (dllFiles.Length == 0)
+                    {
+                        _logger.LogError("No DLL files found in zip archive");
+                        return false;
+                    }
+
+                    bool includePDB = false;
+                    if (manifestFiles.Length > 0)
+                    {
+                        using var reader = new StreamReader(manifestFiles[0]);
+                        var manifestData = TOML.Parse(reader);
+                        
+                        if (manifestData.TryGetNode("Mod", out var modNode) && modNode is TomlTable modSection && 
+                            modSection.TryGetNode("IncludePDB", out var includePDBNode) && includePDBNode is TomlBoolean includePDBBool)
+                        {
+                            includePDB = includePDBBool.Value;
+                            _logger.LogInformation($"IncludePDB setting: {includePDB}");
+                        }
+                    }
+
+                    foreach (var dllFile in dllFiles)
+                    {
+                        var dllFileName = Path.GetFileNameWithoutExtension(dllFile);
+                        var dllFileNameWithExt = Path.GetFileName(dllFile);
+                        var pdbFileName = dllFileName + ".pdb";
+                        
+                        var dllDestPath = Path.Combine(pluginsPath, dllFileNameWithExt);
+                        var modFolderDestPath = Path.Combine(pluginsPath, dllFileName);
+                        
+                        if (!Directory.Exists(modFolderDestPath))
+                        {
+                            Directory.CreateDirectory(modFolderDestPath);
+                            _logger.LogInformation($"Created mod folder: {modFolderDestPath}");
+                        }
+
+                        if (File.Exists(dllDestPath))
+                        {
+                            var backupPath = dllDestPath + ".backup";
+                            if (File.Exists(backupPath))
+                            {
+                                File.Delete(backupPath);
+                            }
+                            File.Move(dllDestPath, backupPath);
+                            _logger.LogInformation($"Backed up existing DLL: {dllDestPath} -> {backupPath}");
+                        }
+
+                        File.Copy(dllFile, dllDestPath, true);
+                        _logger.LogInformation($"Installed DLL: {dllFile} -> {dllDestPath}");
+
+                        var pdbFile = Path.Combine(Path.GetDirectoryName(dllFile) ?? tempExtractPath, pdbFileName);
+                        if (includePDB && File.Exists(pdbFile))
+                        {
+                            var pdbDestPath = Path.Combine(pluginsPath, pdbFileName);
+                            
+                            if (File.Exists(pdbDestPath))
+                            {
+                                var backupPath = pdbDestPath + ".backup";
+                                if (File.Exists(backupPath))
+                                {
+                                    File.Delete(backupPath);
+                                }
+                                File.Move(pdbDestPath, backupPath);
+                                _logger.LogInformation($"Backed up existing PDB: {pdbDestPath} -> {backupPath}");
+                            }
+                            
+                            File.Copy(pdbFile, pdbDestPath, true);
+                            _logger.LogInformation($"Installed PDB: {pdbFile} -> {pdbDestPath}");
+                        }
+
+                        foreach (var manifestFile in manifestFiles)
+                        {
+                            var manifestFileName = Path.GetFileName(manifestFile);
+                            var manifestDestPath = Path.Combine(modFolderDestPath, manifestFileName);
+                            File.Copy(manifestFile, manifestDestPath, true);
+                            _logger.LogInformation($"Installed manifest: {manifestFile} -> {manifestDestPath}");
+                        }
+                    }
+
+                    _logger.LogInformation($"Successfully installed mod from: {zipFilePath}");
+                    return true;
+                }
+                finally
+                {
+                    if (Directory.Exists(tempExtractPath))
+                    {
+                        try
+                        {
+                            Directory.Delete(tempExtractPath, true);
+                            _logger.LogInformation($"Cleaned up temp directory: {tempExtractPath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning($"Failed to clean up temp directory: {ex.Message}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error installing mod from: {zipFilePath}");
+                return false;
+            }
         }
     }
 }

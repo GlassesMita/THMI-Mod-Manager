@@ -1,6 +1,6 @@
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Collections.Concurrent;
+using System.IO.Compression;
+using Tommy;
 using THMI_Mod_Manager.Models;
 
 namespace THMI_Mod_Manager.Services
@@ -10,26 +10,11 @@ namespace THMI_Mod_Manager.Services
         private readonly ILogger<ModServiceOptimized> _logger;
         private readonly AppConfigManager _appConfig;
         
-        // Cache for compiled delegates
-        private static readonly ConcurrentDictionary<string, ModInfoDelegates> _delegateCache = new();
-        
-        // Cache for mod info data to avoid repeated assembly loading
+        // Cache for mod info data to avoid repeated file reading
         private static readonly ConcurrentDictionary<string, CachedModInfo> _modInfoCache = new();
         
         // Cache timeout (5 minutes)
         private static readonly TimeSpan _cacheTimeout = TimeSpan.FromMinutes(5);
-
-        // Delegates for fast field access
-        private class ModInfoDelegates
-        {
-            public Func<object, string?>? ModNameGetter { get; set; }
-            public Func<object, string?>? ModVersionGetter { get; set; }
-            public Func<object, uint>? ModVersionCodeGetter { get; set; }
-            public Func<object, string?>? ModAuthorGetter { get; set; }
-            public Func<object, string?>? ModUniqueIdGetter { get; set; }
-            public Func<object, string?>? ModDescriptionGetter { get; set; }
-            public Func<object, string?>? ModLinkGetter { get; set; }
-        }
 
         // Cached mod info with timestamp
         private class CachedModInfo
@@ -59,11 +44,9 @@ namespace THMI_Mod_Manager.Services
 
             try
             {
-                // Get all .dll files (including .disabled files)
                 var dllFiles = Directory.GetFiles(pluginsPath, "*.dll", SearchOption.TopDirectoryOnly);
                 var disabledFiles = Directory.GetFiles(pluginsPath, "*.dll.disabled", SearchOption.TopDirectoryOnly);
                 
-                // Combine both lists
                 var allFiles = dllFiles.Concat(disabledFiles).ToArray();
                 
                 _logger.LogInformation($"Found {dllFiles.Length} DLL files and {disabledFiles.Length} disabled files in {pluginsPath}");
@@ -88,11 +71,9 @@ namespace THMI_Mod_Manager.Services
             var fileSize = fileInfo.Length;
             var lastModified = fileInfo.LastWriteTime;
 
-            // Check cache first
             var cacheKey = dllPath.ToLowerInvariant();
             if (_modInfoCache.TryGetValue(cacheKey, out var cachedInfo))
             {
-                // Check if cache is still valid (file hasn't changed)
                 if (cachedInfo.FileSize == fileSize && cachedInfo.LastModified == lastModified && 
                     DateTime.UtcNow - cachedInfo.CacheTime < _cacheTimeout)
                 {
@@ -100,7 +81,6 @@ namespace THMI_Mod_Manager.Services
                     return cachedInfo.ModInfo;
                 }
                 
-                // Cache is invalid, remove it
                 _modInfoCache.TryRemove(cacheKey, out _);
             }
 
@@ -110,54 +90,92 @@ namespace THMI_Mod_Manager.Services
                 FileName = Path.GetFileName(dllPath),
                 FileSize = fileSize,
                 LastModified = lastModified,
+                InstallTime = fileInfo.CreationTime,
                 IsValid = false
             };
 
             try
             {
-                var assembly = Assembly.LoadFrom(dllPath);
-                var modInfoType = assembly.GetType("Meta.ModInfo");
-
-                if (modInfoType != null)
+                var dllFileName = Path.GetFileNameWithoutExtension(dllPath);
+                var dllDirectory = Path.GetDirectoryName(dllPath) ?? string.Empty;
+                var modFolder = Path.Combine(dllDirectory, dllFileName);
+                
+                var manifestPath = Path.Combine(modFolder, "Manifest.toml");
+                
+                if (File.Exists(manifestPath))
                 {
-                    // Get or create compiled delegates for this type
-                    var delegates = GetOrCreateDelegates(modInfoType);
+                    using var reader = new StreamReader(manifestPath);
+                    var manifestData = TOML.Parse(reader);
                     
-                    // Create instance (null for static fields)
-                    var instance = Activator.CreateInstance(modInfoType, true);
-
-                    // Use compiled delegates for fast field access
-                    modInfo.Name = delegates.ModNameGetter?.Invoke(instance ?? new object()) ?? string.Empty;
-                    modInfo.Version = delegates.ModVersionGetter?.Invoke(instance ?? new object()) ?? string.Empty;
+                    _logger.LogInformation($"Parsed Manifest.toml from {manifestPath}");
+                    _logger.LogInformation($"Manifest sections: {string.Join(", ", manifestData.Keys)}");
                     
-                    if (delegates.ModVersionCodeGetter != null)
+                    if (manifestData.TryGetNode("Mod", out var modNode) && modNode is TomlTable modSection)
                     {
-                        modInfo.VersionCode = delegates.ModVersionCodeGetter.Invoke(instance ?? new object());
+                        _logger.LogInformation($"Found Mod section with {modSection.ChildrenCount} keys: {string.Join(", ", modSection.Keys)}");
+                        
+                        if (modSection.TryGetNode("Name", out var nameNode) && nameNode is TomlString nameString)
+                        {
+                            modInfo.Name = nameString.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("Version", out var versionNode) && versionNode is TomlString versionString)
+                        {
+                            modInfo.Version = versionString.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("VersionCode", out var versionCodeNode) && versionCodeNode is TomlInteger versionCodeInt)
+                        {
+                            modInfo.VersionCode = (uint)versionCodeInt.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("Author", out var authorNode) && authorNode is TomlString authorString)
+                        {
+                            modInfo.Author = authorString.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("UniqueId", out var uniqueIdNode) && uniqueIdNode is TomlString uniqueIdString)
+                        {
+                            modInfo.UniqueId = uniqueIdString.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("Description", out var descriptionNode) && descriptionNode is TomlString descriptionString)
+                        {
+                            modInfo.Description = descriptionString.Value;
+                        }
+                        
+                        if (modSection.TryGetNode("Link", out var linkNode) && linkNode is TomlString linkString)
+                        {
+                            modInfo.ModLink = linkString.Value;
+                        }
+                        
+                        modInfo.IsValid = true;
+                        _logger.LogInformation($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
                     }
-                    
-                    modInfo.Author = delegates.ModAuthorGetter?.Invoke(instance ?? new object()) ?? string.Empty;
-                    modInfo.UniqueId = delegates.ModUniqueIdGetter?.Invoke(instance ?? new object()) ?? string.Empty;
-                    modInfo.Description = delegates.ModDescriptionGetter?.Invoke(instance ?? new object()) ?? string.Empty;
-                    
-                    var linkValue = delegates.ModLinkGetter?.Invoke(instance ?? new object());
-                    if (!string.IsNullOrWhiteSpace(linkValue))
+                    else
                     {
-                        modInfo.ModLink = linkValue;
+                        modInfo.ErrorMessage = "Mod section not found in Manifest.toml";
+                        _logger.LogWarning($"Mod section not found in {manifestPath}. Available sections: {string.Join(", ", manifestData.Keys)}");
                     }
-
-                    modInfo.IsValid = true;
-                    _logger.LogInformation($"Successfully extracted mod info from {dllPath}: {modInfo.Name}");
                 }
                 else
                 {
-                    modInfo.ErrorMessage = "Meta.ModInfo class not found";
-                    _logger.LogWarning($"Meta.ModInfo class not found in {dllPath}");
+                    modInfo.ErrorMessage = "Manifest.toml not found";
+                    _logger.LogWarning($"Manifest.toml not found at {manifestPath}");
+                    
+                    var fileName = Path.GetFileNameWithoutExtension(dllPath);
+                    if (fileName.EndsWith(".dll"))
+                    {
+                        fileName = Path.GetFileNameWithoutExtension(fileName);
+                    }
+                    
+                    modInfo.Name = fileName;
                 }
             }
-            catch (FileLoadException ex)
+            catch (Exception ex)
             {
-                modInfo.ErrorMessage = $"Error loading DLL: {ex.Message}";
-                _logger.LogWarning($"Could not load assembly from {dllPath}, attempting to extract basic info: {ex.Message}");
+                modInfo.ErrorMessage = $"Error reading Manifest.toml: {ex.Message}";
+                _logger.LogError(ex, $"Error extracting mod info from {dllPath}");
                 
                 var fileName = Path.GetFileNameWithoutExtension(dllPath);
                 if (fileName.EndsWith(".dll"))
@@ -166,15 +184,8 @@ namespace THMI_Mod_Manager.Services
                 }
                 
                 modInfo.Name = fileName;
-                modInfo.IsValid = false;
-            }
-            catch (Exception ex)
-            {
-                modInfo.ErrorMessage = $"Error reading DLL: {ex.Message}";
-                _logger.LogError(ex, $"Error extracting mod info from {dllPath}");
             }
 
-            // Cache the result
             var newCachedInfo = new CachedModInfo
             {
                 ModInfo = modInfo,
@@ -186,89 +197,6 @@ namespace THMI_Mod_Manager.Services
             _modInfoCache.AddOrUpdate(cacheKey, newCachedInfo, (key, old) => newCachedInfo);
             
             return modInfo;
-        }
-
-        private ModInfoDelegates GetOrCreateDelegates(Type modInfoType)
-        {
-            var typeName = modInfoType.AssemblyQualifiedName ?? modInfoType.FullName ?? modInfoType.Name;
-            
-            return _delegateCache.GetOrAdd(typeName, key =>
-            {
-                _logger.LogInformation($"Creating compiled delegates for type: {typeName}");
-                
-                var delegates = new ModInfoDelegates();
-                
-                // Compile delegates for each field
-                delegates.ModNameGetter = CreateFieldGetter(modInfoType, "ModName");
-                delegates.ModVersionGetter = CreateFieldGetter(modInfoType, "ModVersion");
-                delegates.ModVersionCodeGetter = CreateFieldGetter<uint>(modInfoType, "ModVersionCode");
-                delegates.ModAuthorGetter = CreateFieldGetter(modInfoType, "ModAuthor");
-                delegates.ModUniqueIdGetter = CreateFieldGetter(modInfoType, "ModUniqueId");
-                delegates.ModDescriptionGetter = CreateFieldGetter(modInfoType, "ModDescription");
-                delegates.ModLinkGetter = CreateFieldGetter(modInfoType, "ModLink");
-                
-                return delegates;
-            });
-        }
-
-        private Func<object, string?>? CreateFieldGetter(Type type, string fieldName)
-        {
-            try
-            {
-                var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static);
-                if (field == null) return null;
-
-                // Create parameter expression for the instance (even though it's static, we need it for the delegate signature)
-                var instanceParam = Expression.Parameter(typeof(object), "instance");
-                
-                // Create field access expression
-                var fieldAccess = Expression.Field(null, field); // null for static fields
-                
-                // Convert to string if necessary
-                Expression result = fieldAccess;
-                if (field.FieldType != typeof(string))
-                {
-                    result = Expression.Call(fieldAccess, "ToString", Type.EmptyTypes);
-                }
-                
-                // Create lambda expression
-                var lambda = Expression.Lambda<Func<object, string?>>(result, instanceParam);
-                
-                // Compile to delegate
-                return lambda.Compile();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Could not create getter for field {fieldName} in type {type.Name}: {ex.Message}");
-                return null;
-            }
-        }
-
-        private Func<object, T>? CreateFieldGetter<T>(Type type, string fieldName)
-        {
-            try
-            {
-                var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Static);
-                if (field == null) return null;
-
-                var instanceParam = Expression.Parameter(typeof(object), "instance");
-                var fieldAccess = Expression.Field(null, field); // null for static fields
-                
-                // Convert to target type if necessary
-                Expression result = fieldAccess;
-                if (field.FieldType != typeof(T))
-                {
-                    result = Expression.Convert(fieldAccess, typeof(T));
-                }
-                
-                var lambda = Expression.Lambda<Func<object, T>>(result, instanceParam);
-                return lambda.Compile();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Could not create typed getter for field {fieldName} in type {type.Name}: {ex.Message}");
-                return null;
-            }
         }
 
         private string GetPluginsPath()
@@ -315,7 +243,6 @@ namespace THMI_Mod_Manager.Services
             {
                 if (File.Exists(filePath))
                 {
-                    // Remove from cache when deleting
                     var cacheKey = filePath.ToLowerInvariant();
                     _modInfoCache.TryRemove(cacheKey, out _);
                     
@@ -369,7 +296,6 @@ namespace THMI_Mod_Manager.Services
 
                 File.Move(fullPath, newFilePath);
                 
-                // Remove from cache when toggling
                 var cacheKey = fullPath.ToLowerInvariant();
                 _modInfoCache.TryRemove(cacheKey, out _);
                 
@@ -402,14 +328,12 @@ namespace THMI_Mod_Manager.Services
         {
             var pluginsPath = GetPluginsPath();
 
-            // First, try to find the exact file name in the plugins directory
             string fullPath = Path.Combine(pluginsPath, fileName);
             if (File.Exists(fullPath))
             {
                 return fullPath;
             }
 
-            // If not found, check if it's a disabled file and try to find the enabled version
             if (fileName.EndsWith(".disabled"))
             {
                 string enabledName = fileName.Substring(0, fileName.Length - ".disabled".Length);
@@ -421,7 +345,6 @@ namespace THMI_Mod_Manager.Services
             }
             else
             {
-                // If it's an enabled file, try to find the disabled version
                 string disabledName = fileName + ".disabled";
                 string disabledPath = Path.Combine(pluginsPath, disabledName);
                 if (File.Exists(disabledPath))
@@ -430,16 +353,14 @@ namespace THMI_Mod_Manager.Services
                 }
             }
 
-            // If not found in plugins directory, search in subdirectories
             try
             {
                 var allFiles = Directory.GetFiles(pluginsPath, fileName, SearchOption.AllDirectories);
                 if (allFiles.Length > 0)
                 {
-                    return allFiles[0]; // Return the first match
+                    return allFiles[0];
                 }
 
-                // If still not found, try searching for both enabled and disabled versions
                 if (fileName.EndsWith(".disabled"))
                 {
                     var enabledFiles = Directory.GetFiles(pluginsPath, fileName.Substring(0, fileName.Length - ".disabled".Length), SearchOption.TopDirectoryOnly);
@@ -462,7 +383,7 @@ namespace THMI_Mod_Manager.Services
                 _logger.LogError(ex, $"Error searching for mod file: {fileName}");
             }
 
-            return null; // File not found
+            return null;
         }
     }
 }
