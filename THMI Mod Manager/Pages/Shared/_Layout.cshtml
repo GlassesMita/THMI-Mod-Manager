@@ -3,10 +3,11 @@
 @{ string year = DateTime.Now.Year.ToString(); }
 
 @using THMI_Mod_Manager.Services
+@using System.Reflection
 @inject AppConfigManager AppConfig
-@{
+{
     var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
-    var appVersion = AppConfig.Get("[App]Version", "0.0.1");
+    var appVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +23,7 @@
     <link rel="stylesheet" href="~/css/file-browser.css" asp-append-version="true" />
     <style>
         h1 {
-            color: @themeColor !important;
+            color: @@themeColor !important;
         }
     </style>
     @await RenderSectionAsync("Styles", required: false)

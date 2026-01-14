@@ -1,6 +1,6 @@
-﻿[App]
+[App]
 Name=THMI Mod Manager
-Version=0.2.0
+Version=0.3.1
 VersionCode=1
 IsFirstRun=False
 ThemeColor=#c670ff

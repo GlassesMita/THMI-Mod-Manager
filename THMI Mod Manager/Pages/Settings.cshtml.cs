@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Diagnostics;
 using THMI_Mod_Manager.Services;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System.Reflection;
 
 namespace THMI_Mod_Manager.Pages
 {
@@ -46,8 +47,8 @@ namespace THMI_Mod_Manager.Pages
         public bool AutoCheckUpdates { get; set; } = true; // 是否自动检查更新
         
         // Mod信息属性
-        public string ModName { get; set; } = "MetaIzakaya";
-        public string ModVersion { get; set; } = "0.7.0";
+        public string ModName { get; set; } = "THMI Mod Manager";
+        public string ModVersion { get; set; } = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -111,7 +112,6 @@ namespace THMI_Mod_Manager.Pages
                 try
                 {
                     ModName = _appConfig.Get("[App]Name", "THMI Mod Manager");
-                    ModVersion = _appConfig.Get("[App]Version", "0.0.1");
                     Logger.LogInfo($"Loaded program information: {ModName} v{ModVersion}");
                 }
                 catch (Exception ex)

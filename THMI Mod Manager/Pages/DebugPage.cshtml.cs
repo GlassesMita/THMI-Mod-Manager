@@ -12,6 +12,7 @@ using System.Net.NetworkInformation;
 using System.Net.Http;
 using System.Net;
 using static Microsoft.Win32.Registry;
+using System.Reflection;
 
 namespace THMI_Mod_Manager.Pages
 {
@@ -23,7 +24,7 @@ namespace THMI_Mod_Manager.Pages
         private readonly IHttpClientFactory _httpClientFactory;
 
         public string AppName { get; set; } = "THMI Mod Manager";
-        public string AppVersion { get; set; } = "0.0.1";
+        public string AppVersion { get; set; } = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
         public string RuntimeVersion { get; set; } = "";
         public string OSVersion { get; set; } = "";
         public string OSFriendlyName { get; set; } = "";
@@ -55,7 +56,6 @@ namespace THMI_Mod_Manager.Pages
             try
             {
                 AppName = _appConfig.Get("[App]Name", "THMI Mod Manager") ?? "THMI Mod Manager";
-                AppVersion = _appConfig.Get("[App]Version", "0.0.1") ?? "0.0.1";
                 RuntimeVersion = Environment.Version.ToString();
                 OSVersion = Environment.OSVersion.ToString();
                 OSFriendlyName = GetOSFriendlyName();

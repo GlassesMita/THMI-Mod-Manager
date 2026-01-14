@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Diagnostics;
 using System.Text;
 using Markdig;
+using System.Reflection;
 
 namespace THMI_Mod_Manager.Pages
 {
@@ -127,9 +128,9 @@ namespace THMI_Mod_Manager.Pages
             var versionCode = _appConfig.Get("[App]VersionCode", "1");
             markdown = markdown.Replace("@versionCode", versionCode);
             
-            // Replace @version with app version from AppConfig.Schale
-            var version = _appConfig.Get("[App]Version", "0.0.1");
-            markdown = markdown.Replace("@version", version);
+            // Replace @version with app version from assembly
+            var assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
+            markdown = markdown.Replace("@version", assemblyVersion);
             
             // Replace @appName with localized app name
             var appName = _appConfig.GetLocalized("App:Name", "THMI Mod Manager");
