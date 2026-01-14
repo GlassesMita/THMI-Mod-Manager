@@ -31,14 +31,14 @@
 
 1. 安装.NET 10.0 SDK
 
-- 手动下载：[微软.NET下载页面](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- 使用 WinGet 命令（Windows 包管理器）
+- 手动下载：[Microsoft .NET Download Page](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+- 使用 WinGet（Windows 包管理器）命令
 
 ```bash
 winget install --id Microsoft.DotNet.SDK.10 --source winget
 ```
 
-- *注意：使用 WinGet 安装需管理员权限。如果没有管理员权限，会在安装过程中请求一次。若已开启 Windows sudo 功能，可在普通权限下执行：*
+- *注意：使用 WinGet 安装需管理员权限。如果没有管理员权限，会在安装过程中请求一次。若已开启 Windows sudo 功能，可在普通权限下执行，但是会在刚开始运行命令的时候请求一次权限。这个功能在使用 WinGet 一次性安装多个应用的时候非常方便：*
 
 ```bash
 sudo winget install --id Microsoft.DotNet.SDK.10 --source winget
@@ -87,11 +87,23 @@ Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
 
 3. 使用 DotNet CLI 编译：
 
+- 使用此方法，程序依赖于 .NET 10 SDK 或 Runtime 运行。
+
 命令提示符或 PowerShell：
 
 ```bash
 dotnet build --configuration Release --no-incremental
 ```
+
+- 使用此方法，程序不依赖于 .NET 10 SDK 或 Runtime 运行。
+
+命令提示符或 PowerShell：
+
+```bash
+dotnet publish --configuration Release
+```
+
+*注意：可以使用 `--runtime win-x64` 编译 64 位 Windows 程序。如果需要编译 32 位 Windows 程序，可使用 `--runtime win-x86`。如果需要编译到其他目录，可使用 `--output <path>` 指定输出目录。*
 
 编译过程会自动将本地化文件、网页资源和配置文件复制到输出目录。
 

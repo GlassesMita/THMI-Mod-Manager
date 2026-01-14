@@ -33,13 +33,13 @@ A mod manager for Touhou Mystia Izakaya game.
 1. Install .NET 10.0 SDK
 
 - Manual download and installation from [Microsoft .NET Download](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- Using WinGet command (Windows Package Manager)
+- Using WinGet (Windows Package Manager) command
 
 ```bash
 winget install --id Microsoft.DotNet.SDK.10 --source winget
 ```
 
-- *Note: you need to run PowerShell as administrator to install .NET SDK using WinGet. If you did not run PowerShell as administrator, you will need to approve the UAC dialog during installation. If you enabled Sudo in Windows Settings, you can run the command line bottom in normal user privilege.*
+- *Note: you need to run PowerShell as administrator to install .NET SDK using WinGet. If you did not run PowerShell as administrator, you will need to approve the UAC dialog during installation. If you enabled Sudo in Windows Settings, you can run the command line and it will prompt you for administrator permission at Enter key pressed. This feature is very useful when you need to install multiple applications using WinGet at once:*
 
 ```bash
 sudo winget install --id Microsoft.DotNet.SDK.10 --source winget
@@ -88,11 +88,23 @@ Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
 
 3. Build the application via DotNet CLI:
 
+- Using this method, the program depends on .NET 10 SDK or Runtime to run.
+
 Using Command Prompt or PowerShell:
 
 ```bash
 dotnet build --configuration Release --no-incremental
 ```
+
+- Using this method, the program does not depend on .NET 10 SDK or Runtime to run.
+
+Using Command Prompt or PowerShell:
+
+```bash
+dotnet publish --configuration Release
+```
+
+*Note: You can use `--runtime win-x64` to build the program for 64-bit Windows. If you want to build the program for 32-bit Windows, you can use `--runtime win-x86`. If you want to build into other directories, you can use `--output <path>` to specify the output directory.*
 
 The build process automatically copies localization files, web assets, and configuration files to the output directory.
 
