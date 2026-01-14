@@ -5,7 +5,7 @@
 @using THMI_Mod_Manager.Services
 @using System.Reflection
 @inject AppConfigManager AppConfig
-{
+@{ 
     var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
     var appVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
 }
