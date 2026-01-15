@@ -10,18 +10,22 @@ class Program
     static async Task Main()
     {
         Console.WriteLine("=== Testing Settings Save Functionality ===");
+        Logger.LogInfo("=== Testing Settings Save Functionality ===");
         
         string configPath = Path.Combine("..", "THMI Mod Manager", "bin", "Debug", "net8.0", "AppConfig.Schale");
         
         // Read current ModifyTitle value
         Console.WriteLine($"Config file path: {configPath}");
         Console.WriteLine($"File exists: {File.Exists(configPath)}");
+        Logger.LogInfo($"File exists: {File.Exists(configPath)}");
         
         if (File.Exists(configPath))
         {
             string originalContent = File.ReadAllText(configPath, Encoding.UTF8);
             Console.WriteLine("\n=== Original File Content ===");
+            Logger.LogInfo("\n=== Original File Content ===");
             Console.WriteLine(originalContent);
+            Logger.LogInfo(originalContent);
             
             // Parse current value
             var sections = ParseIniContent(originalContent);
@@ -31,10 +35,12 @@ class Program
                 currentValue = sections["Game"]["ModifyTitle"];
             }
             Console.WriteLine($"\nCurrent ModifyTitle value: {currentValue}");
+            Logger.LogInfo($"\nCurrent ModifyTitle value: {currentValue}");
             
             // Test toggling the value
             string newValue = currentValue == "true" ? "false" : "true";
             Console.WriteLine($"Testing save with new value: {newValue}");
+            Logger.LogInfo($"Testing save with new value: {newValue}");
             
             // Simulate form data
             var formData = new Dictionary<string, string>
@@ -53,9 +59,11 @@ class Program
             };
             
             Console.WriteLine("\n=== Simulated Form Data ===");
+            Logger.LogInfo("\n=== Simulated Form Data ===");
             foreach (var kvp in formData)
             {
                 Console.WriteLine($"{kvp.Key} = {kvp.Value}");
+                Logger.LogInfo($"{kvp.Key} = {kvp.Value}");
             }
             
             // Manually update the config file (simulating what the server would do)
@@ -81,9 +89,12 @@ class Program
                 }
                 
                 Console.WriteLine($"\n=== Verification ===");
+                Logger.LogInfo($"\n=== Verification ===");
                 Console.WriteLine($"Expected value: {newValue}");
+                Logger.LogInfo($"Expected value: {newValue}");
                 Console.WriteLine($"Actual value: {verifyValue}");
                 Console.WriteLine($"Save successful: {verifyValue == newValue}");
+                Logger.LogInfo($"Save successful: {verifyValue == newValue}");
                 
                 if (verifyValue == newValue)
                 {
@@ -97,11 +108,13 @@ class Program
             else
             {
                 Console.WriteLine("\n❌ [Game] section not found in config file!");
+                Logger.LogError("[Game] section not found in config file!");
             }
         }
         else
         {
             Console.WriteLine("\n❌ AppConfig.Schale file does not exist!");
+            Logger.LogError("AppConfig.Schale file does not exist!");
         }
     }
     

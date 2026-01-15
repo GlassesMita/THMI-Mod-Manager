@@ -8,6 +8,7 @@ namespace PerformanceDemo
         static void Main(string[] args)
         {
             Console.WriteLine("=== ModService Performance Optimization Demo ===");
+            Logger.LogInfo("=== ModService Performance Optimization Demo ===");
             Console.WriteLine();
             
             // Demonstrate reflection vs delegate performance
@@ -16,12 +17,15 @@ namespace PerformanceDemo
             Console.WriteLine();
             Console.WriteLine("Demo completed! The actual ModServiceOptimized implementation");
             Console.WriteLine("provides similar performance improvements in real-world usage.");
+            Logger.LogInfo("provides similar performance improvements in real-world usage.");
             Console.WriteLine();
             Console.WriteLine("Key improvements:");
             Console.WriteLine("- Expression tree compiled delegates: ~10-50x faster field access");
+            Logger.LogInfo("- Expression tree compiled delegates: ~10-50x faster field access");
             Console.WriteLine("- File-based caching: Near-instant mod info retrieval");
             Console.WriteLine("- Memory efficient: Automatic cache cleanup");
             Console.WriteLine("- Thread-safe: Concurrent access support");
+            Logger.LogInfo("- Thread-safe: Concurrent access support");
             
             Console.WriteLine();
             Console.WriteLine("Press any key to exit...");
@@ -63,7 +67,9 @@ namespace PerformanceDemo
             
             Console.WriteLine($"Reflection ({iterations} calls): {reflectionSw.Elapsed.TotalMilliseconds:F2}ms");
             Console.WriteLine($"Delegates ({iterations} calls): {delegateSw.Elapsed.TotalMilliseconds:F2}ms");
+            Logger.LogInfo($"Delegates ({iterations} calls): {delegateSw.Elapsed.TotalMilliseconds:F2}ms");
             Console.WriteLine($"Performance improvement: {reflectionSw.Elapsed.TotalMilliseconds / delegateSw.Elapsed.TotalMilliseconds:F1}x faster");
+            Logger.LogInfo($"Performance improvement: {reflectionSw.Elapsed.TotalMilliseconds / delegateSw.Elapsed.TotalMilliseconds:F1}x faster");
         }
         
         // Test class to simulate mod info structure

@@ -13,6 +13,7 @@ class Program
         
         Console.WriteLine($"Config file path: {configPath}");
         Console.WriteLine($"File exists: {File.Exists(configPath)}");
+        Logger.LogInfo($"File exists: {File.Exists(configPath)}");
         
         if (!File.Exists(configPath))
         {
@@ -30,6 +31,7 @@ class Program
         // Step 2: Verify ModifyTitle setting exists and is readable
         bool modifyTitleSettingExists = sections.ContainsKey("Game") && sections["Game"].ContainsKey("ModifyTitle");
         Console.WriteLine($"\n=== Step 2: ModifyTitle Setting Check ===");
+        Logger.LogInfo($"\n=== Step 2: ModifyTitle Setting Check ===");
         Console.WriteLine($"ModifyTitle setting exists: {modifyTitleSettingExists}");
         
         if (modifyTitleSettingExists)
@@ -38,6 +40,7 @@ class Program
             bool currentBoolValue = currentValue?.ToLower() != "false";
             Console.WriteLine($"Current value: {currentValue}");
             Console.WriteLine($"Parsed as boolean: {currentBoolValue}");
+            Logger.LogInfo($"Parsed as boolean: {currentBoolValue}");
             Console.WriteLine("✅ ModifyTitle setting is properly configured");
         }
         else
@@ -48,6 +51,7 @@ class Program
         
         // Step 3: Test setting toggle (simulate user changing the switch)
         Console.WriteLine($"\n=== Step 3: Testing Setting Toggle ===");
+        Logger.LogInfo($"\n=== Step 3: Testing Setting Toggle ===");
         string originalValue = sections["Game"]["ModifyTitle"];
         string newValue = originalValue == "true" ? "false" : "true";
         
@@ -60,6 +64,7 @@ class Program
         File.WriteAllText(configPath, updatedContent, Encoding.UTF8);
         
         Console.WriteLine("✅ Setting toggle test completed");
+        Logger.LogInfo("Setting toggle test completed");
         
         // Step 4: Verify the change was saved
         string verifyContent = File.ReadAllText(configPath, Encoding.UTF8);
@@ -69,6 +74,7 @@ class Program
         Console.WriteLine($"\n=== Step 4: Verification ===");
         Console.WriteLine($"Expected value: {newValue}");
         Console.WriteLine($"Actual value: {verifyValue}");
+        Logger.LogInfo($"Actual value: {verifyValue}");
         Console.WriteLine($"Save successful: {verifyValue == newValue}");
         
         if (verifyValue == newValue)
@@ -78,6 +84,7 @@ class Program
         else
         {
             Console.WriteLine("❌ Setting change was not saved correctly");
+            Logger.LogError("Setting change was not saved correctly");
             return;
         }
         
@@ -88,6 +95,7 @@ class Program
         
         Console.WriteLine($"Config value: {configValue}");
         Console.WriteLine($"Should modify title: {shouldModifyTitle}");
+        Logger.LogInfo($"Should modify title: {shouldModifyTitle}");
         
         if (shouldModifyTitle)
         {
@@ -100,8 +108,10 @@ class Program
         
         // Step 6: Test UI binding simulation
         Console.WriteLine($"\n=== Step 6: UI Binding Simulation ===");
+        Logger.LogInfo($"\n=== Step 6: UI Binding Simulation ===");
         bool uiCheckedState = shouldModifyTitle;
         Console.WriteLine($"UI switch would be: {(uiCheckedState ? "checked" : "unchecked")}");
+        Logger.LogInfo($"UI switch would be: {(uiCheckedState ? "checked" : "unchecked")}");
         Console.WriteLine("✅ UI binding is working correctly");
         
         // Final summary
@@ -109,9 +119,11 @@ class Program
         Console.WriteLine("✅ AppConfig.Schale contains [Game] section");
         Console.WriteLine("✅ ModifyTitle setting exists in [Game] section");
         Console.WriteLine("✅ Setting can be read and parsed correctly");
+        Logger.LogInfo("Setting can be read and parsed correctly");
         Console.WriteLine("✅ Setting can be saved and updated");
         Console.WriteLine("✅ LauncherController logic respects the setting");
         Console.WriteLine("✅ UI binding works correctly");
+        Logger.LogInfo("UI binding works correctly");
         Console.WriteLine("\n🎉 All tests passed! The ModifyTitle functionality is working correctly.");
         
         // Restore original value
@@ -179,11 +191,13 @@ class Program
         foreach (var section in sections)
         {
             Console.WriteLine($"[{section.Key}]");
+                        Logger.LogInfo($"[{section.Key}]");
             foreach (var kvp in section.Value)
             {
                 Console.WriteLine($"  {kvp.Key} = {kvp.Value}");
             }
             Console.WriteLine();
+            Logger.LogInfo("");
         }
     }
 }

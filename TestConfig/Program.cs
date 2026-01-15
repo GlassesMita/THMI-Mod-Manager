@@ -13,6 +13,7 @@ class Program
         
         Console.WriteLine($"Config file path: {configPath}");
         Console.WriteLine($"File exists: {File.Exists(configPath)}");
+        Logger.LogInfo($"File exists: {File.Exists(configPath)}");
         
         if (File.Exists(configPath))
         {
@@ -26,12 +27,15 @@ class Program
                 var sections = ParseIniContent(content);
                 
                 Console.WriteLine("\n=== Parsed Sections ===");
+                Logger.LogInfo("\n=== Parsed Sections ===");
                 foreach (var section in sections)
                 {
                     Console.WriteLine($"[{section.Key}]");
+                        Logger.LogInfo($"[{section.Key}]");
                     foreach (var kvp in section.Value)
                     {
                         Console.WriteLine($"  {kvp.Key} = {kvp.Value}");
+                            Logger.LogInfo($"  {kvp.Key} = {kvp.Value}");
                     }
                 }
                 
@@ -49,13 +53,16 @@ class Program
                     else
                     {
                         Console.WriteLine("\n=== ERROR ===");
+                        Logger.LogError("\n=== ERROR ===");
                         Console.WriteLine("ModifyTitle setting not found in [Game] section!");
+                        Logger.LogError("ModifyTitle setting not found in [Game] section!");
                     }
                 }
                 else
                 {
                     Console.WriteLine("\n=== ERROR ===");
                     Console.WriteLine("[Game] section not found in config file!");
+                    Logger.LogError("[Game] section not found in config file!");
                 }
             }
             catch (Exception ex)

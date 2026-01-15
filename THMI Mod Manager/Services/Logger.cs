@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using Microsoft.Extensions.Logging;
 
 namespace THMI_Mod_Manager.Services
 {
@@ -134,6 +133,7 @@ namespace THMI_Mod_Manager.Services
             {
                 // 如果初始化失败，记录到控制台
                 Console.WriteLine($"Failed to initialize logger: {ex.Message}");
+                Logger.LogError($"Failed to initialize logger: {ex.Message}");
                 logFilePath = null;
             }
         }

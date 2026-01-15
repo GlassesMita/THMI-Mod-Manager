@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using THMI_Mod_Manager.Middleware;
 using System.Diagnostics;
 using THMI_Mod_Manager;
+using THMI_Mod_Manager.Services;
 
 #if DEBUG
 Console.Title = "THMI Mod Manager - Console (Debug Build)";
@@ -17,27 +18,33 @@ Console.Title = "THMI Mod Manager - Console";
 
 // 简单的权限检查 - 仅使用管理员权限运行
 Console.WriteLine("正在检查权限状态...");
+Logger.LogInfo("Checking permission status...");
 
 // 检查是否以管理员身份运行
 bool isAdmin = PermissionHelper.IsRunAsAdmin();
 Console.WriteLine($"管理员权限: {isAdmin}");
+Logger.LogInfo($"Administrator privileges: {isAdmin}");
 
 if (!isAdmin)
 {
     Console.WriteLine("没有管理员权限，有可能会导致部分功能不可用，算了还是继续加载吧...");
+    Logger.LogWarning("Administrator privileges not available. Some features may be limited. Proceeding with loading...");
     /* PermissionHelper.RestartAsAdministrator(); */
     /* Environment.Exit(0); */
 }
 else
 {
     Console.WriteLine("已获得管理员权限，继续启动应用...");
+    Logger.LogInfo("Administrator privileges acquired. Continuing application startup...");
 }
 
 Console.Write("\n");
 
 Console.WriteLine("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
+Logger.LogInfo("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
 
 Console.WriteLine("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
+Logger.LogInfo("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
 
 Console.Write('\n');
 
@@ -318,6 +325,7 @@ lifetime.ApplicationStarted.Register(() =>
             catch (Exception ex)
             {
                 Console.WriteLine($"读取本地化文件失败: {ex.Message}");
+                Logger.LogError($"Failed to read localization file: {ex.Message}");
             }
         }
         
@@ -325,6 +333,7 @@ lifetime.ApplicationStarted.Register(() =>
         if (!string.IsNullOrEmpty(welcomeMessage))
         {
             Console.WriteLine(welcomeMessage);
+            Logger.LogInfo(welcomeMessage);
         }
         
         Console.WriteLine(runningMessage);
@@ -337,6 +346,7 @@ lifetime.ApplicationStarted.Register(() =>
             UseShellExecute = true
         });
         Console.WriteLine(browserOpenedMessage);
+        Logger.LogInfo(browserOpenedMessage);
     }
     catch (Exception ex)
     {
@@ -355,6 +365,7 @@ lifetime.ApplicationStopping.Register(() =>
     catch (Exception ex)
     {
         Console.WriteLine($"Error during shutdown logging: {ex.Message}");
+        Logger.LogError($"Error during shutdown logging: {ex.Message}");
     }
 });
 

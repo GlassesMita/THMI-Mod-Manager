@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using THMI_Mod_Manager.Services;
 
 namespace THMI_Mod_Manager
 {
@@ -74,10 +75,12 @@ namespace THMI_Mod_Manager
                     if (ex.NativeErrorCode == 1223) // ERROR_CANCELLED
                     {
                         Console.WriteLine("需要管理员权限才能修改游戏窗口标题。请在UAC提示时点击'是'以授予权限。");
+                        Logger.LogWarning("Administrator privileges required to modify game window title. Please click 'Yes' in the UAC prompt to grant permissions.");
                     }
                     else
                     {
                         Console.WriteLine($"无法获取管理员权限：{ex.Message} (错误代码：{ex.NativeErrorCode})");
+                        Logger.LogError($"Failed to obtain administrator privileges: {ex.Message} (Error code: {ex.NativeErrorCode})");
                     }
                     return false;
                 }
@@ -85,6 +88,7 @@ namespace THMI_Mod_Manager
             catch (Exception ex)
             {
                 Console.WriteLine($"权限提升时发生错误：{ex.Message}");
+                Logger.LogError($"Error during privilege elevation: {ex.Message}");
                 return false;
             }
         }
