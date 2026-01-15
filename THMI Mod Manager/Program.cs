@@ -33,6 +33,14 @@ else
     Console.WriteLine("已获得管理员权限，继续启动应用...");
 }
 
+Console.Write("\n");
+
+Console.WriteLine("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
+
+Console.WriteLine("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
+
+Console.Write('\n');
+
 
 
 var builder = WebApplication.CreateBuilder(args);

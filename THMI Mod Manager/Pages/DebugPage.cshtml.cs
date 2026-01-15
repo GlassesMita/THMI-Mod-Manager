@@ -506,7 +506,7 @@ namespace THMI_Mod_Manager.Pages
 
             string friendlyName = platform switch
             {
-                PlatformID.Win32NT => $"Windows NT {versionString}",
+                PlatformID.Win32NT => versionString,
                 PlatformID.Win32Windows => $"Windows {versionString}",
                 PlatformID.Win32S => "Win32s",
                 PlatformID.WinCE => "Windows CE",
@@ -524,8 +524,17 @@ namespace THMI_Mod_Manager.Pages
             {
                 if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
-                    var productName = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion")?.GetValue("ProductName")?.ToString();
-                    return productName ?? "Unknown";
+                    var os = Environment.OSVersion;
+                    var version = os.Version;
+                    
+                    var productName = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion")?.GetValue("ProductName")?.ToString() ?? "Unknown";
+                    
+                    if (version.Build >= 22000)
+                    {
+                        productName = productName.Replace("Windows 10", "Windows 11");
+                    }
+                    
+                    return productName;
                 }
                 return "N/A";
             }
