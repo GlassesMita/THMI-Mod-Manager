@@ -44,8 +44,9 @@ namespace THMI_Mod_Manager.Controllers
                     deleteConfirm = _appConfig.GetLocalized("Mods:DeleteConfirm", "确定要删除 Mod 吗？")
                 };
 
+                _logger.LogInformation($"Successfully returned {mods.Count} mods");
                 return Ok(new 
-                { 
+                {
                     success = true, 
                     mods = mods,
                     localizedStrings = localizedStrings
@@ -70,6 +71,7 @@ namespace THMI_Mod_Manager.Controllers
 
                 _logger.LogInformation($"Toggling mod: {request.FileName}");
                 var success = _modService.ToggleMod(request.FileName);
+                _logger.LogInformation($"Mod toggle {(success ? "succeeded" : "failed")} for {request.FileName}");
                 
                 return Ok(new { success = success });
             }
@@ -101,6 +103,7 @@ namespace THMI_Mod_Manager.Controllers
 
                 _logger.LogInformation($"Deleting mod: {mod.FilePath}");
                 var success = _modService.DeleteMod(mod.FilePath);
+                _logger.LogInformation($"Mod deletion {(success ? "succeeded" : "failed")} for {mod.FileName}");
                 
                 return Ok(new { success = success });
             }

@@ -55,6 +55,14 @@ namespace THMI_Mod_Manager.Services
                 {
                     var modInfo = ExtractModInfoOptimized(dllFile);
                     mods.Add(modInfo);
+                    if (modInfo.IsValid)
+                    {
+                        _logger.LogInformation($"Successfully loaded mod: {modInfo.Name} v{modInfo.Version} (File: {modInfo.FileName})");
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Failed to load mod {modInfo.FileName}: {modInfo.ErrorMessage}");
+                    }
                 }
             }
             catch (Exception ex)

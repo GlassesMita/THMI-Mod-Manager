@@ -9,7 +9,8 @@ namespace THMI_Mod_Manager.Services
         {
             Info,
             Warning,
-            Error
+            Error,
+            Ex
         }
         
         private static string? logFilePath;
@@ -40,6 +41,11 @@ namespace THMI_Mod_Manager.Services
         public static void LogInfo(string message)
         {
             Log(message, LogLevel.Info);
+        }
+
+        public static void LogEx(string message)
+        {
+            Log(message, LogLevel.Ex);
         }
 
         // 写入消息并指定等级（不使用默认参数，以免与 Log(string) 冲突）
@@ -87,6 +93,7 @@ namespace THMI_Mod_Manager.Services
         {
             switch (level)
             {
+                case LogLevel.Ex: return "X";
                 case LogLevel.Warning: return "W";
                 case LogLevel.Error: return "E";
                 case LogLevel.Info:

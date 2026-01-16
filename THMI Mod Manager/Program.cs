@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -38,7 +39,40 @@ else
     Logger.LogInfo("Administrator privileges acquired. Continuing application startup...");
 }
 
+string osArchitecture = RuntimeInformation.OSArchitecture.ToString();
+string platform;
+
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+{
+    if (osArchitecture.Contains("Arm"))
+    {
+        platform = "Windows (ARM)";
+        Console.WriteLine($"Unsupported platform: {platform}. This application does not support Windows ARM.");
+        Logger.LogError($"Unsupported platform: {platform}. This application does not support Windows ARM.");
+        Environment.Exit(1);
+    }
+    else
+    {
+        platform = "Windows";
+    }
+}
+else
+{
+    platform = RuntimeInformation.OSDescription;
+    Console.WriteLine($"Unsupported platform: {platform}. This application only supports Windows.");
+    Logger.LogError($"Unsupported platform: {platform}. This application only supports Windows.");
+    Environment.Exit(1);
+}
+
+string runtimeId = RuntimeInformation.RuntimeIdentifier;
+string arch = runtimeId.Contains("x64") ? "64-Bit" : (runtimeId.Contains("x86") ? "32-Bit" : "Unknown");
+Console.WriteLine($"Platform: {platform}");
+Logger.LogInfo($"Platform: {platform}");
+Console.WriteLine($"Architecture: {arch}");
+Logger.LogInfo($"Architecture: {arch}");
+
 Console.Write("\n");
+Logger.Log("\t");
 
 Console.WriteLine("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
 Logger.LogInfo("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
@@ -47,6 +81,7 @@ Console.WriteLine("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
 Logger.LogInfo("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
 
 Console.Write('\n');
+Logger.Log("\t");
 
 
 
@@ -279,8 +314,8 @@ lifetime.ApplicationStarted.Register(() =>
         
         // 构建本地化文件路径
         var localizationFile = Path.Combine(app.Environment.ContentRootPath, "Localization", $"{currentLanguage}.ini");
-        string runningMessage = $"正在 localhost:{port} 上运行"; // 默认消息
-        string browserOpenedMessage = $"已自动打开浏览器: http://localhost:{port}"; // 默认消息
+        string runningMessage = $"Running on localhost:{port}"; // 默认消息
+        string browserOpenedMessage = $"Opened URL: http://localhost:{port}"; // 默认消息
         string? welcomeMessage = null;
         
         if (File.Exists(localizationFile))
@@ -333,10 +368,11 @@ lifetime.ApplicationStarted.Register(() =>
         if (!string.IsNullOrEmpty(welcomeMessage))
         {
             Console.WriteLine(welcomeMessage);
-            Logger.LogInfo(welcomeMessage);
+            Logger.LogInfo("Welcome message displayed");
         }
         
         Console.WriteLine(runningMessage);
+        Logger.LogInfo($"Application running on localhost:{port}");
         
         // 自动打开默认浏览器
         var openUrl = $"http://localhost:{port}";
@@ -346,11 +382,12 @@ lifetime.ApplicationStarted.Register(() =>
             UseShellExecute = true
         });
         Console.WriteLine(browserOpenedMessage);
-        Logger.LogInfo(browserOpenedMessage);
+        Logger.LogInfo($"Browser opened with URL: http://localhost:{port}");
     }
     catch (Exception ex)
     {
         Console.WriteLine($"无法自动打开浏览器: {ex.Message}");
+        Logger.LogError($"Cannot open browser automatically: {ex.Message}");
     }
 });
 

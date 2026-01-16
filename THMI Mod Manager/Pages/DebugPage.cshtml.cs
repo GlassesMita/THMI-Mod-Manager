@@ -55,11 +55,13 @@ namespace THMI_Mod_Manager.Pages
 
             try
             {
+                _logger.LogInformation("Starting to collect system information for debug page");
                 AppName = _appConfig.Get("[App]Name", "THMI Mod Manager") ?? "THMI Mod Manager";
                 RuntimeVersion = Environment.Version.ToString();
                 OSVersion = Environment.OSVersion.ToString();
                 OSFriendlyName = GetOSFriendlyName();
                 OSProductName = GetOSProductName();
+                _logger.LogInformation($"System Information - OS: {OSFriendlyName} ({OSProductName}), Runtime: {RuntimeVersion}");
                 BaseDirectory = AppContext.BaseDirectory;
                 CurrentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
@@ -75,6 +77,7 @@ namespace THMI_Mod_Manager.Pages
                 var disableCacheValue = _appConfig.Get("[Debug]DisableCache", "false");
                 DisableCache = disableCacheValue?.ToLower() == "true";
 
+                _logger.LogInformation("Reading configuration file information");
                 var configPath = Path.Combine(AppContext.BaseDirectory, "AppConfig.Schale");
                 ConfigFilePath = configPath;
                 
@@ -82,18 +85,19 @@ namespace THMI_Mod_Manager.Pages
                 {
                     var fileInfo = new FileInfo(configPath);
                     ConfigLastModified = fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
+                    _logger.LogInformation($"Configuration file found: {configPath}, Last modified: {ConfigLastModified}");
                 }
-
                 var logPath = Path.Combine(AppContext.BaseDirectory, "logs");
                 LogFilePath = logPath;
+                _logger.LogInformation($"Log directory: {logPath}");
                 
                 if (Directory.Exists(logPath))
                 {
                     var logFiles = Directory.GetFiles(logPath, "*.log");
                     var totalSize = logFiles.Sum(f => new FileInfo(f).Length);
                     LogFileSize = FormatFileSize(totalSize);
+                    _logger.LogInformation($"Found {logFiles.Length} log files totaling {LogFileSize}");
                 }
-
                 _logger.LogInformation($"Debug page loaded - DevMode: {IsDevMode}, VerboseLogging: {EnableVerboseLogging}");
             }
             catch (Exception ex)
@@ -118,37 +122,39 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostToggleCVEWarning([FromBody] ToggleRequest request)
-        {
-            try
-            {
-                _appConfig.Set("[Dev]ShowCVEWarning", request.enabled.ToString().ToLower());
-                _appConfig.Reload();
-                _logger.LogInformation($"CVE warning toggled: {request.enabled}");
-                return new JsonResult(new { success = true, message = $"CVE warning {(request.enabled ? "enabled" : "disabled")}" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error toggling CVE warning: {ex.Message}");
-                return new JsonResult(new { success = false, message = ex.Message });
-            }
-        }
 
-        public IActionResult OnPostToggleVerboseLogging([FromBody] ToggleRequest request)
-        {
-            try
-            {
-                _appConfig.Set("[Debug]VerboseLogging", request.enabled.ToString().ToLower());
-                _appConfig.Reload();
-                _logger.LogInformation($"Verbose logging toggled: {request.enabled}");
-                return new JsonResult(new { success = true, message = $"Verbose logging {(request.enabled ? "enabled" : "disabled")}" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error toggling verbose logging: {ex.Message}");
-                return new JsonResult(new { success = false, message = ex.Message });
-            }
-        }
+
+        public IActionResult OnPostToggleCVEWarning([FromBody] ToggleRequest request)
+          {
+              try
+              {
+                  _appConfig.Set("[Dev]ShowCVEWarning", request.enabled.ToString().ToLower());
+                  _appConfig.Reload();
+                  _logger.LogInformation($"CVE warning toggled: {request.enabled}");
+                  return new JsonResult(new { success = true, message = $"CVE warning {(request.enabled ? "enabled" : "disabled")}" });
+              }
+              catch (Exception ex)
+              {
+                  _logger.LogError($"Error toggling CVE warning: {ex.Message}");
+                  return new JsonResult(new { success = false, message = ex.Message });
+              }
+          }
+
+          public IActionResult OnPostToggleVerboseLogging([FromBody] ToggleRequest request)
+          {
+              try
+              {
+                  _appConfig.Set("[Debug]VerboseLogging", request.enabled.ToString().ToLower());
+                  _appConfig.Reload();
+                  _logger.LogInformation($"Verbose logging toggled: {request.enabled}");
+                  return new JsonResult(new { success = true, message = $"Verbose logging {(request.enabled ? "enabled" : "disabled")}" });
+              }
+              catch (Exception ex)
+              {
+                  _logger.LogError($"Error toggling verbose logging: {ex.Message}");
+                  return new JsonResult(new { success = false, message = ex.Message });
+              }
+          }
 
         public IActionResult OnPostToggleDisableCache([FromBody] ToggleRequest request)
         {
@@ -185,11 +191,13 @@ namespace THMI_Mod_Manager.Pages
         {
             try
             {
+                _logger.LogInformation("User requested configuration file view");
                 var configPath = Path.Combine(AppContext.BaseDirectory, "AppConfig.Schale");
                 
                 if (!System.IO.File.Exists(configPath))
                 {
-                    return new JsonResult(new { success = false, message = "Config file not found" });
+                    _logger.LogWarning("Configuration file not found when requested");
+                return new JsonResult(new { success = false, message = "Config file not found" });
                 }
 
                 var configContent = System.IO.File.ReadAllText(configPath);
@@ -230,6 +238,7 @@ namespace THMI_Mod_Manager.Pages
                 }
 
                 var configContent = System.IO.File.ReadAllText(configPath);
+                _logger.LogInformation("Successfully returned configuration file content");
                 return Content(configContent, "text/plain");
             }
             catch (Exception ex)
