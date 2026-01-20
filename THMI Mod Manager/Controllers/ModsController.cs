@@ -138,7 +138,12 @@ namespace THMI_Mod_Manager.Controllers
             try
             {
                 // Call the launcher controller's method to check game status
-                var launcherController = new LauncherController(_logger as ILogger<LauncherController>, _appConfig);
+                var launcherLogger = _logger as ILogger<LauncherController>;
+                if (launcherLogger == null)
+                {
+                    return StatusCode(500, new { success = false, message = "Failed to create launcher logger" });
+                }
+                var launcherController = new LauncherController(launcherLogger, _appConfig);
                 var gameStatus = launcherController.GetStatus();
                 return gameStatus;
             }

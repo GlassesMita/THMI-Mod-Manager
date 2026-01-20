@@ -47,9 +47,8 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     if (osArchitecture.Contains("Arm"))
     {
         platform = "Windows (ARM)";
-        Console.WriteLine($"Unsupported platform: {platform}. This application does not support Windows ARM.");
-        Logger.LogError($"Unsupported platform: {platform}. This application does not support Windows ARM.");
-        Environment.Exit(1);
+        Console.WriteLine($"Warning: Windows ARM detected. Some features may be limited.");
+        Logger.LogWarning($"Windows ARM detected. Some features may be limited.");
     }
     else
     {
@@ -59,9 +58,8 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 else
 {
     platform = RuntimeInformation.OSDescription;
-    Console.WriteLine($"Unsupported platform: {platform}. This application only supports Windows.");
-    Logger.LogError($"Unsupported platform: {platform}. This application only supports Windows.");
-    Environment.Exit(1);
+    Console.WriteLine($"Note: Running on non-Windows platform ({platform}). This is an early preview for future cross-platform support.");
+    Logger.LogInfo($"Running on non-Windows platform ({platform}). This is an early preview for future cross-platform support.");
 }
 
 string runtimeId = RuntimeInformation.RuntimeIdentifier;

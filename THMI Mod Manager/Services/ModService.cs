@@ -228,8 +228,8 @@ namespace THMI_Mod_Manager.Services
                     return false;
                 }
 
-                string fullPath = FindModFileByName(fileName);
-                if (fullPath == null)
+                string? fullPath = FindModFileByName(fileName);
+                if (string.IsNullOrEmpty(fullPath))
                 {
                     _logger.LogError($"Mod file not found by name: {fileName}");
                     return false;

@@ -527,6 +527,8 @@ namespace THMI_Mod_Manager.Pages
             return friendlyName;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:验证平台兼容性", Justification = "<挂起>")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1168:属性名称应与字段名称不同", Justification = "<挂起>")]
         private string GetOSProductName()
         {
             try

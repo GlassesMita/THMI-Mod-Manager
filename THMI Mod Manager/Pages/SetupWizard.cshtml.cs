@@ -91,7 +91,7 @@ namespace THMI_Mod_Manager.Pages
             return defaultValue ?? key;
         }
 
-        public void OnGet(string language = null)
+        public void OnGet(string? language = null)
         {
             if (!string.IsNullOrEmpty(language))
             {
@@ -99,7 +99,7 @@ namespace THMI_Mod_Manager.Pages
             }
 
             var isDevBuild = _appConfig.Get("[Dev]IsDevBuild", "False");
-            if (bool.Parse(isDevBuild))
+            if (!string.IsNullOrEmpty(isDevBuild) && bool.Parse(isDevBuild))
             {
                 Message = _appConfig.GetLocalized("SetupWizard:DevModeWarning", "当前处于开发模式，跳过设置向导。");
                 MessageType = "warning";

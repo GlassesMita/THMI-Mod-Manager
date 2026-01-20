@@ -93,8 +93,7 @@ namespace THMI_Mod_Manager.Controllers
 
                 // 读取日志文件的最后几行
                 var logLines = new List<string>();
-                string nonNullLogPath = logPath!;
-                using (var fs = new FileStream(nonNullLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var fs = new FileStream(logPath!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (var sr = new StreamReader(fs))
                 {
                     string line;

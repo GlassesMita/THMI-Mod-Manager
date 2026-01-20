@@ -11,8 +11,13 @@ namespace THMI_Mod_Manager
     /// </summary>
     public static class PermissionHelper
     {
+#if NETFRAMEWORK || NETSTANDARD || NETCOREAPP
         [DllImport("shell32.dll", SetLastError = true)]
         private static extern bool IsUserAnAdmin();
+#else
+        [DllImport("libc", SetLastError = true)]
+        private static extern int geteuid();
+#endif
 
         /// <summary>
         /// 检查是否以管理员身份运行
@@ -21,13 +26,27 @@ namespace THMI_Mod_Manager
         {
             try
             {
+#if NETFRAMEWORK || NETSTANDARD || NETCOREAPP
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    WindowsIdentity identity = WindowsIdentity.GetCurrent();
+                    WindowsIdentity? identity = WindowsIdentity.GetCurrent();
+                    if (identity == null)
+                        return false;
+                    
                     WindowsPrincipal principal = new WindowsPrincipal(identity);
                     return principal.IsInRole(WindowsBuiltInRole.Administrator);
                 }
                 return false;
+#else
+                // Cross-platform: Use POSIX check on Unix-like systems
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || 
+                    RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    int uid = geteuid();
+                    return uid == 0;
+                }
+                return false;
+#endif
             }
             catch
             {
@@ -56,11 +75,35 @@ namespace THMI_Mod_Manager
                 }
 
                 var currentProcess = Process.GetCurrentProcess();
+                
+                string? executablePath = currentProcess.MainModule?.FileName;
+                if (string.IsNullOrEmpty(executablePath))
+                {
+                    executablePath = Environment.ProcessPath;
+                }
+                if (string.IsNullOrEmpty(executablePath))
+                {
+                    try
+                    {
+                        executablePath = Process.GetCurrentProcess().MainModule?.FileName;
+                    }
+                    catch
+                    {
+                        executablePath = null;
+                    }
+                }
+                if (string.IsNullOrEmpty(executablePath))
+                {
+                    executablePath = AppContext.BaseDirectory?.TrimEnd('\\', '/') + 
+                                    System.IO.Path.DirectorySeparatorChar + 
+                                    AppDomain.CurrentDomain.FriendlyName;
+                }
+                
                 var startInfo = new ProcessStartInfo
                 {
                     UseShellExecute = true,
                     WorkingDirectory = Environment.CurrentDirectory,
-                    FileName = currentProcess.MainModule?.FileName ?? Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName,
+                    FileName = executablePath ?? string.Empty,
                     Verb = "runas" // 请求管理员权限
                 };
 
@@ -106,8 +149,18 @@ namespace THMI_Mod_Manager
                 }
                 else
                 {
-                    var identity = WindowsIdentity.GetCurrent();
-                    return $"当前用户: {identity?.Name ?? "未知用户"}\n权限级别: 标准用户\n建议: 以管理员身份运行程序以获得最佳兼容性";
+#if NETFRAMEWORK || NETSTANDARD || NETCOREAPP
+                    WindowsIdentity? identity = WindowsIdentity.GetCurrent();
+                    string userName = identity?.Name ?? "Unknown User";
+                    return $"当前用户: {userName}\n权限级别: 标准用户\n建议: 以管理员身份运行程序以获得最佳兼容性";
+#else
+                    // Cross-platform: Get user info via environment
+                    var userName = Environment.GetEnvironmentVariable("USER") ?? 
+                                   Environment.GetEnvironmentVariable("USERNAME") ?? "Unknown";
+                    int uid = geteuid();
+                    bool isRoot = uid == 0;
+                    return $"当前用户: {userName}\n权限级别: {(isRoot ? "管理员 (root)" : "标准用户")}\n建议: {(isRoot ? "程序以管理员权限运行" : "以管理员身份运行程序以获得最佳兼容性")}";
+#endif
                 }
             }
             catch (Exception ex)
@@ -119,11 +172,14 @@ namespace THMI_Mod_Manager
         /// <summary>
         /// 检查目标进程是否可以被修改
         /// </summary>
-        public static bool CanModifyProcess(Process targetProcess)
+        public static bool CanModifyProcess(Process? targetProcess)
         {
             try
             {
-                if (targetProcess == null || targetProcess.HasExited)
+                if (targetProcess == null)
+                    return false;
+
+                if (targetProcess.HasExited)
                     return false;
 
                 // 如果当前是管理员，可以修改任何进程
@@ -134,8 +190,8 @@ namespace THMI_Mod_Manager
                 try
                 {
                     // 尝试获取进程的基本信息，如果失败说明权限不足
-                    var _ = targetProcess.MainModule;
-                    var __ = targetProcess.Id;
+                    ProcessModule? mainModule = targetProcess.MainModule;
+                    int processId = targetProcess.Id;
                     return true;
                 }
                 catch

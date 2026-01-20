@@ -109,6 +109,9 @@
     margin-right: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    pointer-events: auto;
+    z-index: 1;
+    position: relative;
 }
 
 .checkbox-container input[type="checkbox"]:checked {

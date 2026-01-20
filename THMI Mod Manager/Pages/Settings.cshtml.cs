@@ -111,7 +111,7 @@ namespace THMI_Mod_Manager.Pages
                 // Load program version information from AppConfig
                 try
                 {
-                    ModName = _appConfig.Get("[App]Name", "THMI Mod Manager");
+                    ModName = _appConfig.Get("[App]Name", "THMI Mod Manager") ?? "THMI Mod Manager";
                     Logger.LogInfo($"Loaded program information: {ModName} v{ModVersion}");
                 }
                 catch (Exception ex)

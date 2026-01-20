@@ -117,12 +117,12 @@ namespace THMI_Mod_Manager.Services
         /// <summary>
         /// Checks if this version is newer than the other version
         /// </summary>
-        public bool IsNewerThan(SemanticVersion other) => CompareTo(other) > 0;
+        public bool IsNewerThan(SemanticVersion? other) => CompareTo(other) > 0;
 
         /// <summary>
         /// Checks if this version is older than the other version
         /// </summary>
-        public bool IsOlderThan(SemanticVersion other) => CompareTo(other) < 0;
+        public bool IsOlderThan(SemanticVersion? other) => CompareTo(other) < 0;
 
         /// <summary>
         /// Checks if versions are equal (ignoring build metadata)
@@ -210,14 +210,14 @@ namespace THMI_Mod_Manager.Services
             return left.CompareTo(right) >= 0;
         }
 
-        public static bool operator ==(SemanticVersion left, SemanticVersion right)
+        public static bool operator ==(SemanticVersion? left, SemanticVersion? right)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null) return false;
-            return left.IsEqualTo(right);
+            return left.IsEqualTo(right!);
         }
 
-        public static bool operator !=(SemanticVersion left, SemanticVersion right)
+        public static bool operator !=(SemanticVersion? left, SemanticVersion? right)
         {
             return !(left == right);
         }

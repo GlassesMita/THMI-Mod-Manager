@@ -74,7 +74,7 @@ namespace THMI_Mod_Manager.Controllers
                         downloadUrl = result.DownloadUrl,
                         publishedAt = result.PublishedAt,
                         message = result.IsUpdateAvailable 
-                            ? _localizer["UpdateAvailable", result.LatestVersion] 
+                            ? _localizer["UpdateAvailable", result.LatestVersion ?? ""] 
                             : _localizer["NoUpdatesAvailable"]
                     });
                 }
@@ -177,7 +177,7 @@ namespace THMI_Mod_Manager.Controllers
                         downloadUrl = result.DownloadUrl,
                         publishedAt = result.PublishedAt,
                         message = result.IsUpdateAvailable 
-                            ? _localizer["UpdateAvailable", result.LatestVersion] 
+                            ? _localizer["UpdateAvailable", result.LatestVersion ?? ""] 
                             : _localizer["NoUpdatesAvailable"]
                     });
                 }

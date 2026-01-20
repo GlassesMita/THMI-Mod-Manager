@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('settingsForm');
     const successToast = document.getElementById('successToast');
     const selects = document.querySelectorAll('.form-select');
+    let isSaving = false; // 防止重复提交
     
     // 为浏览按钮添加事件监听器
     const browseLauncherPath = document.getElementById('browseLauncherPath');
@@ -24,6 +25,13 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         e.preventDefault(); // 阻止默认表单提交
         
+        // 防止重复提交
+        if (isSaving) {
+            console.log('Settings already being saved, ignoring duplicate submission');
+            return;
+        }
+        isSaving = true;
+        
         // 添加保存动画
         const submitButton = form.querySelector('.btn-primary');
         const saveText = document.getElementById('saveText');
@@ -41,9 +49,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const modifyTitle = document.getElementById('modifyTitle').checked;
         formData.set('modifyTitle', modifyTitle);
         
-        // 确保包含 requireAdminRestart 字段
-        const requireAdminRestart = document.getElementById('requireAdminRestart').checked;
-        formData.set('requireAdminRestart', requireAdminRestart);
+        // 确保 autoCheckUpdates 字段被正确包含
+        const autoCheckUpdatesCheckbox = document.getElementById('autoCheckUpdates');
+        if (autoCheckUpdatesCheckbox) {
+            const autoCheckUpdatesValue = autoCheckUpdatesCheckbox.checked;
+            formData.set('autoCheckUpdates', autoCheckUpdatesValue);
+            console.log('autoCheckUpdates value:', autoCheckUpdatesValue);
+        }
         
         // 发送到后端保存
         fetch('/settings?handler=SaveLanguage', {
@@ -53,13 +65,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
             }
         })
-        .then(response => response.json ? response.json() : response.text())
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            }
+            return response.text();
+        })
         .then(data => {
+            console.log('Response data:', data);
+            
             // 移除加载动画
             submitButton.classList.remove('loading');
             submitButton.disabled = false;
             saveText.style.display = 'inline';
             loadingSpinner.style.display = 'none';
+            isSaving = false;
             
             // 显示成功提示
             successToast.classList.add('show');
@@ -81,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('保存设置失败:', error);
+            isSaving = false;
             
             // 移除加载动画
             submitButton.classList.remove('loading');

@@ -77,16 +77,16 @@ namespace THMI_Mod_Manager.Services
                 }
 
                 // Compare versions
-                bool isUpdateAvailable = latestSemVer.IsNewerThan(currentSemVer);
+                bool isUpdateAvailable = currentSemVer != null && latestSemVer != null && latestSemVer.IsNewerThan(currentSemVer);
                 
                 var result = new UpdateCheckResult
                 {
                     Success = true,
-                    CurrentVersion = currentSemVer.ToString(),
-                    LatestVersion = latestSemVer.ToString(),
+                    CurrentVersion = currentSemVer?.ToString() ?? string.Empty,
+                    LatestVersion = latestSemVer?.ToString() ?? string.Empty,
                     IsUpdateAvailable = isUpdateAvailable,
-                    ReleaseNotes = latestRelease.Body,
-                    DownloadUrl = latestRelease.HtmlUrl,
+                    ReleaseNotes = latestRelease.Body ?? string.Empty,
+                    DownloadUrl = latestRelease.HtmlUrl ?? string.Empty,
                     PublishedAt = latestRelease.PublishedAt
                 };
 

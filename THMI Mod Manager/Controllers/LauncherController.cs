@@ -58,6 +58,12 @@ namespace THMI_Mod_Manager.Controllers
 
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
+#if !NETFRAMEWORK && !NETSTANDARD && !NETCOREAPP
+        // POSIX imports for cross-platform support
+        [DllImport("libc", SetLastError = true)]
+        private static extern int geteuid();
+#endif
+
         public LauncherController(ILogger<LauncherController> logger, AppConfigManager appConfig)
         {
             _logger = logger;
@@ -927,9 +933,23 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                WindowsIdentity identity = WindowsIdentity.GetCurrent();
-                WindowsPrincipal principal = new WindowsPrincipal(identity);
-                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+#if NETFRAMEWORK || NETSTANDARD || NETCOREAPP
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    WindowsIdentity identity = WindowsIdentity.GetCurrent();
+                    WindowsPrincipal principal = new WindowsPrincipal(identity);
+                    return principal.IsInRole(WindowsBuiltInRole.Administrator);
+                }
+                return false;
+#else
+                // Cross-platform: Use POSIX check on Unix-like systems
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || 
+                    RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    return geteuid() == 0;
+                }
+                return false;
+#endif
             }
             catch
             {

@@ -65,17 +65,17 @@ namespace THMI_Mod_Manager.Controllers
                 string? parentDirectory = null;
                 try
                 {
-                    DirectoryInfo dirInfo = Directory.GetParent(path);
+                    DirectoryInfo? dirInfo = Directory.GetParent(path);
                     parentDirectory = dirInfo?.FullName;
                 }
                 catch { /* 忽略无法获取父目录的情况 */ }
                 
                 // 获取目录列表
                 var directories = Directory.GetDirectories(path)
-                    .Where(dir => dir != null)
+                    .Where(dir => !string.IsNullOrEmpty(dir))
                     .Select(dir => new { 
-                        name = Path.GetFileName(dir!),
-                        path = dir!
+                        name = Path.GetFileName(dir),
+                        path = dir
                     })
                     .ToList();
                 
