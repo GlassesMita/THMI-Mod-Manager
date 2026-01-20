@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace THMI_Mod_Manager.Services
 {
@@ -10,13 +12,21 @@ namespace THMI_Mod_Manager.Services
             Info,
             Warning,
             Error,
-            Ex
+            Ex,
+            Mod
         }
         
         private static string? logFilePath;
         private static readonly object lockObject = new object();
-
-        // 静态构造函数，确保在类加载时初始化 logFilePath
+        
+        private static readonly List<BrowserNotification> notificationQueue = new List<BrowserNotification>();
+        private static readonly object notificationLock = new object();
+        
+        private static string? _lastNotificationKey;
+        private static DateTime _lastNotificationTime = DateTime.MinValue;
+        
+        private const int NOTIFICATION_COOLDOWN_MS = 3000;
+        
         static Logger()
         {
             InitializeLogFilePath();
@@ -24,7 +34,6 @@ namespace THMI_Mod_Manager.Services
 
         public static void Log(string message)
         {
-            // 兼容旧版，仅传 message 时视为 Info
             Log(message, LogLevel.Info);
         }
 
@@ -48,7 +57,46 @@ namespace THMI_Mod_Manager.Services
             Log(message, LogLevel.Ex);
         }
 
-        // 写入消息并指定等级（不使用默认参数，以免与 Log(string) 冲突）
+        [ModAccess("Mod专用日志记录方法，支持日志级别参数")]
+        public static void LogMod(string message)
+        {
+            LogMod(message, LogLevel.Info);
+        }
+
+        [ModAccess("Mod专用日志记录方法，支持日志级别参数")]
+        public static void LogMod(string message, LogLevel level)
+        {
+            if (string.IsNullOrEmpty(logFilePath))
+            {
+                InitializeLogFilePath();
+            }
+
+            string levelTag = GetLevelShortTag(level);
+            string logMessage = $"[M][{DateTime.Now:yyyy/MM/dd HH:mm:ss.ffff}] [{levelTag}] {message}";
+            
+            lock (lockObject)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(logFilePath))
+                    {
+                        File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to write to log file: {ex.Message}");
+                }
+            }
+        }
+
+        [ModAccess("Mod专用格式化日志记录方法")]
+        public static void LogMod(string format, LogLevel level, params object[] args)
+        {
+            string message = args != null && args.Length > 0 ? string.Format(format, args) : format;
+            LogMod(message, level);
+        }
+
         public static void Log(string message, LogLevel level)
         {
             if (string.IsNullOrEmpty(logFilePath))
@@ -70,19 +118,18 @@ namespace THMI_Mod_Manager.Services
                 }
                 catch (Exception ex)
                 {
-                    // 如果写入失败，可以尝试写入到备用位置或忽略
                     Console.WriteLine($"Failed to write to log file: {ex.Message}");
                 }
             }
+            
+            Console.WriteLine(logMessage);
         }
 
-        // 显式传入 (LogLevel, message) 的重载，方便调用方以不同顺序传参
         public static void Log(LogLevel level, string message)
         {
             Log(message, level);
         }
 
-        // 支持格式化字符串并指定等级
         public static void Log(string format, LogLevel level, params object[] args)
         {
             string message = args != null && args.Length > 0 ? string.Format(format, args) : format;
@@ -93,6 +140,7 @@ namespace THMI_Mod_Manager.Services
         {
             switch (level)
             {
+                case LogLevel.Mod: return "M";
                 case LogLevel.Ex: return "X";
                 case LogLevel.Warning: return "W";
                 case LogLevel.Error: return "E";
@@ -106,57 +154,111 @@ namespace THMI_Mod_Manager.Services
         {
             try
             {
-                // 获取应用程序的根目录
                 string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                
-                // 创建日志目录路径
                 string logDirectory = Path.Combine(baseDirectory, "Logs");
                 
-                // 确保日志目录存在
                 if (!Directory.Exists(logDirectory))
                 {
                     Directory.CreateDirectory(logDirectory);
                 }
 
-                // 设置日志文件路径
                 logFilePath = Path.Combine(logDirectory, "Latest.Log");
                 
-                // 检查日志文件是否存在
                 if (File.Exists(logFilePath))
                 {
-                    // 清空文件内容
                     File.WriteAllText(logFilePath, string.Empty);
                 }
                 else
                 {
-                    // 创建日志文件
                     File.Create(logFilePath).Dispose();
                 }
                 
-                // 记录日志系统启动
                 Log("Logger initialized successfully", LogLevel.Info);
             }
             catch (Exception ex)
             {
-                // 如果初始化失败，记录到控制台
                 Console.WriteLine($"Failed to initialize logger: {ex.Message}");
                 Logger.LogError($"Failed to initialize logger: {ex.Message}");
                 logFilePath = null;
             }
         }
 
-        // 获取当前日志文件路径
         public static string? GetLogFilePath()
         {
             return logFilePath;
         }
 
-        // 获取日志目录路径
         public static string? GetLogDirectory()
         {
             if (string.IsNullOrEmpty(logFilePath))
                 return null;
             return Path.GetDirectoryName(logFilePath);
         }
+        
+        public static void SendBrowserNotification(string title, string message, string type = "warning")
+        {
+            var notification = new BrowserNotification
+            {
+                Id = Guid.NewGuid().ToString("N")[..16],
+                Title = title,
+                Message = message,
+                Type = type,
+                Timestamp = DateTime.Now.ToString("o"),
+                Key = $"{title}:{message}"
+            };
+            
+            lock (notificationLock)
+            {
+                if (ShouldSkipNotification(notification.Key))
+                {
+                    return;
+                }
+                
+                notificationQueue.Add(notification);
+                _lastNotificationKey = notification.Key;
+                _lastNotificationTime = DateTime.Now;
+            }
+        }
+        
+        private static bool ShouldSkipNotification(string key)
+        {
+            if (_lastNotificationKey == key)
+            {
+                var elapsed = DateTime.Now - _lastNotificationTime;
+                if (elapsed.TotalMilliseconds < NOTIFICATION_COOLDOWN_MS)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        public static List<BrowserNotification> GetPendingNotifications()
+        {
+            lock (notificationLock)
+            {
+                var pending = new List<BrowserNotification>(notificationQueue);
+                notificationQueue.Clear();
+                return pending;
+            }
+        }
+        
+        public static void ClearNotifications()
+        {
+            lock (notificationLock)
+            {
+                notificationQueue.Clear();
+            }
+        }
+    }
+
+    public class BrowserNotification
+    {
+        public string Id { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Message { get; set; } = "";
+        public string Type { get; set; } = "info";
+        public string Timestamp { get; set; } = "";
+        public string Key { get; set; } = "";
     }
 }

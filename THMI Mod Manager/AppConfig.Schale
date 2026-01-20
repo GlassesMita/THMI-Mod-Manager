@@ -6,6 +6,7 @@ IsFirstRun=False
 ThemeColor=#c670ff
 ModsPath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\Mods
 GamePath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\
+RequireAdminRestart=False
 
 [Localization]
 Language=zh_HANS

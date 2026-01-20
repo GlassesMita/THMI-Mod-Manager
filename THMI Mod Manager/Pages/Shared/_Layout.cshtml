@@ -660,6 +660,71 @@
         });
     </script>
 
+    <!-- 通知轮询脚本 -->
+    <script>
+        const notificationPoll = {
+            interval: 3000,
+            endpoint: '/api/notification/poll',
+            closeText: '@Html.Raw(AppConfig.GetLocalized("Notifications:Close", "Close"))'
+        };
+
+        async function checkNotifications() {
+            try {
+                const response = await fetch(notificationPoll.endpoint);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data && data.data.length > 0) {
+                        data.data.forEach(showNotification);
+                    }
+                }
+            } catch (error) {
+                console.error('通知检查失败:', error);
+            }
+        }
+
+        function showNotification(notification) {
+            const toastId = 'notificationToast-' + notification.id;
+            const existingToast = document.getElementById(toastId);
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const iconClass = notification.type === 'warning' ? 'bi-exclamation-triangle-fill text-warning' :
+                             notification.type === 'error' ? 'bi-x-circle-fill text-danger' :
+                             'bi-bell-fill text-primary';
+
+            const toastHtml = `
+                <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <i class="bi ${iconClass} me-2"></i>
+                        <strong class="me-auto">${notification.title}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="${notificationPoll.closeText}"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${notification.message.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+
+            const container = document.querySelector('.toast-container');
+            if (container) {
+                container.insertAdjacentHTML('beforeend', toastHtml);
+                const toastElement = document.getElementById(toastId);
+                const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 8000 });
+                toast.show();
+            }
+        }
+
+        function startNotificationPoll() {
+            checkNotifications();
+            setInterval(checkNotifications, notificationPoll.interval);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            startNotificationPoll();
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

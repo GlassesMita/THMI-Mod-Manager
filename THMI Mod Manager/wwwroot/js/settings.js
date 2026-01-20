@@ -41,6 +41,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const modifyTitle = document.getElementById('modifyTitle').checked;
         formData.set('modifyTitle', modifyTitle);
         
+        // 确保包含 requireAdminRestart 字段
+        const requireAdminRestart = document.getElementById('requireAdminRestart').checked;
+        formData.set('requireAdminRestart', requireAdminRestart);
+        
         // 发送到后端保存
         fetch('/settings?handler=SaveLanguage', {
             method: 'POST',

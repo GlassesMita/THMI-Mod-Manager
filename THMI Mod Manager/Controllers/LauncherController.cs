@@ -719,6 +719,19 @@ namespace THMI_Mod_Manager.Controllers
                 if (!titleModified)
                 {
                     _logger.LogWarning("未能找到游戏窗口或修改标题 (超时 60 秒)");
+                    
+                    // 发送浏览器通知
+                    var titleModifyFailed = _appConfig.GetLocalized("Notifications:TitleModifyFailed", "标题修改失败");
+                    var messageModifyFailed = _appConfig.GetLocalized("Notifications:MessageModifyFailed", 
+                        "无法修改游戏窗口标题。可能的原因：缺少管理员权限|目标窗口被保护|游戏使用了自定义窗口管理器");
+                    var suggestionCheckPermission = _appConfig.GetLocalized("Notifications:SuggestionCheckPermission", 
+                        "请尝试以管理员身份运行本程序");
+                    
+                    Logger.SendBrowserNotification(
+                        titleModifyFailed,
+                        $"{messageModifyFailed}\n\n{suggestionCheckPermission}",
+                        "warning"
+                    );
                 }
             }
             catch (Exception ex)
