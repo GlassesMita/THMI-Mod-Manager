@@ -45,6 +45,7 @@ namespace THMI_Mod_Manager.Pages
         
         // 更新检查设置属性
         public bool AutoCheckUpdates { get; set; } = true; // 是否自动检查更新
+        public string UpdateFrequency { get; set; } = "startup"; // 更新频率：startup, weekly, monthly
         
         // Mod信息属性
         public string ModName { get; set; } = "THMI Mod Manager";
@@ -106,7 +107,10 @@ namespace THMI_Mod_Manager.Pages
                 
                 var autoCheckUpdatesValue = _appConfig.Get("[Updates]CheckForUpdates", "true");
                 AutoCheckUpdates = autoCheckUpdatesValue?.ToLower() != "false";
-                Logger.LogInfo($"Loaded update settings: AutoCheckUpdates: {AutoCheckUpdates}");
+                
+                var updateFrequencyValue = _appConfig.Get("[Updates]UpdateFrequency", "startup");
+                UpdateFrequency = updateFrequencyValue ?? "startup";
+                Logger.LogInfo($"Loaded update settings: AutoCheckUpdates: {AutoCheckUpdates}, UpdateFrequency: {UpdateFrequency}");
                 
                 // Load program version information from AppConfig
                 try
@@ -127,9 +131,9 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates)
+        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency)
         {
-            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}, ModifyTitle: {modifyTitle}, AutoCheckUpdates: {autoCheckUpdates}");
+            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}, ModifyTitle: {modifyTitle}, AutoCheckUpdates: {autoCheckUpdates}, UpdateFrequency: {updateFrequency}");
             
             
             if (string.IsNullOrEmpty(language))
@@ -184,6 +188,13 @@ namespace THMI_Mod_Manager.Pages
                 // Save auto check updates setting
                 _appConfig.Set("[Updates]CheckForUpdates", autoCheckUpdates.ToString());
                 Logger.LogInfo($"Auto check updates setting saved: {autoCheckUpdates}");
+
+                // Save update frequency setting
+                if (!string.IsNullOrEmpty(updateFrequency))
+                {
+                    _appConfig.Set("[Updates]UpdateFrequency", updateFrequency);
+                    Logger.LogInfo($"Update frequency setting saved: {updateFrequency}");
+                }
 
                 // Save custom cursor setting
                 _appConfig.Set("[Cursor]UseCustomCursor", useCustomCursor.ToString());

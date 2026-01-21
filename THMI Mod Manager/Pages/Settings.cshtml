@@ -124,8 +124,16 @@
             <label class="form-label clickable-label">@AppConfig.GetLocalized("Updates:Title", "Updates")</label>
             <div class="update-section">
                 <div class="checkbox-container">
-                    <input type="checkbox" id="autoCheckUpdates" name="autoCheckUpdates" @(Model.AutoCheckUpdates ? "checked" : "") />
+                    <input type="checkbox" id="autoCheckUpdates" name="autoCheckUpdates" @(Model.AutoCheckUpdates ? "checked" : "") onclick="toggleUpdateFrequency(this)" />
                     <label for="autoCheckUpdates" class="checkbox-label">@AppConfig.GetLocalized("Updates:AutoCheckUpdates", "Automatically check for updates")</label>
+                </div>
+                <div class="mb-3 mt-3" id="updateFrequencySection">
+                    <label for="updateFrequency" class="form-label clickable-label">@AppConfig.GetLocalized("Updates:UpdateFrequencyLabel", "Update Frequency")</label>
+                    <select id="updateFrequency" name="updateFrequency" class="form-select">
+                        <option value="startup" selected="@(Model.UpdateFrequency == "startup")">@AppConfig.GetLocalized("Updates:FrequencyStartup", "On Startup")</option>
+                        <option value="weekly" selected="@(Model.UpdateFrequency == "weekly")">@AppConfig.GetLocalized("Updates:FrequencyWeekly", "Every Monday")</option>
+                        <option value="monthly" selected="@(Model.UpdateFrequency == "monthly")">@AppConfig.GetLocalized("Updates:FrequencyMonthly", "First Day of Month")</option>
+                    </select>
                 </div>
                 <div class="update-info mt-2">
                     <div class="current-version">
@@ -140,12 +148,25 @@
                         <span class="ms-2">@AppConfig.GetLocalized("Updates:CheckForUpdates", "Checking for updates...")</span>
                     </div>
                     <div class="update-result mt-2" id="updateResult" style="display: none;">
-                        <!-- Update result will be displayed here -->
+                    </div>
+                    <div class="update-progress mt-2" id="updateProgress" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar" id="updateProgressBar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted" id="updateProgressText">0%</small>
                     </div>
                 </div>
-                <button type="button" class="btn btn-primary btn-sm mt-2" id="checkNowButton">
-                    @AppConfig.GetLocalized("Updates:CheckNowButton", "Check Now")
-                </button>
+                <div class="update-actions mt-2">
+                    <button type="button" class="btn btn-primary btn-sm" id="checkNowButton">
+                        @AppConfig.GetLocalized("Updates:CheckNowButton", "Check Now")
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm" id="downloadUpdateButton" style="display: none;">
+                        @AppConfig.GetLocalized("Updates:DownloadButton", "Download Update")
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm" id="applyUpdateButton" style="display: none;">
+                        @AppConfig.GetLocalized("Updates:ApplyUpdateButton", "Apply Update & Restart")
+                    </button>
+                </div>
             </div>
         </div>
 

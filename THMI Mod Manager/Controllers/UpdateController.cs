@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using THMI_Mod_Manager.Services;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.IO;
+using System.Net.Http;
 
 namespace THMI_Mod_Manager.Controllers
 {
@@ -12,24 +16,27 @@ namespace THMI_Mod_Manager.Controllers
     public class UpdateController : ControllerBase
     {
         private readonly UpdateCheckService _updateCheckService;
+        private readonly UpdateModule _updateModule;
         private readonly AppConfigManager _appConfigManager;
         private readonly ILogger<UpdateController> _logger;
         private readonly IStringLocalizer<UpdateController> _localizer;
 
         public UpdateController(
             UpdateCheckService updateCheckService,
+            UpdateModule updateModule,
             AppConfigManager appConfigManager,
             ILogger<UpdateController> logger,
             IStringLocalizer<UpdateController> localizer)
         {
             _updateCheckService = updateCheckService;
+            _updateModule = updateModule;
             _appConfigManager = appConfigManager;
             _logger = logger;
             _localizer = localizer;
         }
 
         /// <summary>
-        /// Check for updates for the program itself
+        /// Check for updates for program itself
         /// </summary>
         /// <returns>Program update check result</returns>
         [HttpGet("check-program")]
@@ -37,33 +44,76 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                // Check if update checking is enabled
+                var appSection = _appConfigManager.GetSection("App");
+                var programName = appSection.TryGetValue("Name", out var name) ? name : "THMI Mod Manager";
+                var currentVersion = appSection.TryGetValue("Version", out var version) ? version : "0.0.1";
+
                 var updatesSection = _appConfigManager.GetSection("Updates");
-                if (!bool.TryParse(updatesSection.TryGetValue("CheckForUpdates", out var checkEnabled) ? checkEnabled : "True", out var isEnabled) || !isEnabled)
+                var autoCheckUpdatesValue = updatesSection.TryGetValue("CheckForUpdates", out var checkUpdates) ? checkUpdates : "true";
+                var autoCheckUpdates = autoCheckUpdatesValue?.ToLower() != "false";
+                
+                if (!autoCheckUpdates)
                 {
+                    _logger.LogInformation("Update checking is disabled in settings");
                     return Ok(new
                     {
-                        success = true,
+                        success = false,
                         updateCheckingDisabled = true,
                         message = _localizer["UpdateCheckingDisabled"]
                     });
                 }
 
-                // Get program information from AppConfig
-                var appSection = _appConfigManager.GetSection("App");
-                var programName = appSection.TryGetValue("Name", out var name) ? name : "THMI Mod Manager";
-                var currentVersion = appSection.TryGetValue("Version", out var version) ? version : "0.0.1";
+                var updateFrequency = updatesSection.TryGetValue("UpdateFrequency", out var frequency) ? frequency : "startup";
+                var lastCheckTimeValue = updatesSection.TryGetValue("LastCheckTime", out var lastCheck) ? lastCheck : string.Empty;
+                DateTime? lastCheckTime = null;
                 
-                // Get update source configuration - use program-specific source if available
-                var updateSource = updatesSection.TryGetValue("ProgramUpdateSource", out var programSource) ? programSource : "GlassesMita/THMI-Mod-Manager";
+                if (!string.IsNullOrEmpty(lastCheckTimeValue) && DateTime.TryParse(lastCheckTimeValue, out var parsedTime))
+                {
+                    lastCheckTime = parsedTime;
+                }
 
-                _logger.LogInformation($"Checking for program updates. Current version: {currentVersion}, Source: {updateSource}");
+                var now = DateTime.Now;
+                bool shouldCheck = false;
 
-                // Perform update check
-                var result = await _updateCheckService.CheckForUpdatesAsync(currentVersion, updateSource);
+                switch (updateFrequency?.ToLower())
+                {
+                    case "startup":
+                        shouldCheck = true;
+                        break;
+                    case "weekly":
+                        shouldCheck = now.DayOfWeek == DayOfWeek.Monday && 
+                                      (!lastCheckTime.HasValue || lastCheckTime.Value.Date < now.Date);
+                        break;
+                    case "monthly":
+                        shouldCheck = now.Day == 1 && 
+                                      (!lastCheckTime.HasValue || lastCheckTime.Value.Month < now.Month || lastCheckTime.Value.Year < now.Year);
+                        break;
+                    default:
+                        shouldCheck = true;
+                        break;
+                }
+
+                if (!shouldCheck)
+                {
+                    _logger.LogInformation($"Update check skipped due to frequency setting: {updateFrequency}");
+                    return Ok(new
+                    {
+                        success = true,
+                        isUpdateAvailable = false,
+                        currentVersion = currentVersion,
+                        latestVersion = currentVersion,
+                        message = _localizer["NoUpdatesAvailable"]
+                    });
+                }
+
+                _logger.LogInformation($"Checking for program updates. Current version: {currentVersion}, Frequency: {updateFrequency}");
+
+                var result = await _updateModule.CheckForUpdatesAsync(currentVersion);
 
                 if (result.Success)
                 {
+                    _appConfigManager.Set("[Updates]LastCheckTime", now.ToString("o"));
+                    
                     return Ok(new
                     {
                         success = true,
@@ -83,7 +133,7 @@ namespace THMI_Mod_Manager.Controllers
                     return Ok(new
                     {
                         success = false,
-                        error = result.ErrorMessage,
+                        error = result.Message,
                         message = _localizer["UpdateCheckFailed"]
                     });
                 }
@@ -92,11 +142,11 @@ namespace THMI_Mod_Manager.Controllers
             {
                 _logger.LogError(ex, "Error during program update check");
                 return StatusCode(500, new
-                {
-                    success = false,
-                    error = ex.Message,
-                    message = _localizer["UpdateCheckError"]
-                });
+                    {
+                        success = false,
+                        error = ex.Message,
+                        message = _localizer["UpdateCheckError"]
+                    });
             }
         }
 
@@ -115,70 +165,126 @@ namespace THMI_Mod_Manager.Controllers
                 var versionCode = appSection.TryGetValue("VersionCode", out var code) ? code : "1";
 
                 return Ok(new
-                {
-                    success = true,
-                    programName = programName,
-                    version = version,
-                    versionCode = versionCode,
-                    message = _localizer["CurrentVersionInfo", programName, version]
-                });
+                    {
+                        success = true,
+                        programName = programName,
+                        version = version,
+                        versionCode = versionCode,
+                        message = _localizer["CurrentVersionInfo", programName, version]
+                    });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting program version information");
                 return StatusCode(500, new
-                {
-                    success = false,
-                    error = ex.Message,
-                    message = _localizer["VersionInfoError"]
-                });
+                    {
+                        success = false,
+                        error = ex.Message,
+                        message = _localizer["VersionInfoError"]
+                    });
             }
         }
 
         /// <summary>
-        /// Check for updates for the MetaIzakaya mod
+        /// Download update package
         /// </summary>
-        /// <returns>Update check result</returns>
-        [HttpGet("check")]
-        public async Task<IActionResult> CheckForUpdates()
+        [HttpPost("download")]
+        public async Task<IActionResult> DownloadUpdate([FromBody] DownloadUpdateRequest request)
         {
             try
             {
-                // Check if update checking is enabled
-                var updatesSection = _appConfigManager.GetSection("Updates");
-                if (!bool.TryParse(updatesSection.TryGetValue("CheckForUpdates", out var checkEnabled) ? checkEnabled : "True", out var isEnabled) || !isEnabled)
+                if (string.IsNullOrEmpty(request?.DownloadUrl))
                 {
-                    return Ok(new
+                    return BadRequest(new
                     {
-                        success = true,
-                        updateCheckingDisabled = true,
-                        message = _localizer["UpdateCheckingDisabled"]
+                        success = false,
+                        message = "Download URL cannot be empty"
                     });
                 }
 
-                // Get update source configuration
-                var updateSource = updatesSection.TryGetValue("UpdateSource", out var source) ? source : "MetaMikuAI/MetaIzakaya";
-                var currentVersion = "0.7.0";
+                _logger.LogInformation($"Starting download update: {request.DownloadUrl}");
 
-                _logger.LogInformation($"Checking for updates. Current version: {currentVersion}, Source: {updateSource}");
-
-                // Perform update check
-                var result = await _updateCheckService.CheckForUpdatesAsync(currentVersion, updateSource);
+                var result = await _updateModule.DownloadUpdateAsync(request.DownloadUrl);
 
                 if (result.Success)
+                {
+                    _logger.LogInformation($"Download successful: {result.TempPath}");
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Download successful",
+                        tempPath = result.TempPath,
+                        downloadedBytes = result.DownloadedBytes,
+                        totalBytes = result.TotalBytes
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning($"Download failed: {result.Message}");
+                    return Ok(new
+                    {
+                        success = false,
+                        message = result.Message
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading update");
+                return StatusCode(500, new
+                    {
+                        success = false,
+                        error = ex.Message,
+                        message = "Download update failed"
+                    });
+            }
+        }
+
+        /// <summary>
+        /// Prepare update (download and prepare for installation)
+        /// </summary>
+        [HttpPost("prepare")]
+        public async Task<IActionResult> PrepareUpdate([FromBody] DownloadUpdateRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request?.DownloadUrl))
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Download URL cannot be empty"
+                    });
+                }
+
+                _logger.LogInformation($"Preparing update: {request.DownloadUrl}");
+
+                var downloadResult = await _updateModule.DownloadUpdateAsync(request.DownloadUrl);
+                if (!downloadResult.Success)
+                {
+                    return Ok(new
+                    {
+                        success = false,
+                        message = downloadResult.Message
+                    });
+                }
+
+                var exePath = UpdateModule.GetExecutablePath();
+                var applyResult = _updateModule.PrepareUpdate(
+                    downloadResult.TempPath ?? string.Empty, 
+                    exePath,
+                    request.NewVersion ?? string.Empty
+                );
+
+                if (applyResult.Success)
                 {
                     return Ok(new
                     {
                         success = true,
-                        isUpdateAvailable = result.IsUpdateAvailable,
-                        currentVersion = result.CurrentVersion,
-                        latestVersion = result.LatestVersion,
-                        releaseNotes = result.ReleaseNotes,
-                        downloadUrl = result.DownloadUrl,
-                        publishedAt = result.PublishedAt,
-                        message = result.IsUpdateAvailable 
-                            ? _localizer["UpdateAvailable", result.LatestVersion ?? ""] 
-                            : _localizer["NoUpdatesAvailable"]
+                        message = "Update ready",
+                        restartRequired = applyResult.RestartRequired,
+                        updaterPath = applyResult.UpdaterPath
                     });
                 }
                 else
@@ -186,98 +292,96 @@ namespace THMI_Mod_Manager.Controllers
                     return Ok(new
                     {
                         success = false,
-                        error = result.ErrorMessage,
-                        message = _localizer["UpdateCheckFailed"]
+                        message = applyResult.Message
                     });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during update check");
+                _logger.LogError(ex, "Error preparing update");
                 return StatusCode(500, new
-                {
-                    success = false,
-                    error = ex.Message,
-                    message = _localizer["UpdateCheckError"]
-                });
+                    {
+                        success = false,
+                        error = ex.Message,
+                        message = "Prepare update failed"
+                    });
             }
         }
 
         /// <summary>
-        /// Get current version information
+        /// Restart application and apply update
         /// </summary>
-        /// <returns>Current version info</returns>
-        [HttpGet("version")]
-        public IActionResult GetCurrentVersion()
+        [HttpPost("restart")]
+        public IActionResult RestartAndUpdate([FromBody] ApplyUpdateRequest request)
         {
             try
             {
-                var version = "0.7.0";
-                var modName = "MetaIzakaya";
-                var modAuthor = "MetaMikuAI";
-                var modDescription = "为居酒屋模组添加自定义菜品、场景交互和顾客行为扩展";
-                var modLink = "https://github.com/MetaMikuAI/MetaIzakaya";
+                var exePath = UpdateModule.GetExecutablePath();
+                var exeDir = Path.GetDirectoryName(exePath) ?? Directory.GetCurrentDirectory();
+
+                _logger.LogInformation($"Preparing to restart application: {exePath}");
+
+                var vbsContent = "Set WshShell = CreateObject(\"WScript.Shell\")" + Environment.NewLine +
+                                  "WshShell.Run \"cmd /c ping -n 3 127.0.0.1 && \"\"" + exePath + "\"\"\", 0, False" + Environment.NewLine +
+                                  "WScript.Quit(0)";
+
+                var vbsPath = Path.Combine(Path.GetTempPath(), "THMI_Restart.vbs");
+                System.IO.File.WriteAllText(vbsPath, vbsContent);
+
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "wscript.exe",
+                    Arguments = "\"" + vbsPath + "\"",
+                    UseShellExecute = true,
+                    CreateNoWindow = false,
+                    WorkingDirectory = exeDir
+                };
+
+                Process.Start(startInfo);
 
                 return Ok(new
-                {
-                    success = true,
-                    modName = modName,
-                    version = version,
-                    author = modAuthor,
-                    description = modDescription,
-                    modLink = modLink,
-                    message = _localizer["CurrentVersionInfo", modName, version]
-                });
+                    {
+                        success = true,
+                        message = "Application will restart"
+                    });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting version information");
+                _logger.LogError(ex, "Error restarting application");
                 return StatusCode(500, new
-                {
-                    success = false,
-                    error = ex.Message,
-                    message = _localizer["VersionInfoError"]
-                });
+                    {
+                        success = false,
+                        error = ex.Message,
+                        message = "Restart application failed"
+                    });
             }
         }
 
         /// <summary>
-        /// Update update check settings
+        /// Get current architecture information
         /// </summary>
-        /// <param name="settings">Update settings</param>
-        /// <returns>Result of the update operation</returns>
-        [HttpPost("settings")]
-        public IActionResult UpdateSettings([FromBody] UpdateSettingsRequest settings)
+        [HttpGet("architecture")]
+        public IActionResult GetArchitecture()
         {
             try
             {
-                // Update settings using the Set method
-                _appConfigManager.Set("[Updates]CheckForUpdates", settings.CheckForUpdates.ToString(), false);
-                _appConfigManager.Set("[Updates]UpdateCheckType", settings.UpdateCheckType ?? "GitHub", false);
-                _appConfigManager.Set("[Updates]UpdateCheckInterval", settings.UpdateCheckInterval.ToString(), false);
-                _appConfigManager.Set("[Updates]AutoDownloadUpdates", settings.AutoDownloadUpdates.ToString(), false);
-                _appConfigManager.Set("[Updates]UpdateSource", settings.UpdateSource ?? "MetaMikuAI/MetaIzakaya", false);
-
-                // Save configuration
-                _appConfigManager.Save();
-
-                _logger.LogInformation("Update settings saved successfully");
-
                 return Ok(new
-                {
-                    success = true,
-                    message = _localizer["UpdateSettingsSaved"]
-                });
+                    {
+                        success = true,
+                        architecture = Architecture.Current,
+                        packageSuffix = Architecture.PackageSuffix,
+                        is64Bit = Environment.Is64BitOperatingSystem,
+                        osArchitecture = RuntimeInformation.OSArchitecture.ToString()
+                    });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving update settings");
+                _logger.LogError(ex, "Error getting architecture information");
                 return StatusCode(500, new
-                {
-                    success = false,
-                    error = ex.Message,
-                    message = _localizer["UpdateSettingsError"]
-                });
+                    {
+                        success = false,
+                        error = ex.Message
+                    });
             }
         }
     }
@@ -292,5 +396,22 @@ namespace THMI_Mod_Manager.Controllers
         public int UpdateCheckInterval { get; set; }
         public bool AutoDownloadUpdates { get; set; }
         public string? UpdateSource { get; set; }
+    }
+
+    /// <summary>
+    /// Download update request model
+    /// </summary>
+    public class DownloadUpdateRequest
+    {
+        public string? DownloadUrl { get; set; }
+        public string? NewVersion { get; set; }
+    }
+
+    /// <summary>
+    /// Apply update request model
+    /// </summary>
+    public class ApplyUpdateRequest
+    {
+        public string? TempPath { get; set; }
     }
 }

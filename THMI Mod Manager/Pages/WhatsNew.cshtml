@@ -1,0 +1,264 @@
+@page
+@model WhatsNewModel
+@using Microsoft.AspNetCore.Http
+@inject THMI_Mod_Manager.Services.AppConfigManager AppConfig
+@inject THMI_Mod_Manager.Services.LocalizationManager LocalizationManager
+@{
+    ViewData["Title"] = "What's New";
+    var updateVersion = HttpContext.Request.Query["version"].FirstOrDefault();
+}
+
+<style>
+    .whatsnew-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 20px;
+        background: var(--card-bg);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .whatsnew-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .whatsnew-header h1 {
+        color: var(--text-color);
+        margin: 0 0 10px 0;
+        font-size: 2.5rem;
+    }
+
+    .whatsnew-header .version {
+        color: var(--accent-color);
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .whatsnew-header .date {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    .whatsnew-content {
+        color: var(--text-color);
+        line-height: 1.8;
+    }
+
+    .whatsnew-content h1,
+    .whatsnew-content h2,
+    .whatsnew-content h3 {
+        color: var(--text-color);
+        margin-top: 30px;
+        margin-bottom: 15px;
+    }
+
+    .whatsnew-content h1 {
+        font-size: 2rem;
+        border-bottom: 2px solid var(--accent-color);
+        padding-bottom: 10px;
+    }
+
+    .whatsnew-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .whatsnew-content h3 {
+        font-size: 1.25rem;
+    }
+
+    .whatsnew-content ul {
+        margin-left: 20px;
+        margin-bottom: 15px;
+    }
+
+    .whatsnew-content li {
+        margin-bottom: 8px;
+    }
+
+    .whatsnew-content code {
+        background: var(--code-bg);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+    }
+
+    .whatsnew-content strong {
+        color: var(--accent-color);
+        font-weight: 600;
+    }
+
+    .whatsnew-content em {
+        font-style: italic;
+    }
+
+    .whatsnew-content a {
+        color: var(--accent-color);
+        text-decoration: none;
+    }
+
+    .whatsnew-content a:hover {
+        text-decoration: underline;
+    }
+
+    .whatsnew-actions {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .whatsnew-actions .btn {
+        margin: 0 10px;
+        min-width: 150px;
+    }
+
+    .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+    }
+
+    .error-message {
+        text-align: center;
+        padding: 40px;
+        color: var(--error-color);
+    }
+
+    .close-button {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .close-button:hover {
+        background: var(--accent-color);
+        color: white;
+        transform: rotate(90deg);
+    }
+
+    @@media (max-width: 768px) {
+        .whatsnew-container {
+            margin: 20px;
+            padding: 15px;
+        }
+
+        .whatsnew-header h1 {
+            font-size: 2rem;
+        }
+
+        .whatsnew-header .version {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+
+<div class="whatsnew-container" id="whatsnewContainer">
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div class="error-message" id="errorMessage" style="display: none;">
+        <h3>Failed to load release notes</h3>
+        <p id="errorText"></p>
+        <button class="btn btn-primary" onclick="location.reload()">Retry</button>
+    </div>
+
+    <div id="whatsnewContent" style="display: none;">
+        <div class="whatsnew-header">
+            <h1>@AppConfig.GetLocalized("WhatsNew:Title", "What's New")</h1>
+            <div class="version" id="versionDisplay"></div>
+            <div class="date" id="dateDisplay"></div>
+        </div>
+        <div class="whatsnew-content" id="releaseNotes">
+        </div>
+        <div class="whatsnew-actions">
+            <a href="#" id="githubLink" target="_blank" class="btn btn-outline-primary">
+                <i class="fab fa-github"></i> @AppConfig.GetLocalized("WhatsNew:ViewOnGitHub", "View on GitHub")
+            </a>
+            <button class="btn btn-primary" onclick="window.location.href='/'">
+                <i class="fas fa-check"></i> @AppConfig.GetLocalized("WhatsNew:BackToHome", "Back to Home")
+            </button>
+        </div>
+    </div>
+</div>
+
+<button class="close-button" onclick="window.location.href='/'" title="@AppConfig.GetLocalized("Common:Close", "Close")">
+    <i class="fas fa-times"></i>
+</button>
+
+<script>
+    const updateVersion = '@updateVersion';
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    const whatsnewContent = document.getElementById('whatsnewContent');
+    const versionDisplay = document.getElementById('versionDisplay');
+    const dateDisplay = document.getElementById('dateDisplay');
+    const releaseNotes = document.getElementById('releaseNotes');
+    const githubLink = document.getElementById('githubLink');
+
+    async function loadReleaseNotes() {
+        try {
+            const url = updateVersion 
+                ? `/api/whatsnew/release-notes?version=${encodeURIComponent(updateVersion)}`
+                : '/api/whatsnew/release-notes';
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.success) {
+                loadingSpinner.style.display = 'none';
+                whatsnewContent.style.display = 'block';
+
+                versionDisplay.textContent = data.version || data.name || '@AppConfig.GetLocalized("WhatsNew:UnknownVersion", "Unknown Version")';
+                
+                if (data.publishedAt) {
+                    const date = new Date(data.publishedAt);
+                    dateDisplay.textContent = date.toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+
+                releaseNotes.innerHTML = data.releaseNotes || `<p>@AppConfig.GetLocalized("WhatsNew:NoReleaseNotes", "No release notes available.")</p>`;
+
+                if (data.htmlUrl) {
+                    githubLink.href = data.htmlUrl;
+                }
+            } else {
+                showError(data.message || '@AppConfig.GetLocalized("WhatsNew:FailedToLoadReleaseNotes", "Failed to load release notes")');
+            }
+        } catch (error) {
+            console.error('Error loading release notes:', error);
+            showError('@AppConfig.GetLocalized("WhatsNew:ErrorLoadingReleaseNotes", "An error occurred while loading release notes")');
+        }
+    }
+
+    function showError(message) {
+        loadingSpinner.style.display = 'none';
+        errorMessage.style.display = 'block';
+        errorText.textContent = message;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadReleaseNotes);
+</script>

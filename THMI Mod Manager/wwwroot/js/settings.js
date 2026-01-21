@@ -57,6 +57,14 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('autoCheckUpdates value:', autoCheckUpdatesValue);
         }
         
+        // 确保 updateFrequency 字段被正确包含
+        const updateFrequencySelect = document.getElementById('updateFrequency');
+        if (updateFrequencySelect) {
+            const updateFrequencyValue = updateFrequencySelect.value;
+            formData.set('updateFrequency', updateFrequencyValue);
+            console.log('updateFrequency value:', updateFrequencyValue);
+        }
+        
         // 发送到后端保存
         fetch('/settings?handler=SaveLanguage', {
             method: 'POST',
@@ -240,19 +248,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const localizedUpdateCheckFailed = document.getElementById('localizedUpdateCheckFailed')?.value || 'Update check failed';
                 
                 if (data.success && data.isUpdateAvailable) {
+                    currentDownloadUrl = data.downloadUrl;
+                    currentLatestVersion = data.latestVersion;
                     updateResult.innerHTML = `
                         <div class="alert alert-info">
                             <h6>${localizedUpdateAvailable.replace('{0}', data.latestVersion)}</h6>
                             <p>${data.releaseNotes || localizedNoReleaseNotes}</p>
-                            <div class="mt-2">
-                                <a href="${data.downloadUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                    ${localizedDownloadUpdate}
-                                </a>
-                            </div>
                         </div>
                     `;
+                    if (downloadUpdateButton) {
+                        downloadUpdateButton.style.display = 'inline-block';
+                    }
                     
-                    // Dispatch custom event for global update notification
                     const event = new CustomEvent('updateCheckCompleted', {
                         detail: data
                     });
@@ -299,8 +306,145 @@ document.addEventListener('DOMContentLoaded', function() {
     // 自动检查更新设置变更
     if (autoCheckUpdates) {
         autoCheckUpdates.addEventListener('change', function() {
-            // 更新设置将通过表单提交保存
             console.log('Auto check updates setting changed to:', this.checked);
+        });
+    }
+    
+    // 初始化更新频率显示状态
+    const updateFrequencySection = document.getElementById('updateFrequencySection');
+    if (autoCheckUpdates && updateFrequencySection) {
+        updateFrequencySection.style.display = autoCheckUpdates.checked ? 'block' : 'none';
+    }
+
+    // 下载更新按钮
+    const downloadUpdateButton = document.getElementById('downloadUpdateButton');
+    const applyUpdateButton = document.getElementById('applyUpdateButton');
+    const updateProgress = document.getElementById('updateProgress');
+    const updateProgressBar = document.getElementById('updateProgressBar');
+    const updateProgressText = document.getElementById('updateProgressText');
+    let currentDownloadUrl = null;
+    let currentTempPath = null;
+    let currentLatestVersion = null;
+
+    if (downloadUpdateButton && applyUpdateButton) {
+        downloadUpdateButton.addEventListener('click', async function() {
+            if (!currentDownloadUrl) {
+                console.error('Download URL not found');
+                return;
+            }
+
+            downloadUpdateButton.disabled = true;
+            downloadUpdateButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + (document.getElementById('localizedDownloadingUpdate')?.value || 'Downloading...');
+
+            if (updateProgress) updateProgress.style.display = 'block';
+            if (updateProgressBar) updateProgressBar.style.width = '0%';
+            if (updateProgressText) updateProgressText.textContent = '0%';
+
+            try {
+                const response = await fetch('/api/update/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ downloadUrl: currentDownloadUrl })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentTempPath = data.tempPath;
+                    downloadUpdateButton.style.display = 'none';
+                    applyUpdateButton.style.display = 'inline-block';
+                    updateResult.innerHTML = `
+                        <div class="alert alert-success">
+                            ${document.getElementById('localizedDownloadComplete')?.value || 'Download complete! Click "Apply Update" to restart and update.'}
+                        </div>
+                    `;
+                    if (updateProgress) updateProgress.style.display = 'none';
+                } else {
+                    downloadUpdateButton.disabled = false;
+                    downloadUpdateButton.textContent = document.getElementById('localizedDownloadButton')?.value || 'Download Update';
+                    updateResult.innerHTML = `
+                        <div class="alert alert-danger">
+                            ${document.getElementById('localizedDownloadFailed')?.value || 'Download failed'}: ${data.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Download failed:', error);
+                downloadUpdateButton.disabled = false;
+                downloadUpdateButton.textContent = document.getElementById('localizedDownloadButton')?.value || 'Download Update';
+                updateResult.innerHTML = `
+                    <div class="alert alert-danger">
+                        ${document.getElementById('localizedDownloadFailed')?.value || 'Download failed'}: ${error.message}
+                    </div>
+                `;
+            }
+        });
+
+        applyUpdateButton.addEventListener('click', async function() {
+            if (!currentDownloadUrl) {
+                console.error('Download URL not found');
+                return;
+            }
+
+            applyUpdateButton.disabled = true;
+            applyUpdateButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + (document.getElementById('localizedApplyingUpdate')?.value || 'Applying update...');
+
+            try {
+                const prepareResponse = await fetch('/api/update/prepare', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        downloadUrl: currentDownloadUrl,
+                        newVersion: currentLatestVersion
+                    })
+                });
+
+                const prepareData = await prepareResponse.json();
+
+                if (prepareData.success) {
+                    updateResult.innerHTML = `
+                        <div class="alert alert-info">
+                            ${document.getElementById('localizedUpdatePrepared')?.value || 'Update prepared. Restarting application...'}<br>
+                            <small>${document.getElementById('localizedAppWillRestart')?.value || 'The application will close and restart with the new version.'}</small>
+                        </div>
+                    `;
+
+                    setTimeout(async () => {
+                        await fetch('/api/update/restart', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ tempPath: currentTempPath })
+                        });
+
+                        setTimeout(() => {
+                            window.close();
+                        }, 2000);
+                    }, 2000);
+                } else {
+                    applyUpdateButton.disabled = false;
+                    applyUpdateButton.textContent = document.getElementById('localizedApplyUpdateButton')?.value || 'Apply Update & Restart';
+                    updateResult.innerHTML = `
+                        <div class="alert alert-danger">
+                            ${document.getElementById('localizedApplyFailed')?.value || 'Apply failed'}: ${prepareData.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Apply failed:', error);
+                applyUpdateButton.disabled = false;
+                applyUpdateButton.textContent = document.getElementById('localizedApplyUpdateButton')?.value || 'Apply Update & Restart';
+                updateResult.innerHTML = `
+                    <div class="alert alert-danger">
+                        ${document.getElementById('localizedApplyFailed')?.value || 'Apply failed'}: ${error.message}
+                    </div>
+                `;
+            }
         });
     }
 
@@ -320,6 +464,13 @@ function toggleLauncherPath(element) {
     const launcherPathSection = document.getElementById('launcherPathSection');
     const isExternal = element.value === 'external_program';
     launcherPathSection.style.display = isExternal ? 'block' : 'none';
+}
+
+// 更新频率显示/隐藏相关功能 - 全局函数
+function toggleUpdateFrequency(element) {
+    const updateFrequencySection = document.getElementById('updateFrequencySection');
+    const isChecked = element.checked;
+    updateFrequencySection.style.display = isChecked ? 'block' : 'none';
 }
 
 // 验证可执行文件 - 全局函数

@@ -85,6 +85,20 @@ Logger.Log("\t");
 
 var builder = WebApplication.CreateBuilder(args);
 
+string? updateVersion = null;
+foreach (var arg in args)
+{
+    if (arg.StartsWith("--updated-version="))
+    {
+        updateVersion = arg.Substring("--updated-version=".Length);
+        Console.WriteLine($"Update version parameter detected: {updateVersion}");
+        Logger.LogInfo($"Update version parameter detected: {updateVersion}");
+        break;
+    }
+}
+
+builder.Configuration["UpdateVersion"] = updateVersion ?? string.Empty;
+
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddControllers(); // 添加API控制器服务
@@ -134,6 +148,13 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.SystemInfoLogger>(provid
 // Register UpdateCheckService
 builder.Services.AddHttpClient<THMI_Mod_Manager.Services.UpdateCheckService>();
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.UpdateCheckService>();
+
+// Register UpdateModule
+builder.Services.AddHttpClient<THMI_Mod_Manager.UpdateModule>();
+builder.Services.AddSingleton<THMI_Mod_Manager.UpdateModule>();
+
+// Register WhatsNewController HttpClient
+builder.Services.AddHttpClient<THMI_Mod_Manager.Controllers.WhatsNewController>();
 
 // 检查端口是否可用
 bool IsPortAvailable(int port)
@@ -374,6 +395,15 @@ lifetime.ApplicationStarted.Register(() =>
         
         // 自动打开默认浏览器
         var openUrl = $"http://localhost:{port}";
+        
+        // 如果有更新版本参数，打开WhatsNew页面
+        if (!string.IsNullOrEmpty(updateVersion))
+        {
+            openUrl = $"http://localhost:{port}/WhatsNew?version={updateVersion}";
+            Console.WriteLine($"Opening What's New page for version: {updateVersion}");
+            Logger.LogInfo($"Opening What's New page for version: {updateVersion}");
+        }
+        
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
         {
             FileName = openUrl,
