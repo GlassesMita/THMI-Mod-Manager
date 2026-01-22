@@ -1,27 +1,57 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
+    <!-- 基础配置（保留你原有内容） -->
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>THMI_Mod_Manager</RootNamespace>
-	  <IsPackable>true</IsPackable>
+    <IsPackable>true</IsPackable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>0.4.0</Version>
-    <AssemblyVersion>0.4.0.0</AssemblyVersion>
-    <FileVersion>0.4.0.0</FileVersion>
+    <Version>0.5.0</Version>
+    <AssemblyVersion>0.5.0.0</AssemblyVersion>
+    <FileVersion>0.5.0.0</FileVersion>
+    
+    <!-- 核心：自定义BuildAll参数（默认false，传入\-\-build-all则为true） -->
+    <BuildAll>false</BuildAll>
+    <!-- 定义所有目标平台（可按需增删） -->
+    <TargetRuntimes>win-x86;win-x64;linux-x64;osx-x64;osx-arm64</TargetRuntimes>
+    
+    <!-- 动态路径配置（基础路径由-o传入，自动拼接架构目录） -->
+    <BaseOutputPath Condition=" '$(PublishDir)' != '' ">$(PublishDir)</BaseOutputPath>
+    <PublishOutputPath>$(BaseOutputPath)\$(RuntimeIdentifier.ToLower())\</PublishOutputPath>
+    <ZipOutputPath>$(BaseOutputPath)</ZipOutputPath>
+    
+    <!-- ZIP打包命名规则：<项目名>_<架构>_<版本>.zip -->
+    <ProjectName>THMI_Mod_Manager</ProjectName>
+    <PublishZipFileName>$(ProjectName)_$(RuntimeIdentifier.ToLower())_$(Version).zip</PublishZipFileName>
+    <PublishZipFullPath>$(ZipOutputPath)$(PublishZipFileName)</PublishZipFullPath>
+    
+    <PublishSingleFile>false</PublishSingleFile>
+    <SelfContained>false</SelfContained>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+  <!-- 原Windows Release配置（保留） -->
+  <PropertyGroup Condition="'$(Configuration)'=='Release' And '$(RuntimeIdentifier)'=='win-x64'">
     <OutDir>F:\SteamLibrary\steamapps\common\Touhou Mystia Izakaya\</OutDir>
     <UseCommonOutputDirectory>false</UseCommonOutputDirectory>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
+  <!-- 全局文件排除规则 -->
+  <ItemGroup>
+    <Content Remove="appsettings.Development.json" />
+    <Content Remove="package.json" />
+    <Content Remove="web.config" />
+    <!-- 可选：剔除调试/文档文件 -->
+    <!-- <Content Remove="*.pdb" /> -->
+    <!-- <Content Remove="*.xml" /> -->
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.44.0" />
   </ItemGroup>
 
+  <!-- 强制保留必要文件 -->
   <ItemGroup>
     <Content Update="wwwroot\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -31,4 +61,32 @@
     </None>
   </ItemGroup>
 
+  <!-- 核心：BuildAll=true时，批量发布所有平台 -->
+  <Target Name="BuildAllPlatforms" BeforeTargets="Publish" Condition=" '$(BuildAll)' == 'true' ">
+    <Message Text="开始一键构建所有平台：$(TargetRuntimes)" Importance="High" />
+    
+    <!-- 遍历所有目标平台，逐个发布 -->
+    <MSBuild
+      Projects="$(MSBuildProjectFile)"
+      Targets="Publish"
+      Properties="Configuration=Release;TargetFramework=net10.0;RuntimeIdentifier=%(RuntimeIdentifier.Identity);PublishDir=$(BaseOutputPath);SelfContained=$(SelfContained)"
+      Condition=" '%(RuntimeIdentifier.Identity)' != '' "
+    >
+      <Output TaskParameter="TargetOutputs" ItemName="AllPublishOutputs" />
+    </MSBuild>
+    
+    <!-- 输出构建完成日志 -->
+    <Message Text="全平台构建完成！输出目录：$(BaseOutputPath)" Importance="High" />
+  </Target>
+
+  <!-- 单平台发布后打包ZIP -->
+  <Target Name="PublishZipAfterBuild" AfterTargets="Publish" Condition=" '$(BuildAll)' != 'true' ">
+    <Error Condition="!Exists('$(PublishOutputPath)')" Text="发布目录不存在：$(PublishOutputPath)" />
+    <ZipDirectory
+      SourceDirectory="$(PublishOutputPath)"
+      DestinationFile="$(PublishZipFullPath)"
+      Overwrite="true"
+    />
+    <Message Text="已生成 ZIP 包：$(PublishZipFullPath)" Importance="High" />
+  </Target>
 </Project>

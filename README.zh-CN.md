@@ -107,6 +107,42 @@ dotnet publish --configuration Release
 
 编译过程会自动将本地化文件、网页资源和配置文件复制到输出目录。
 
+### 全平台构建（推荐）
+
+为方便起见，提供了 PowerShell 脚本可一次性构建所有平台（需确保工作目录和 `THMI Mod Manager.csproj` 文件在同一目录）：
+
+```bash
+.\BuildAllPlatforms.ps1 -BuildPath <TargetPath>
+```
+
+此脚本将为以下平台构建并打包应用程序：
+
+**Windows:**
+
+- `win-x86` - Windows 32位
+- `win-x64` - Windows 64位
+- `win-arm64` - Windows ARM64
+
+**Linux:**
+
+- `linux-x64` - Linux 64位
+- `linux-arm` - Linux ARM 32位
+- `linux-arm64` - Linux ARM 64位
+
+**macOS:**
+
+- `osx-x64` - macOS Intel 64位
+- `osx-arm64` - macOS Apple Silicon
+
+脚本将自动：
+
+1. 从 `THMI Mod Manager.csproj` 文件读取版本号
+2. 构建每个平台并输出到指定目录
+3. 移除不需要的文件（appsettings.Development.json、package.json、web.config）
+4. 为每个平台创建 ZIP 压缩包
+
+所有 ZIP 包将命名为 `THMI.Mod.Manager_<平台>_<版本>.zip` 并放置在指定的输出目录中。
+
 ## 使用说明
 
 ### 游戏启动功能
