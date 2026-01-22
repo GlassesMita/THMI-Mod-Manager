@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Antiforgery;
 using System.Diagnostics;
 using THMI_Mod_Manager.Services;
 using System.Text.Json;
-using Microsoft.Win32;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -11,11 +11,12 @@ using System.Threading;
 using System.Net.NetworkInformation;
 using System.Net.Http;
 using System.Net;
-using static Microsoft.Win32.Registry;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace THMI_Mod_Manager.Pages
 {
+    [IgnoreAntiforgeryToken]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public class DebugModel : PageModel
     {
@@ -511,7 +512,7 @@ namespace THMI_Mod_Manager.Pages
             var os = Environment.OSVersion;
             var platform = os.Platform;
             var version = os.Version;
-            var versionString = $"{version.Major}.{version.Minor}.{version.Build}";
+            var versionString = $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
 
             string friendlyName = platform switch
             {
@@ -527,27 +528,60 @@ namespace THMI_Mod_Manager.Pages
             return friendlyName;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:验证平台兼容性", Justification = "<挂起>")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1168:属性名称应与字段名称不同", Justification = "<挂起>")]
         private string GetOSProductName()
         {
             try
             {
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                var osVersion = Environment.OSVersion;
+                var version = osVersion.Version;
+                var platform = osVersion.Platform;
+
+                if (platform == PlatformID.Win32NT)
                 {
-                    var os = Environment.OSVersion;
-                    var version = os.Version;
-                    
-                    var productName = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion")?.GetValue("ProductName")?.ToString() ?? "Unknown";
+                    string osName = "Windows";
                     
                     if (version.Build >= 22000)
                     {
-                        productName = productName.Replace("Windows 10", "Windows 11");
+                        osName = "Windows 11";
                     }
+                    else if (version.Major == 10)
+                    {
+                        osName = "Windows 10";
+                    }
+                    else if (version.Major == 6)
+                    {
+                        if (version.Minor == 3)
+                            osName = "Windows 8.1";
+                        else if (version.Minor == 2)
+                            osName = "Windows 8";
+                        else if (version.Minor == 1)
+                            osName = "Windows 7";
+                        else if (version.Minor == 0)
+                            osName = "Windows Vista";
+                    }
+                    else if (version.Major == 5)
+                    {
+                        if (version.Minor == 1)
+                            osName = "Windows XP";
+                        else if (version.Minor == 0)
+                            osName = "Windows 2000";
+                    }
+
+                    osName = osName.Replace("Enterprise", "Pro");
                     
-                    return productName;
+                    return osName;
                 }
-                return "N/A";
+                else if (platform == PlatformID.Unix)
+                {
+                    return RuntimeInformation.OSDescription;
+                }
+                else if (platform == PlatformID.MacOSX)
+                {
+                    return "macOS";
+                }
+
+                return platform.ToString();
             }
             catch
             {

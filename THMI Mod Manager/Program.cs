@@ -86,6 +86,7 @@ Logger.Log("\t");
 var builder = WebApplication.CreateBuilder(args);
 
 string? updateVersion = null;
+string? openPage = null;
 foreach (var arg in args)
 {
     if (arg.StartsWith("--updated-version="))
@@ -95,13 +96,24 @@ foreach (var arg in args)
         Logger.LogInfo($"Update version parameter detected: {updateVersion}");
         break;
     }
+    else if (arg.StartsWith("--open="))
+    {
+        openPage = arg.Substring("--open=".Length);
+        Console.WriteLine($"Open page parameter detected: {openPage}");
+        Logger.LogInfo($"Open page parameter detected: {openPage}");
+        break;
+    }
 }
 
 builder.Configuration["UpdateVersion"] = updateVersion ?? string.Empty;
+builder.Configuration["OpenPage"] = openPage ?? string.Empty;
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddControllers(); // 添加API控制器服务
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+}); // 添加API控制器服务
 
 // Add localization services and custom INI-based localizer factory
 builder.Services.AddLocalization();
@@ -396,8 +408,15 @@ lifetime.ApplicationStarted.Register(() =>
         // 自动打开默认浏览器
         var openUrl = $"http://localhost:{port}";
         
+        // 如果有指定页面参数，打开指定页面
+        if (!string.IsNullOrEmpty(openPage))
+        {
+            openUrl = $"http://localhost:{port}/{openPage}";
+            Console.WriteLine($"Opening specified page: {openPage}");
+            Logger.LogInfo($"Opening specified page: {openPage}");
+        }
         // 如果有更新版本参数，打开WhatsNew页面
-        if (!string.IsNullOrEmpty(updateVersion))
+        else if (!string.IsNullOrEmpty(updateVersion))
         {
             openUrl = $"http://localhost:{port}/WhatsNew?version={updateVersion}";
             Console.WriteLine($"Opening What's New page for version: {updateVersion}");
@@ -410,7 +429,7 @@ lifetime.ApplicationStarted.Register(() =>
             UseShellExecute = true
         });
         Console.WriteLine(browserOpenedMessage);
-        Logger.LogInfo($"Browser opened with URL: http://localhost:{port}");
+        Logger.LogInfo($"Browser opened with URL: {openUrl}");
     }
     catch (Exception ex)
     {

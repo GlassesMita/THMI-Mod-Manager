@@ -7,6 +7,28 @@
     var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
 }
 
+<script>
+    var localizedStrings = {
+        checking: '@AppConfig.GetLocalized("Debug:Checking", "Checking...")',
+        notSupported: '@AppConfig.GetLocalized("Debug:NotSupported", "Not Supported")',
+        supported: '@AppConfig.GetLocalized("Debug:Supported", "Supported")',
+        notAvailable: '@AppConfig.GetLocalized("Debug:NotAvailable", "N/A")',
+        permissionGranted: '@AppConfig.GetLocalized("Debug:PermissionGranted", "Granted")',
+        permissionDenied: '@AppConfig.GetLocalized("Debug:PermissionDenied", "Denied")',
+        permissionDefault: '@AppConfig.GetLocalized("Debug:PermissionDefault", "Default")',
+        notificationNotSupported: '@AppConfig.GetLocalized("Debug:NotificationNotSupported", "Notifications are not supported in this browser")',
+        permissionGrantedMessage: '@AppConfig.GetLocalized("Debug:PermissionGrantedMessage", "Notification permission granted successfully")',
+        permissionDeniedMessage: '@AppConfig.GetLocalized("Debug:PermissionDeniedMessage", "Notification permission denied")',
+        permissionDefaultMessage: '@AppConfig.GetLocalized("Debug:PermissionDefaultMessage", "Notification permission is in default state")',
+        permissionRequestError: '@AppConfig.GetLocalized("Debug:PermissionRequestError", "Error requesting notification permission")',
+        permissionNotGranted: '@AppConfig.GetLocalized("Debug:PermissionNotGranted", "Notification permission is not granted. Please request permission first.")',
+        notificationSent: '@AppConfig.GetLocalized("Debug:NotificationSent", "Notification sent successfully")',
+        notificationSendError: '@AppConfig.GetLocalized("Debug:NotificationSendError", "Error sending notification")',
+        defaultNotificationTitle: '@AppConfig.GetLocalized("Debug:DefaultNotificationTitle", "Test Notification")',
+        defaultNotificationBody: '@AppConfig.GetLocalized("Debug:DefaultNotificationBody", "This is a test notification from THMI Mod Manager")'
+    };
+</script>
+
 <link rel="stylesheet" href="~/css/settings.css" />
 
 <style>
@@ -255,6 +277,31 @@
             </button>
         </div>
         <div id="apiOutput" class="debug-output" style="display: none;"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3><i class="bi bi-bell"></i> @AppConfig.GetLocalized("Debug:NotificationTesting", "Browser Notification Testing")</h3>
+        <div class="debug-info">
+            <p><strong>@AppConfig.GetLocalized("Debug:NotificationPermission", "Notification Permission"):</strong> <span id="notificationPermission">Checking...</span></p>
+            <p><strong>@AppConfig.GetLocalized("Debug:NotificationSupport", "Notification Support"):</strong> <span id="notificationSupport">Checking...</span></p>
+        </div>
+        <div class="mb-3">
+            <label for="notificationTitle" class="form-label">@AppConfig.GetLocalized("Debug:NotificationTitle", "Notification Title")</label>
+            <input type="text" id="notificationTitle" class="form-control" value="Test Notification" placeholder="@AppConfig.GetLocalized("Debug:EnterNotificationTitle", "Enter notification title")" />
+        </div>
+        <div class="mb-3">
+            <label for="notificationBody" class="form-label">@AppConfig.GetLocalized("Debug:NotificationBody", "Notification Body")</label>
+            <input type="text" id="notificationBody" class="form-control" value="This is a test notification from THMI Mod Manager" placeholder="@AppConfig.GetLocalized("Debug:EnterNotificationBody", "Enter notification body")" />
+        </div>
+        <div class="debug-button-group">
+            <button type="button" class="debug-button debug-button-primary" onclick="requestNotificationPermission()">
+                <i class="bi bi-shield-lock"></i> @AppConfig.GetLocalized("Debug:RequestPermission", "Request Permission")
+            </button>
+            <button type="button" class="debug-button debug-button-primary" onclick="sendTestNotification()">
+                <i class="bi bi-bell-fill"></i> @AppConfig.GetLocalized("Debug:SendNotification", "Send Test Notification")
+            </button>
+        </div>
+        <div id="notificationOutput" class="debug-output" style="display: none;"></div>
     </div>
     
     <div class="debug-section">
@@ -1276,6 +1323,121 @@
         }
     }
 
+    function checkNotificationSupport() {
+        const supportSpan = document.getElementById('notificationSupport');
+        const permissionSpan = document.getElementById('notificationPermission');
+        
+        if (!('Notification' in window)) {
+            supportSpan.textContent = localizedStrings.notSupported;
+            supportSpan.className = 'debug-status debug-status-error';
+            permissionSpan.textContent = localizedStrings.notAvailable;
+            return false;
+        }
+        
+        supportSpan.textContent = localizedStrings.supported;
+        supportSpan.className = 'debug-status debug-status-success';
+        
+        const permission = Notification.permission;
+        switch (permission) {
+            case 'granted':
+                permissionSpan.textContent = localizedStrings.permissionGranted;
+                permissionSpan.className = 'debug-status debug-status-success';
+                break;
+            case 'denied':
+                permissionSpan.textContent = localizedStrings.permissionDenied;
+                permissionSpan.className = 'debug-status debug-status-error';
+                break;
+            case 'default':
+                permissionSpan.textContent = localizedStrings.permissionDefault;
+                permissionSpan.className = 'debug-status debug-status-warning';
+                break;
+            default:
+                permissionSpan.textContent = permission;
+                permissionSpan.className = 'debug-status debug-status-info';
+        }
+        
+        return true;
+    }
+
+    async function requestNotificationPermission() {
+        const outputDiv = document.getElementById('notificationOutput');
+        
+        if (!('Notification' in window)) {
+            outputDiv.textContent = localizedStrings.notificationNotSupported;
+            outputDiv.style.display = 'block';
+            return;
+        }
+        
+        try {
+            const permission = await Notification.requestPermission();
+            
+            checkNotificationSupport();
+            
+            if (permission === 'granted') {
+                outputDiv.textContent = localizedStrings.permissionGrantedMessage;
+                outputDiv.style.color = '#155724';
+            } else if (permission === 'denied') {
+                outputDiv.textContent = localizedStrings.permissionDeniedMessage;
+                outputDiv.style.color = '#721c24';
+            } else {
+                outputDiv.textContent = localizedStrings.permissionDefaultMessage;
+                outputDiv.style.color = '#856404';
+            }
+            
+            outputDiv.style.display = 'block';
+        } catch (error) {
+            console.error('Error requesting notification permission:', error);
+            outputDiv.textContent = localizedStrings.permissionRequestError + ': ' + error.message;
+            outputDiv.style.color = '#721c24';
+            outputDiv.style.display = 'block';
+        }
+    }
+
+    function sendTestNotification() {
+        const outputDiv = document.getElementById('notificationOutput');
+        const titleInput = document.getElementById('notificationTitle');
+        const bodyInput = document.getElementById('notificationBody');
+        
+        const title = titleInput.value || localizedStrings.defaultNotificationTitle;
+        const body = bodyInput.value || localizedStrings.defaultNotificationBody;
+        
+        if (!('Notification' in window)) {
+            outputDiv.textContent = localizedStrings.notificationNotSupported;
+            outputDiv.style.color = '#721c24';
+            outputDiv.style.display = 'block';
+            return;
+        }
+        
+        if (Notification.permission !== 'granted') {
+            outputDiv.textContent = localizedStrings.permissionNotGranted;
+            outputDiv.style.color = '#856404';
+            outputDiv.style.display = 'block';
+            return;
+        }
+        
+        try {
+            const notification = new Notification(title, {
+                body: body,
+                icon: '/favicon.ico',
+                tag: 'test-notification-' + Date.now()
+            });
+            
+            outputDiv.textContent = localizedStrings.notificationSent + ': ' + title;
+            outputDiv.style.color = '#155724';
+            outputDiv.style.display = 'block';
+            
+            notification.onclick = function() {
+                window.focus();
+                notification.close();
+            };
+        } catch (error) {
+            console.error('Error sending notification:', error);
+            outputDiv.textContent = localizedStrings.notificationSendError + ': ' + error.message;
+            outputDiv.style.color = '#721c24';
+            outputDiv.style.display = 'block';
+        }
+    }
+
     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
         toast.className = 'debug-toast';
@@ -1313,4 +1475,8 @@
         }
     `;
     document.head.appendChild(style);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        checkNotificationSupport();
+    });
 </script>

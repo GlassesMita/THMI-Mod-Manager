@@ -65,6 +65,14 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('updateFrequency value:', updateFrequencyValue);
         }
         
+        // 确保 enableNotifications 字段被正确包含
+        const enableNotificationsCheckbox = document.getElementById('enableNotifications');
+        if (enableNotificationsCheckbox) {
+            const enableNotificationsValue = enableNotificationsCheckbox.checked;
+            formData.set('enableNotifications', enableNotificationsValue);
+            console.log('enableNotifications value:', enableNotificationsValue);
+        }
+        
         // 发送到后端保存
         fetch('/settings?handler=SaveLanguage', {
             method: 'POST',
@@ -565,3 +573,82 @@ function closeFileBrowser() {
     fileBrowserModal.classList.remove('show');
     fileBrowserModal.style.display = 'none';
 }
+
+// 通知权限相关函数
+function toggleNotificationPermission(checkbox) {
+    const permissionSection = document.getElementById('notificationPermissionSection');
+    
+    if (checkbox.checked) {
+        if ('Notification' in window) {
+            permissionSection.style.display = 'block';
+            checkNotificationPermissionStatus();
+        } else {
+            checkbox.checked = false;
+            alert(document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser');
+        }
+    } else {
+        permissionSection.style.display = 'none';
+    }
+}
+
+function checkNotificationPermissionStatus() {
+    const permissionStatus = document.getElementById('permissionStatus');
+    
+    if (!('Notification' in window)) {
+        permissionStatus.innerHTML = `<small class="text-danger">${document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser'}</small>`;
+        return;
+    }
+    
+    const permission = Notification.permission;
+    const localizedGranted = document.getElementById('localizedNotificationPermissionGranted')?.value || 'Permission granted';
+    const localizedDenied = document.getElementById('localizedNotificationPermissionDenied')?.value || 'Permission denied';
+    const localizedDefault = document.getElementById('localizedNotificationPermissionDefault')?.value || 'Permission not granted';
+    
+    switch (permission) {
+        case 'granted':
+            permissionStatus.innerHTML = `<small class="text-success">${localizedGranted}</small>`;
+            break;
+        case 'denied':
+            permissionStatus.innerHTML = `<small class="text-danger">${localizedDenied}</small>`;
+            break;
+        case 'default':
+            permissionStatus.innerHTML = `<small class="text-warning">${localizedDefault}</small>`;
+            break;
+        default:
+            permissionStatus.innerHTML = `<small class="text-muted">${permission}</small>`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const requestPermissionButton = document.getElementById('requestPermissionButton');
+    
+    if (requestPermissionButton) {
+        requestPermissionButton.addEventListener('click', async function() {
+            if (!('Notification' in window)) {
+                alert(document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser');
+                return;
+            }
+            
+            try {
+                const permission = await Notification.requestPermission();
+                checkNotificationPermissionStatus();
+                
+                const localizedSuccess = document.getElementById('localizedNotificationRequestSuccess')?.value || 'Notification permission granted successfully';
+                const localizedDenied = document.getElementById('localizedNotificationRequestDenied')?.value || 'Notification permission denied';
+                const localizedDefault = document.getElementById('localizedNotificationPermissionDefault')?.value || 'Permission not granted';
+                const localizedFailed = document.getElementById('localizedNotificationRequestFailed')?.value || 'Failed to request notification permission';
+                
+                if (permission === 'granted') {
+                    alert(localizedSuccess);
+                } else if (permission === 'denied') {
+                    alert(localizedDenied);
+                } else {
+                    alert(localizedDefault);
+                }
+            } catch (error) {
+                console.error('Error requesting notification permission:', error);
+                alert((document.getElementById('localizedNotificationRequestFailed')?.value || 'Failed to request notification permission') + ': ' + error.message);
+            }
+        });
+    }
+});

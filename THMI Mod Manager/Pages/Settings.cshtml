@@ -109,6 +109,15 @@
         <input type="hidden" id="localizedNoUpdatesAvailable" value="@AppConfig.GetLocalized("Updates:NoUpdatesAvailable", "No updates available. You are using the latest version.")" />
         <input type="hidden" id="localizedUpdateCheckingDisabled" value="@AppConfig.GetLocalized("Updates:UpdateCheckingDisabled", "Update checking is disabled")" />
         <input type="hidden" id="localizedUpdateCheckFailed" value="@AppConfig.GetLocalized("Updates:UpdateCheckFailed", "Update check failed")" />
+        
+        <!-- Hidden fields for notification localization -->
+        <input type="hidden" id="localizedNotificationNotSupported" value="@AppConfig.GetLocalized("Notifications:NotSupported", "Notifications are not supported in this browser")" />
+        <input type="hidden" id="localizedNotificationPermissionGranted" value="@AppConfig.GetLocalized("Notifications:PermissionGranted", "Permission granted")" />
+        <input type="hidden" id="localizedNotificationPermissionDenied" value="@AppConfig.GetLocalized("Notifications:PermissionDenied", "Permission denied")" />
+        <input type="hidden" id="localizedNotificationPermissionDefault" value="@AppConfig.GetLocalized("Notifications:PermissionDefault", "Permission not granted")" />
+        <input type="hidden" id="localizedNotificationRequestSuccess" value="@AppConfig.GetLocalized("Notifications:PermissionRequestSuccess", "Notification permission granted successfully")" />
+        <input type="hidden" id="localizedNotificationRequestDenied" value="@AppConfig.GetLocalized("Notifications:PermissionRequestDenied", "Notification permission denied")" />
+        <input type="hidden" id="localizedNotificationRequestFailed" value="@AppConfig.GetLocalized("Notifications:PermissionRequestFailed", "Failed to request notification permission")" />
 
         <!-- 修改应用标题开关 -->
         <div class="mb-3 form-group-animated">
@@ -165,6 +174,30 @@
                     </button>
                     <button type="button" class="btn btn-info btn-sm" id="applyUpdateButton" style="display: none;">
                         @AppConfig.GetLocalized("Updates:ApplyUpdateButton", "Apply Update & Restart")
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通知设置部分 -->
+        <div class="mb-3 form-group-animated">
+            <label class="form-label clickable-label">@AppConfig.GetLocalized("Notifications:Title", "Notifications")</label>
+            <div class="notification-section">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="enableNotifications" name="enableNotifications" @(Model.EnableNotifications ? "checked" : "") onclick="toggleNotificationPermission(this)" />
+                    <label for="enableNotifications" class="checkbox-label">@AppConfig.GetLocalized("Notifications:EnableNotifications", "Enable browser notifications")</label>
+                </div>
+                <div class="notification-info mt-2">
+                    <small class="text-muted">
+                        @AppConfig.GetLocalized("Notifications:Description", "Receive notifications for updates and important events")
+                    </small>
+                </div>
+                <div class="notification-permission mt-2" id="notificationPermissionSection" style="display: none;">
+                    <div class="permission-status" id="permissionStatus">
+                        <small class="text-muted">@AppConfig.GetLocalized("Notifications:CheckingPermission", "Checking permission status...")</small>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm mt-2" id="requestPermissionButton">
+                        @AppConfig.GetLocalized("Notifications:RequestPermission", "Request Permission")
                     </button>
                 </div>
             </div>

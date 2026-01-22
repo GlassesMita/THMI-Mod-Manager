@@ -47,6 +47,9 @@ namespace THMI_Mod_Manager.Pages
         public bool AutoCheckUpdates { get; set; } = true; // 是否自动检查更新
         public string UpdateFrequency { get; set; } = "startup"; // 更新频率：startup, weekly, monthly
         
+        // 通知设置属性
+        public bool EnableNotifications { get; set; } = false; // 是否启用浏览器通知
+        
         // Mod信息属性
         public string ModName { get; set; } = "THMI Mod Manager";
         public string ModVersion { get; set; } = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
@@ -112,6 +115,10 @@ namespace THMI_Mod_Manager.Pages
                 UpdateFrequency = updateFrequencyValue ?? "startup";
                 Logger.LogInfo($"Loaded update settings: AutoCheckUpdates: {AutoCheckUpdates}, UpdateFrequency: {UpdateFrequency}");
                 
+                var enableNotificationsValue = _appConfig.Get("[Notifications]Enable", "false");
+                EnableNotifications = enableNotificationsValue?.ToLower() == "true";
+                Logger.LogInfo($"Loaded notification settings: EnableNotifications: {EnableNotifications}");
+                
                 // Load program version information from AppConfig
                 try
                 {
@@ -131,9 +138,9 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency)
+        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications)
         {
-            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}, ModifyTitle: {modifyTitle}, AutoCheckUpdates: {autoCheckUpdates}, UpdateFrequency: {updateFrequency}");
+            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}, ModifyTitle: {modifyTitle}, AutoCheckUpdates: {autoCheckUpdates}, UpdateFrequency: {updateFrequency}, EnableNotifications: {enableNotifications}");
             
             
             if (string.IsNullOrEmpty(language))
@@ -195,6 +202,10 @@ namespace THMI_Mod_Manager.Pages
                     _appConfig.Set("[Updates]UpdateFrequency", updateFrequency);
                     Logger.LogInfo($"Update frequency setting saved: {updateFrequency}");
                 }
+
+                // Save enable notifications setting
+                _appConfig.Set("[Notifications]Enable", enableNotifications.ToString());
+                Logger.LogInfo($"Enable notifications setting saved: {enableNotifications}");
 
                 // Save custom cursor setting
                 _appConfig.Set("[Cursor]UseCustomCursor", useCustomCursor.ToString());
