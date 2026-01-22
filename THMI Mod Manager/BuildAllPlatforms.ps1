@@ -105,12 +105,21 @@ foreach ($runtime in $targetRuntimes) {
         }
         Write-Host "✅ $runtime 平台发布成功" -ForegroundColor Green
 
-        # 3. 剔除不需要的文件
+        # 3. 剔除不需要的文件和目录
+        # 删除文件
         foreach ($file in $excludeFiles) {
             $excludePath = Join-Path -Path $runtimeOutputPath -ChildPath $file
             Get-ChildItem -Path $excludePath -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -Recurse
         }
-        Write-Host "✅ 已剔除无用文件（$($excludeFiles -join ', ')）" -ForegroundColor Green
+        # 删除不需要的目录
+        $excludeDirs = @("bin", "Release")
+        foreach ($dir in $excludeDirs) {
+            $excludeDirPath = Join-Path -Path $runtimeOutputPath -ChildPath $dir
+            if (Test-Path $excludeDirPath) {
+                Remove-Item -Path $excludeDirPath -Force -Recurse
+            }
+        }
+        Write-Host "✅ 已剔除无用文件和目录（$($excludeFiles -join ', ')、$($excludeDirs -join ', ')）" -ForegroundColor Green
 
         # 4. 生成ZIP包（覆盖已存在的包）
         if (Test-Path $zipFilePath) {
