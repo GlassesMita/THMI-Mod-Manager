@@ -1,0 +1,404 @@
+/* OOUI Dialog Styles - MessageDialog Style */
+
+/* OOUI Window Frame */
+.oo-ui-window-frame {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    border: 1px solid #a2a9b1;
+    border-radius: 3px;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.25);
+    z-index: 1001;
+    overflow: hidden;
+    transition: width 0.25s, height 0.25s, opacity 0.25s, transform 0.25s;
+    min-width: 280px;
+    max-width: 90vw;
+    min-height: 100px !important;
+}
+
+.oo-ui-window-frame.oo-ui-window-active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.oo-ui-window-frame.oo-ui-window-setup {
+    opacity: 0;
+    transform: scale(0.9);
+}
+
+/* OOUI Window Content */
+.oo-ui-window-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    overflow: hidden;
+    min-height: 60px !important;
+    height: auto !important;
+}
+
+.oo-ui-window-focusTrap {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* OOUI Window Head */
+.oo-ui-window-head {
+    display: none;
+}
+
+/* OOUI Window Body */
+.oo-ui-window-body {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 60px;
+    max-height: none !important;
+    height: auto !important;
+}
+
+.oo-ui-window-body[style*="bottom"] {
+    bottom: auto !important;
+}
+
+/* OOUI MessageDialog Container */
+.oo-ui-messageDialog-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    padding: 16px 20px;
+    min-height: 50px;
+    overflow: hidden;
+}
+
+.oo-ui-messageDialog-text {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 8px 0;
+    min-height: 30px;
+}
+
+.oo-ui-messageDialog-title {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    color: #202122;
+    margin-bottom: 12px;
+    min-height: 24px;
+}
+
+.oo-ui-messageDialog-message {
+    display: block;
+    font-size: 14px;
+    color: #54595d;
+    line-height: 1.5;
+    min-height: 20px;
+}
+
+/* OOUI Window Foot */
+.oo-ui-window-foot {
+    flex-shrink: 0;
+    padding: 12px 20px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #a2a9b1;
+}
+
+/* OOUI MessageDialog Actions */
+.oo-ui-messageDialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.oo-ui-messageDialog-actions-horizontal {
+    flex-direction: row;
+}
+
+.oo-ui-messageDialog-actions-vertical {
+    flex-direction: column;
+}
+
+/* OOUI Button Element */
+.oo-ui-buttonElement {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 4px;
+}
+
+.oo-ui-buttonElement-framed .oo-ui-buttonElement-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    min-height: 36px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    white-space: nowrap;
+}
+
+.oo-ui-buttonElement-frameless .oo-ui-buttonElement-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    min-height: 36px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    text-decoration: none;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    white-space: nowrap;
+}
+
+/* Primary/Progressive Button */
+.oo-ui-flaggedElement-primary.oo-ui-buttonElement-framed .oo-ui-buttonElement-button,
+.oo-ui-flaggedElement-progressive.oo-ui-buttonElement-framed .oo-ui-buttonElement-button {
+    background-color: #3366cc;
+    border-color: #3366cc;
+    color: #ffffff;
+}
+
+.oo-ui-flaggedElement-primary.oo-ui-buttonElement-framed .oo-ui-buttonElement-button:hover,
+.oo-ui-flaggedElement-progressive.oo-ui-buttonElement-framed .oo-ui-buttonElement-button:hover {
+    background-color: #447ff5;
+    border-color: #447ff5;
+}
+
+.oo-ui-flaggedElement-primary.oo-ui-buttonElement-framed .oo-ui-buttonElement-button:active,
+.oo-ui-flaggedElement-progressive.oo-ui-buttonElement-framed .oo-ui-buttonElement-button:active {
+    background-color: #2a4d8f;
+    border-color: #2a4d8f;
+}
+
+/* Safe/Close Button */
+.oo-ui-flaggedElement-safe.oo-ui-buttonElement-framed .oo-ui-buttonElement-button,
+.oo-ui-flaggedElement-close.oo-ui-buttonElement-framed .oo-ui-buttonElement-button {
+    background-color: #ffffff;
+    border-color: #a2a9b1;
+    color: #202122;
+}
+
+.oo-ui-flaggedElement-safe.oo-ui-buttonElement-framed .oo-ui-buttonElement-button:hover,
+.oo-ui-flaggedElement-close.oo-ui-buttonElement-framed .oo-ui-buttonElement-button:hover {
+    background-color: #f8f9fa;
+    border-color: #72777d;
+}
+
+/* Destructive Button */
+.oo-ui-flaggedElement-destructive.oo-ui-buttonElement-framed .oo-ui-buttonElement-button {
+    background-color: #d73333;
+    border-color: #d73333;
+    color: #ffffff;
+}
+
+.oo-ui-flaggedElement-destructive.oo-ui-buttonElement-framed .oo-ui-buttonElement-button:hover {
+    background-color: #e03535;
+    border-color: #e03535;
+}
+
+/* Button Icons */
+.oo-ui-iconElement-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.oo-ui-iconElement-noIcon {
+    display: none;
+}
+
+/* Button Label */
+.oo-ui-labelElement-label {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Button Indicators */
+.oo-ui-indicatorElement-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: 8px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.oo-ui-indicatorElement-noIndicator {
+    display: none;
+}
+
+/* OOUI Layout Panels */
+.oo-ui-panelLayout {
+    display: block;
+}
+
+.oo-ui-panelLayout-padded {
+    padding: 0;
+}
+
+.oo-ui-panelLayout-expanded {
+    width: 100%;
+    height: 100%;
+}
+
+.oo-ui-panelLayout-scrollable {
+    overflow-y: auto;
+}
+
+/* OOUI Widget States */
+.oo-ui-widget-enabled {
+    opacity: 1;
+}
+
+.oo-ui-widget-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Dialog Overlay/Backdrop */
+.oo-ui-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5);
+    z-index: 1000;
+}
+
+.oo-ui-dialog-overlay-inverse {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* OOUI Window Manager */
+.oo-ui-windowManager {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.oo-ui-windowManager > * {
+    pointer-events: auto;
+}
+
+/* MessageDialog Size Variations */
+.oo-ui-messageDialog-size-small {
+    width: 300px;
+    min-height: 120px;
+}
+
+.oo-ui-messageDialog-size-medium {
+    width: 400px;
+    min-height: 150px;
+}
+
+.oo-ui-messageDialog-size-large {
+    width: 500px;
+    min-height: 200px;
+}
+
+/* Loading Dialog */
+.oo-ui-loading-dialog {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+}
+
+.oo-ui-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #a2a9b1;
+    border-top-color: #3366cc;
+    border-radius: 50%;
+    animation: oo-ui-spin 0.8s linear infinite;
+}
+
+.oo-ui-loading-message {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #54595d;
+}
+
+@keyframes oo-ui-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error/Destructive Message */
+.oo-ui-messageDialog-message.oo-ui-messageDialog-error {
+    color: #d73333;
+}
+
+/* Success Message */
+.oo-ui-messageDialog-message.oo-ui-messageDialog-success {
+    color: #2e7d32;
+}
+
+/* Warning Message */
+.oo-ui-messageDialog-message.oo-ui-messageDialog-warning {
+    color: #ed6c02;
+}
+
+/* Centered Dialog Position */
+.oo-ui-window-centered {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .oo-ui-messageDialog-size-small,
+    .oo-ui-messageDialog-size-medium,
+    .oo-ui-messageDialog-size-large {
+        width: 90%;
+        max-width: none;
+        left: 5%;
+        transform: none;
+    }
+}

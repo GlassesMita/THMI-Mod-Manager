@@ -23,13 +23,16 @@
         };
         
         // 将表单提交处理函数暴露到全局作用域
-        window.handleLauncherSubmit = function(event) {
+        window.handleLauncherSubmit = async function(event) {
         event.preventDefault();
         
         const action = launchButtonComponentCurrentIsRunning ? 'stop' : 'launch';
         
-        if (launchButtonComponentCurrentIsRunning && !confirmStopGame()) {
-            return;
+        if (launchButtonComponentCurrentIsRunning) {
+            const shouldStop = await confirmStopGame();
+            if (!shouldStop) {
+                return;
+            }
         }
         
         // 准备请求数据
@@ -71,7 +74,17 @@
     }
     
     function confirmStopGame() {
-        return confirm('@Html.Raw(Model.ConfirmStopMessage.Replace("\n", "\\n"))');
+        if (typeof OOUIModalManager !== 'undefined') {
+            const confirmMessage = '@Html.Raw(Model.ConfirmStopMessage.Replace("\n", "\\n"))';
+            return new Promise((resolve) => {
+                OOUIModalManager.showConfirmStopGameDialog(
+                    confirmMessage,
+                    () => resolve(true),
+                    () => resolve(false)
+                );
+            });
+        }
+        return Promise.resolve(confirm('@Html.Raw(Model.ConfirmStopMessage.Replace("\n", "\\n"))'));
     }
     
     function updateButtonState(isRunning) {

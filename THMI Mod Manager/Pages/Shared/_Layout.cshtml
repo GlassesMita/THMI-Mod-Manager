@@ -21,6 +21,10 @@
     <link rel="stylesheet" href="~/css/cursor-selector.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/settings.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/file-browser.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/oojs-ui/oojs-ui-wikimediaui.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sidebar-oojs-ui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/oojs-ui-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/oojs-ui-dialog.css" asp-append-version="true" />
     <style>
         h1 {
             color: @@themeColor !important;
@@ -124,45 +128,41 @@
 
     <div class="d-flex">
         <!-- Sidebar for md and up -->
-        <nav id="sidebar" class="bg-white border-end d-none d-md-block" style="width:260px; height:100vh; position:fixed; top:0; left:0; overflow:hidden;">
-            <div class="p-3">
-                <a id="navbarBrandSidebar" class="navbar-brand d-block mb-3" asp-area="" asp-page="/Index" style="cursor: pointer;">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
-                <ul class="nav nav-pills flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Index"><i class="bi bi-house"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Mods"><i class="bi bi-box-seam"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Explore"><i class="bi bi-globe"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Settings">
-                            <i class="bi bi-gear"></i> 
-                            <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
-                            <span id="settingsUpdateBadge" class="badge bg-danger ms-1" style="display: none;">!</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/About"><i class="bi bi-info-circle"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
-                    </li>
-                </ul>
+        <nav id="sidebar" class="oojs-ui-sidebar d-none d-md-block" style="width:260px; height:100vh; position:fixed; top:0; left:0; overflow:hidden;">
+            <div class="oojs-ui-sidebar-header">
+                <a id="navbarBrandSidebar" class="oojs-ui-sidebar-title" asp-area="" asp-page="/Index" style="cursor: pointer; text-decoration: none;">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
+            </div>
+            <ul class="oojs-ui-menu">
+                <li class="oojs-ui-menu-item">
+                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Index"><span class="oojs-ui-menu-icon"><i class="bi bi-house"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
+                </li>
+                <li class="oojs-ui-menu-item">
+                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Mods"><span class="oojs-ui-menu-icon"><i class="bi bi-box-seam"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
+                </li>
+                <li class="oojs-ui-menu-item">
+                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Explore"><span class="oojs-ui-menu-icon"><i class="bi bi-globe"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
+                </li>
+                <li class="oojs-ui-menu-item">
+                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Settings">
+                        <span class="oojs-ui-menu-icon"><i class="bi bi-gear"></i></span>
+                        <span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
+                        <span id="settingsUpdateBadge" class="oojs-ui-pill oojs-ui-pill-warning" style="display: none;">!</span>
+                    </a>
+                </li>
+                <li class="oojs-ui-menu-item">
+                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/About"><span class="oojs-ui-menu-icon"><i class="bi bi-info-circle"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
+                </li>
+            </ul>
 
-                <!-- Steam Status Indicator -->
-                <div class="mt-3 mb-3">
-                    <div class="card">
-                        <div class="card-body py-2 px-3">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-steam me-2" id="steamStatusIcon"></i>
-                                <span class="small" id="steamStatusText">@AppConfig.GetLocalized("Steam:Checking", "Checking...")</span>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Steam Status Indicator -->
+            <div class="oojs-ui-sidebar-footer">
+                <div class="oojs-ui-status" id="steamStatusIndicator">
+                    <span class="oojs-ui-status-icon" id="steamStatusIcon"></span>
+                    <span class="oojs-ui-status-text" id="steamStatusText">@AppConfig.GetLocalized("Steam:Checking", "Checking...")</span>
                 </div>
 
                 <!-- Fixed button at the bottom of the sidebar (md+) -->
-                <div class="position-absolute bottom-0 w-100 p-3">
+                <div style="margin-top: 16px;">
                     @await Component.InvokeAsync("LaunchButton")
                 </div>
             </div>
@@ -174,38 +174,34 @@
                 <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
-            <div class="offcanvas-body" style="display:flex; flex-direction:column; overflow:hidden;">
-                <ul class="nav nav-pills flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Index"><i class="bi bi-house"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
+            <div class="offcanvas-body oojs-ui-sidebar" style="display:flex; flex-direction:column; overflow:hidden;">
+                <ul class="oojs-ui-menu">
+                    <li class="oojs-ui-menu-item">
+                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Index"><span class="oojs-ui-menu-icon"><i class="bi bi-house"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Mods"><i class="bi bi-box-seam"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
+                    <li class="oojs-ui-menu-item">
+                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Mods"><span class="oojs-ui-menu-icon"><i class="bi bi-box-seam"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Explore"><i class="bi bi-globe"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
+                    <li class="oojs-ui-menu-item">
+                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Explore"><span class="oojs-ui-menu-icon"><i class="bi bi-globe"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/Settings">
-                            <i class="bi bi-gear"></i> 
-                            <span class="ms-2">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
-                            <span id="settingsUpdateBadgeOffcanvas" class="badge bg-danger ms-1" style="display: none;">!</span>
+                    <li class="oojs-ui-menu-item">
+                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Settings">
+                            <span class="oojs-ui-menu-icon"><i class="bi bi-gear"></i></span>
+                            <span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
+                            <span id="settingsUpdateBadgeOffcanvas" class="oojs-ui-pill oojs-ui-pill-warning" style="display: none;">!</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-page="/About"><i class="bi bi-info-circle"></i> <span class="ms-2">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
+                    <li class="oojs-ui-menu-item">
+                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/About"><span class="oojs-ui-menu-icon"><i class="bi bi-info-circle"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
                     </li>
                 </ul>
 
                 <!-- Steam Status Indicator -->
-                <div class="mt-3 mb-3">
-                    <div id="steamStatusIndicatorOffcanvas" class="card" style="cursor: pointer;">
-                        <div class="card-body py-2 px-3">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-steam me-2" id="steamStatusIconOffcanvas"></i>
-                                <span class="small" id="steamStatusTextOffcanvas">@AppConfig.GetLocalized("Steam:Checking", "Checking...")</span>
-                            </div>
-                        </div>
+                <div class="oojs-ui-sidebar-footer">
+                    <div class="oojs-ui-status" id="steamStatusIndicatorOffcanvas" style="cursor: pointer;">
+                        <span class="oojs-ui-status-icon" id="steamStatusIconOffcanvas"></span>
+                        <span class="oojs-ui-status-text" id="steamStatusTextOffcanvas">@AppConfig.GetLocalized("Steam:Checking", "Checking...")</span>
                     </div>
                 </div>
 
@@ -269,6 +265,11 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/oojs/oojs.min.js" asp-append-version="true"></script>
+    <script src="~/oojs-ui/oojs-ui.min.js" asp-append-version="true"></script>
+    <script src="~/oojs-ui/oojs-ui-wikimediaui.min.js" asp-append-version="true"></script>
+    <script src="~/js/oojs-ui-modal.js" asp-append-version="true"></script>
+    <script src="~/js/modal-utils.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/settings.js" asp-append-version="true"></script>
     
