@@ -87,6 +87,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 string? updateVersion = null;
 string? openPage = null;
+bool openDebugPage = false;
+
 foreach (var arg in args)
 {
     if (arg.StartsWith("--updated-version="))
@@ -101,7 +103,12 @@ foreach (var arg in args)
         openPage = arg.Substring("--open=".Length);
         Console.WriteLine($"Open page parameter detected: {openPage}");
         Logger.LogInfo($"Open page parameter detected: {openPage}");
-        break;
+    }
+    else if (arg == "--open-debug-page")
+    {
+        openDebugPage = true;
+        Console.WriteLine($"Open debug page parameter detected");
+        Logger.LogInfo($"Open debug page parameter detected");
     }
 }
 
@@ -404,32 +411,49 @@ lifetime.ApplicationStarted.Register(() =>
         
         Console.WriteLine(runningMessage);
         Logger.LogInfo($"Application running on localhost:{port}");
-        
-        // 自动打开默认浏览器
-        var openUrl = $"http://localhost:{port}";
-        
-        // 如果有指定页面参数，打开指定页面
-        if (!string.IsNullOrEmpty(openPage))
+
+        List<string> urlsToOpen = new List<string>();
+
+        if (openDebugPage)
         {
-            openUrl = $"http://localhost:{port}/{openPage}";
+            urlsToOpen.Add($"http://localhost:{port}/DebugPage");
+            Console.WriteLine($"Opening debug page");
+            Logger.LogInfo($"Opening debug page");
+
+            if (!string.IsNullOrEmpty(openPage) && openPage.ToLower() != "debugpage")
+            {
+                urlsToOpen.Add($"http://localhost:{port}/{openPage}");
+                Console.WriteLine($"Opening specified page: {openPage}");
+                Logger.LogInfo($"Opening specified page: {openPage}");
+            }
+        }
+        else if (!string.IsNullOrEmpty(openPage))
+        {
+            urlsToOpen.Add($"http://localhost:{port}/{openPage}");
             Console.WriteLine($"Opening specified page: {openPage}");
             Logger.LogInfo($"Opening specified page: {openPage}");
         }
-        // 如果有更新版本参数，打开WhatsNew页面
         else if (!string.IsNullOrEmpty(updateVersion))
         {
-            openUrl = $"http://localhost:{port}/WhatsNew?version={updateVersion}";
+            urlsToOpen.Add($"http://localhost:{port}/WhatsNew?version={updateVersion}");
             Console.WriteLine($"Opening What's New page for version: {updateVersion}");
             Logger.LogInfo($"Opening What's New page for version: {updateVersion}");
         }
-        
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        else
         {
-            FileName = openUrl,
-            UseShellExecute = true
-        });
-        Console.WriteLine(browserOpenedMessage);
-        Logger.LogInfo($"Browser opened with URL: {openUrl}");
+            urlsToOpen.Add($"http://localhost:{port}");
+        }
+
+        foreach (var url in urlsToOpen)
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+            Console.WriteLine(browserOpenedMessage);
+            Logger.LogInfo($"Browser opened with URL: {url}");
+        }
     }
     catch (Exception ex)
     {
