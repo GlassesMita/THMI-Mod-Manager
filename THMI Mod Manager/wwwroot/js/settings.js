@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
             loadingSpinner.style.display = 'none';
             
             // 显示错误提示
-            alert('保存设置失败，请重试: ' + error.message);
+            ModalUtils.alert('保存失败', '保存设置失败，请重试: ' + error.message);
         });
     });
     
@@ -561,7 +561,7 @@ function openFileBrowser(type) {
         }
     } else {
         console.error('File browser is not available');
-        alert('File browser is not available. Please refresh the page and try again.');
+        ModalUtils.alert('错误', 'File browser is not available. Please refresh page and try again.');
     }
 }
 
