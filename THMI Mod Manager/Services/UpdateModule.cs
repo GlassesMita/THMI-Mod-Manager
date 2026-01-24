@@ -223,10 +223,36 @@ namespace THMI_Mod_Manager
 
     public class Architecture
     {
-        public static string Current => RuntimeInformation.OSArchitecture.ToString().Contains("Arm") ? "ARM" : 
+        public static string Current => RuntimeInformation.OSArchitecture.ToString().Contains("Arm") ? "ARM64" : 
                                          (Environment.Is64BitOperatingSystem ? "x64" : "x86");
 
-        public static string PackageSuffix => Environment.Is64BitOperatingSystem ? "win64" : "win32";
+        public static string PackageSuffix
+        {
+            get
+            {
+                var os = RuntimeInformation.OSDescription.ToLowerInvariant();
+                var arch = Environment.Is64BitOperatingSystem ? "x64" : "x86";
+
+                if (os.Contains("windows"))
+                {
+                    return Environment.Is64BitOperatingSystem ? "win-x64" : "win-x86";
+                }
+                else if (os.Contains("linux"))
+                {
+                    if (RuntimeInformation.OSArchitecture.ToString().Contains("Arm"))
+                    {
+                        return RuntimeInformation.OSArchitecture.ToString().Contains("64") ? "linux-arm64" : "linux-arm";
+                    }
+                    return "linux-x64";
+                }
+                else if (os.Contains("darwin") || os.Contains("macos") || os.Contains("osx"))
+                {
+                    return RuntimeInformation.OSArchitecture.ToString().Contains("Arm") ? "osx-arm64" : "osx-x64";
+                }
+
+                return Environment.Is64BitOperatingSystem ? "win-x64" : "win-x86";
+            }
+        }
     }
 
     public class UpdateModule
@@ -342,7 +368,9 @@ namespace THMI_Mod_Manager
             {
                 _logger.LogInformation($"Starting download update: {downloadUrl}");
 
-                var tempPath = Path.Combine(Path.GetTempPath(), $"THMI_Update_{DateTime.Now:yyyyMMdd_HHmmss}");
+                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff");
+                var uniqueId = Guid.NewGuid().ToString("N")[..8];
+                var tempPath = Path.Combine(Path.GetTempPath(), $"THMI_Update_{timestamp}_{uniqueId}");
                 Directory.CreateDirectory(tempPath);
 
                 var fileName = Path.GetFileName(new Uri(downloadUrl).AbsolutePath);
@@ -362,8 +390,8 @@ namespace THMI_Mod_Manager
                 _logger.LogInformation($"File size: {totalBytes:N0} bytes");
 
                 using var contentStream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                var buffer = new byte[81920];
+                using var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.Read, bufferSize: 131072);
+                var buffer = new byte[131072];
                 long downloadedBytes = 0;
                 int bytesRead;
 

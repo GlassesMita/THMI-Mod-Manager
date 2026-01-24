@@ -2,11 +2,49 @@
 
 <form id="launcherForm" style="display: inline; width: 100%;" 
       onsubmit="handleLauncherSubmit(event)">
-    <button type="submit" class="btn @Model.ButtonClass" style="width: 100%; display: flex; align-items: center; justify-content: flex-start; padding: 0.5rem 0.75rem;">
+    <button type="submit" class="oojs-button oojs-button-primary oojs-launch-button" id="launchButton">
         <i class="bi @Model.ButtonIcon" style="margin-right: 0.5rem;"></i> 
         <span id="buttonText">@Model.ButtonText</span>
     </button>
 </form>
+
+<style>
+.oojs-launch-button.oojs-button-safe {
+    background-color: var(--color-success, #14866d) !important;
+    border-color: var(--color-success, #14866d) !important;
+    color: #ffffff !important;
+}
+
+.oojs-launch-button.oojs-button-safe:hover,
+.oojs-launch-button.oojs-button-safe:focus {
+    background-color: var(--color-success--hover, #179c82) !important;
+    border-color: var(--color-success--hover, #179c82) !important;
+    color: #ffffff !important;
+}
+
+.oojs-launch-button.oojs-button-destructive {
+    background-color: var(--color-destructive, #d73333) !important;
+    border-color: var(--color-destructive, #d73333) !important;
+    color: #ffffff !important;
+}
+
+.oojs-launch-button.oojs-button-destructive:hover,
+.oojs-launch-button.oojs-button-destructive:focus {
+    background-color: var(--color-destructive--hover, #e03535) !important;
+    border-color: var(--color-destructive--hover, #e03535) !important;
+    color: #ffffff !important;
+}
+
+.oojs-launch-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0.5rem 0.75rem !important;
+    box-sizing: border-box;
+    font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+}
+</style>
 
 <script>
     // 使用函数作用域避免全局变量冲突
@@ -89,16 +127,16 @@
     
     function updateButtonState(isRunning) {
         launchButtonComponentCurrentIsRunning = isRunning;
-        const button = document.querySelector('#launcherForm button');
+        const button = document.querySelector('#launchButton');
         const buttonText = document.getElementById('buttonText');
         const buttonIcon = button.querySelector('i');
         
         if (isRunning) {
-            button.className = 'btn btn-danger';
+            button.className = 'oojs-button oojs-button-destructive oojs-launch-button';
             buttonIcon.className = 'bi bi-stop-fill';
             buttonText.textContent = localizedStrings.stopText;
         } else {
-            button.className = 'btn btn-success';
+            button.className = 'oojs-button oojs-button-safe oojs-launch-button';
             buttonIcon.className = 'bi bi-play-fill';
             buttonText.textContent = localizedStrings.launchText;
         }

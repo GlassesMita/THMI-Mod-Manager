@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using THMI_Mod_Manager.Services;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Net.Http;
@@ -44,9 +45,9 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                var appSection = _appConfigManager.GetSection("App");
-                var programName = appSection.TryGetValue("Name", out var name) ? name : "THMI Mod Manager";
-                var currentVersion = appSection.TryGetValue("Version", out var version) ? version : "0.0.1";
+                var programName = "THMI Mod Manager";
+                var assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
+                var currentVersion = assemblyVersion?.ToString(3) ?? "0.0.0";
 
                 var updatesSection = _appConfigManager.GetSection("Updates");
                 var autoCheckUpdatesValue = updatesSection.TryGetValue("CheckForUpdates", out var checkUpdates) ? checkUpdates : "true";

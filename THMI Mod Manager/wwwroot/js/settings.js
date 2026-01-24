@@ -1,8 +1,26 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('settingsForm');
     const successToast = document.getElementById('successToast');
-    const selects = document.querySelectorAll('.form-select');
-    let isSaving = false; // 防止重复提交
+    const selects = document.querySelectorAll('.oojs-select');
+    let isSaving = false;
+
+    const simpleMarkdownParser = (text) => {
+        if (!text) return '';
+        let html = text
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/`(.+?)`/g, '<code>$1</code>')
+            .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+            .replace(/^\- (.+)$/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/^(?!<[hulop])/gm, '<p>')
+            .replace(/(?<![>])$/gm, '</p>');
+        return html;
+    };
     
     // 为浏览按钮添加事件监听器
     const browseLauncherPath = document.getElementById('browseLauncherPath');
@@ -12,10 +30,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 为所有下拉框添加动画效果
     selects.forEach((select, index) => {
-        // 改变值时的动画
         select.addEventListener('change', function() {
-            // 添加成功反馈
-            this.style.borderColor = '#198754';
+            this.style.borderColor = 'var(--color-success)';
             setTimeout(() => {
                 this.style.borderColor = '';
             }, 1500);
@@ -23,17 +39,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     form.addEventListener('submit', function(e) {
-        e.preventDefault(); // 阻止默认表单提交
+        e.preventDefault();
         
-        // 防止重复提交
         if (isSaving) {
             console.log('Settings already being saved, ignoring duplicate submission');
             return;
         }
         isSaving = true;
         
-        // 添加保存动画
-        const submitButton = form.querySelector('.btn-primary');
+        const submitButton = form.querySelector('.oojs-button-primary');
         const saveText = document.getElementById('saveText');
         const loadingSpinner = document.getElementById('loadingSpinner');
         
@@ -135,19 +149,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // 为光标选项添加交互效果
     const cursorRadios = document.querySelectorAll('input[name="cursorType"]');
     cursorRadios.forEach(radio => {
         radio.addEventListener('change', function() {
-            // 移除所有选项的高亮
-            document.querySelectorAll('.cursor-radio-option').forEach(option => {
+            document.querySelectorAll('.oojs-radio-container').forEach(option => {
                 option.style.backgroundColor = 'transparent';
             });
             
-            // 为选中的选项添加高亮
             if (this.checked) {
                 const themeColor = document.getElementById('colorPreviewText') ? document.getElementById('colorPreviewText').textContent : '#c670ff';
-                this.closest('.cursor-radio-option').style.backgroundColor = 'rgba(' + parseInt(themeColor.substring(1, 3), 16) + ', ' + parseInt(themeColor.substring(3, 5), 16) + ', ' + parseInt(themeColor.substring(5, 7), 16) + ', 0.1)';
+                this.closest('.oojs-radio-container').style.backgroundColor = 'rgba(' + parseInt(themeColor.substring(1, 3), 16) + ', ' + parseInt(themeColor.substring(3, 5), 16) + ', ' + parseInt(themeColor.substring(5, 7), 16) + ', 0.1)';
             }
         });
     });
@@ -261,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateResult.innerHTML = `
                         <div class="alert alert-info">
                             <h6>${localizedUpdateAvailable.replace('{0}', data.latestVersion)}</h6>
-                            <p>${data.releaseNotes || localizedNoReleaseNotes}</p>
+                            <div class="release-notes">${simpleMarkdownParser(data.releaseNotes || localizedNoReleaseNotes)}</div>
                         </div>
                     `;
                     if (downloadUpdateButton) {
@@ -577,25 +588,28 @@ function closeFileBrowser() {
 // 通知权限相关函数
 function toggleNotificationPermission(checkbox) {
     const permissionSection = document.getElementById('notificationPermissionSection');
+    const requestPermissionButton = document.getElementById('requestPermissionButton');
     
     if (checkbox.checked) {
         if ('Notification' in window) {
-            permissionSection.style.display = 'block';
             checkNotificationPermissionStatus();
         } else {
             checkbox.checked = false;
-            alert(document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser');
+            ModalUtils.alert(document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser');
         }
     } else {
-        permissionSection.style.display = 'none';
+        if (requestPermissionButton) requestPermissionButton.disabled = true;
     }
 }
 
 function checkNotificationPermissionStatus() {
-    const permissionStatus = document.getElementById('permissionStatus');
+    const permissionStatus = document.getElementById('permissionStatusText');
+    const requestPermissionButton = document.getElementById('requestPermissionButton');
     
     if (!('Notification' in window)) {
-        permissionStatus.innerHTML = `<small class="text-danger">${document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser'}</small>`;
+        permissionStatus.textContent = document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser';
+        permissionStatus.className = 'oojs-text-danger';
+        if (requestPermissionButton) requestPermissionButton.disabled = true;
         return;
     }
     
@@ -606,26 +620,49 @@ function checkNotificationPermissionStatus() {
     
     switch (permission) {
         case 'granted':
-            permissionStatus.innerHTML = `<small class="text-success">${localizedGranted}</small>`;
+            permissionStatus.textContent = localizedGranted;
+            permissionStatus.className = 'oojs-text-muted';
+            if (requestPermissionButton) {
+                requestPermissionButton.disabled = true;
+                requestPermissionButton.textContent = document.getElementById('localizedNotificationPermissionGranted')?.value || '授权已获取';
+            }
             break;
         case 'denied':
-            permissionStatus.innerHTML = `<small class="text-danger">${localizedDenied}</small>`;
+            permissionStatus.textContent = localizedDenied;
+            permissionStatus.className = 'oojs-text-danger';
+            if (requestPermissionButton) {
+                requestPermissionButton.disabled = true;
+                requestPermissionButton.textContent = document.getElementById('localizedNotificationPermissionDenied')?.value || '授权被拒绝';
+            }
             break;
         case 'default':
-            permissionStatus.innerHTML = `<small class="text-warning">${localizedDefault}</small>`;
+            permissionStatus.textContent = localizedDefault;
+            permissionStatus.className = 'oojs-text-muted';
+            if (requestPermissionButton) {
+                requestPermissionButton.disabled = false;
+                requestPermissionButton.textContent = document.getElementById('localizedNotificationRequestPermission')?.value || 'Request Permission';
+            }
             break;
         default:
-            permissionStatus.innerHTML = `<small class="text-muted">${permission}</small>`;
+            permissionStatus.textContent = permission;
+            permissionStatus.className = 'oojs-text-muted';
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     const requestPermissionButton = document.getElementById('requestPermissionButton');
+    const enableNotificationsCheckbox = document.getElementById('enableNotifications');
+    
+    if (enableNotificationsCheckbox && enableNotificationsCheckbox.checked) {
+        checkNotificationPermissionStatus();
+    } else if (requestPermissionButton) {
+        requestPermissionButton.disabled = true;
+    }
     
     if (requestPermissionButton) {
         requestPermissionButton.addEventListener('click', async function() {
             if (!('Notification' in window)) {
-                alert(document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser');
+                ModalUtils.alert(document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser');
                 return;
             }
             
@@ -636,18 +673,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const localizedSuccess = document.getElementById('localizedNotificationRequestSuccess')?.value || 'Notification permission granted successfully';
                 const localizedDenied = document.getElementById('localizedNotificationRequestDenied')?.value || 'Notification permission denied';
                 const localizedDefault = document.getElementById('localizedNotificationPermissionDefault')?.value || 'Permission not granted';
-                const localizedFailed = document.getElementById('localizedNotificationRequestFailed')?.value || 'Failed to request notification permission';
                 
                 if (permission === 'granted') {
-                    alert(localizedSuccess);
+                    ModalUtils.alert(localizedSuccess);
                 } else if (permission === 'denied') {
-                    alert(localizedDenied);
+                    ModalUtils.alert(localizedDenied);
                 } else {
-                    alert(localizedDefault);
+                    ModalUtils.alert(localizedDefault);
                 }
             } catch (error) {
                 console.error('Error requesting notification permission:', error);
-                alert((document.getElementById('localizedNotificationRequestFailed')?.value || 'Failed to request notification permission') + ': ' + error.message);
+                ModalUtils.alert((document.getElementById('localizedNotificationRequestFailed')?.value || 'Failed to request notification permission') + ': ' + error.message);
             }
         });
     }
