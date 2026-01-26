@@ -377,6 +377,38 @@
         margin-bottom: 1.5rem;
     }
 
+    .mw-radio-group,
+    .mw-checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .mw-radio-container,
+    .mw-checkbox-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .mw-radio-container input[type="radio"],
+    .mw-checkbox-container input[type="checkbox"] {
+        margin-top: 0.25rem;
+        width: 1.2em;
+        height: 1.2em;
+        cursor: pointer;
+        accent-color: var(--color-progressive);
+    }
+
+    .mw-radio-label,
+    .mw-checkbox-label {
+        font-weight: normal;
+        font-size: 0.95em;
+        color: var(--color-base);
+        cursor: pointer;
+        line-height: 1.4;
+    }
+
     .button-group {
         display: flex;
         flex-wrap: wrap;
@@ -476,6 +508,47 @@
 
                     <input type="hidden" id="themeColor" name="themeColor" value="@Model.ThemeColor" />
 
+                    <div class="form-group">
+                        <label class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:UpdateFrequencyLabel", Model.SelectedLanguage, "更新检查频率 / Update Check Frequency")</label>
+                        <select id="updateFrequency" name="updateFrequency" class="mw-select">
+                            <option value="startup" selected="@(Model.UpdateFrequency == "startup")">@Model.GetLocalizedForLanguage("SetupWizard:FrequencyStartup", Model.SelectedLanguage, "每次启动 / On Startup")</option>
+                            <option value="weekly" selected="@(Model.UpdateFrequency == "weekly")">@Model.GetLocalizedForLanguage("SetupWizard:FrequencyWeekly", Model.SelectedLanguage, "每周一 / Every Monday")</option>
+                            <option value="monthly" selected="@(Model.UpdateFrequency == "monthly")">@Model.GetLocalizedForLanguage("SetupWizard:FrequencyMonthly", Model.SelectedLanguage, "每月第一天 / First Day of Month")</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:QuickSetupLabel", Model.SelectedLanguage, "快速设置 / Quick Setup")</label>
+                        <div class="mw-radio-group">
+                            <div class="mw-radio-container">
+                                <input type="radio" id="skipRemainingYes" name="skipRemainingQuestions" value="true" checked="@(Model.SkipRemainingQuestions ? "checked" : null)" onchange="toggleAdditionalSettings()" />
+                                <label for="skipRemainingYes" class="mw-radio-label">@Model.GetLocalizedForLanguage("SetupWizard:SkipRemainingYes", Model.SelectedLanguage, "我已经不耐烦了，让我赶快进入主界面 / I'm impatient, let me go to the main interface")</label>
+                            </div>
+                            <div class="mw-radio-container">
+                                <input type="radio" id="skipRemainingNo" name="skipRemainingQuestions" value="false" checked="@(!Model.SkipRemainingQuestions ? "checked" : null)" onchange="toggleAdditionalSettings()" />
+                                <label for="skipRemainingNo" class="mw-radio-label">@Model.GetLocalizedForLanguage("SetupWizard:SkipRemainingNo", Model.SelectedLanguage, "再多问我一些问题吧 / Ask me more questions")</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="additionalSettings" style="display: @(Model.SkipRemainingQuestions ? "none" : "block");">
+                        <div class="form-group">
+                            <label class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:NotificationsLabel", Model.SelectedLanguage, "浏览器通知 / Browser Notifications")</label>
+                            <div class="mw-checkbox-container">
+                                <input type="checkbox" id="enableNotifications" name="enableNotifications" @(Model.EnableNotifications ? "checked" : "") />
+                                <label for="enableNotifications" class="mw-checkbox-label">@Model.GetLocalizedForLanguage("SetupWizard:EnableNotificationsDesc", Model.SelectedLanguage, "接收更新和重要事件的通知 / Receive notifications for updates and important events")</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:ModifyTitleLabel", Model.SelectedLanguage, "应用标题 / Application Title")</label>
+                            <div class="mw-checkbox-container">
+                                <input type="checkbox" id="modifyTitle" name="modifyTitle" @(Model.ModifyTitle ? "checked" : "") />
+                                <label for="modifyTitle" class="mw-checkbox-label">@Model.GetLocalizedForLanguage("SetupWizard:ModifyTitleDesc", Model.SelectedLanguage, "在游戏窗口标题添加 Modded 前缀 / Add 'Modded' prefix to game window title")</label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="button-group">
                         <button type="submit" class="mw-button mw-button--progressive">
                             @if (Model.IsReConfiguration)
@@ -513,6 +586,13 @@
         location.href = url;
     }
 
+    function toggleAdditionalSettings() {
+        const skipRemainingYes = document.getElementById('skipRemainingYes').checked;
+        const additionalSettings = document.getElementById('additionalSettings');
+        additionalSettings.style.display = skipRemainingYes ? 'none' : 'block';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        toggleAdditionalSettings();
     });
 </script>

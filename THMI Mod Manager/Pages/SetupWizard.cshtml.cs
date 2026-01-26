@@ -21,6 +21,21 @@ namespace THMI_Mod_Manager.Pages
         [BindProperty]
         public string ThemeColor { get; set; } = "#ACCEED";
 
+        [BindProperty]
+        public bool AutoCheckUpdates { get; set; } = true;
+
+        [BindProperty]
+        public string UpdateFrequency { get; set; } = "startup";
+
+        [BindProperty]
+        public bool EnableNotifications { get; set; } = false;
+
+        [BindProperty]
+        public bool ModifyTitle { get; set; } = true;
+
+        [BindProperty]
+        public bool SkipRemainingQuestions { get; set; } = false;
+
         public string Message { get; set; } = string.Empty;
         public string MessageType { get; set; } = string.Empty;
         public bool IsReConfiguration { get; set; } = false;
@@ -97,8 +112,6 @@ namespace THMI_Mod_Manager.Pages
 
         public void OnGet(string? language = null, bool? reconfigure = null)
         {
-            var existingLanguage = _appConfig.Get("Localization", "Language");
-            var isFirstRun = _appConfig.Get("App", "IsFirstRun");
             var isDevBuild = _appConfig.Get("[Dev]IsDevBuild", "False");
 
             if (!string.IsNullOrEmpty(isDevBuild) && bool.Parse(isDevBuild))
@@ -108,14 +121,24 @@ namespace THMI_Mod_Manager.Pages
                 return;
             }
 
-            var isAlreadyConfigured = !string.IsNullOrEmpty(existingLanguage) && isFirstRun?.ToLower() != "true";
+            var existingLanguage = _appConfig.Get("Localization", "Language");
+            var isFirstRun = _appConfig.Get("App", "IsFirstRun");
+            var allSections = _appConfig.GetAllSections();
+            var hasValidConfig = !string.IsNullOrEmpty(existingLanguage) && 
+                                 isFirstRun?.ToLower() != "true" && 
+                                 allSections.Count > 0;
 
-            if (isAlreadyConfigured)
+            if (hasValidConfig)
             {
                 ExistingLanguage = existingLanguage;
                 ExistingThemeColor = _appConfig.Get("App", "ThemeColor");
                 SelectedLanguage = existingLanguage;
                 ThemeColor = ExistingThemeColor ?? "#ACCEED";
+
+                AutoCheckUpdates = bool.TryParse(_appConfig.Get("Updates", "CheckForUpdates"), out var autoCheck) && autoCheck;
+                UpdateFrequency = _appConfig.Get("Updates", "UpdateFrequency") ?? "startup";
+                EnableNotifications = bool.TryParse(_appConfig.Get("Notifications", "Enable"), out var enableNotif) && enableNotif;
+                ModifyTitle = bool.TryParse(_appConfig.Get("Game", "ModifyTitle"), out var modify) && modify;
 
                 if (reconfigure == true)
                 {
@@ -141,13 +164,32 @@ namespace THMI_Mod_Manager.Pages
             {
                 _appConfig.Set("[Localization]Language", SelectedLanguage);
                 _appConfig.Set("[App]ThemeColor", ThemeColor);
+
+                if (SkipRemainingQuestions)
+                {
+                    _appConfig.Set("[App]IsFirstRun", "False");
+
+                    var semanticVersion = Assembly.GetExecutingAssembly()
+                        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                        ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+                        ?? "0.0.0";
+                    _appConfig.Set("[App]Version", semanticVersion);
+
+                    return RedirectToPage("/Index");
+                }
+
+                _appConfig.Set("[Updates]CheckForUpdates", AutoCheckUpdates.ToString());
+                _appConfig.Set("[Updates]UpdateFrequency", UpdateFrequency);
+                _appConfig.Set("[Notifications]Enable", EnableNotifications.ToString());
+                _appConfig.Set("[Game]ModifyTitle", ModifyTitle.ToString());
+
                 _appConfig.Set("[App]IsFirstRun", "False");
 
-                var semanticVersion = Assembly.GetExecutingAssembly()
+                var semanticVersion2 = Assembly.GetExecutingAssembly()
                     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
                     ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
                     ?? "0.0.0";
-                _appConfig.Set("[App]Version", semanticVersion);
+                _appConfig.Set("[App]Version", semanticVersion2);
 
                 return RedirectToPage("/Index");
             }

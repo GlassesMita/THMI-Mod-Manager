@@ -10,13 +10,13 @@
     
     <!-- 语义化版本号配置 -->
     <!-- Version: 用于 NuGet 包和 informational 版本显示，支持预发布标签 -->
-    <Version>0.6.0-rc2</Version>
+    <Version>0.6.0</Version>
     <!-- AssemblyVersion: 必须为 4 部分数字格式，用于程序集标识 -->
     <AssemblyVersion>0.6.0.0</AssemblyVersion>
     <!-- FileVersion: 必须为 4 部分数字格式，用于文件属性对话框显示 -->
     <FileVersion>0.6.0.0</FileVersion>
     <!-- AssemblyInformationalVersion: 支持完整语义化版本，用于程序集属性显示 -->
-    <AssemblyInformationalVersion>0.6.0-rc2</AssemblyInformationalVersion>
+    <AssemblyInformationalVersion>0.6.0</AssemblyInformationalVersion>
     
     <!-- 禁用源代码控制信息生成（避免版本号后出现 Git 哈希） -->
     <Deterministic>false</Deterministic>
