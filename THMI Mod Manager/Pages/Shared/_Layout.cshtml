@@ -922,7 +922,7 @@
                     if (response.ok) {
                         console.log('Application exit request sent');
                         setTimeout(function() {
-                            window.close();
+                            window.location.href = 'about:blank';
                         }, 500);
                     } else {
                         console.error('Failed to send exit request');

@@ -209,6 +209,16 @@ var builder = WebApplication.CreateBuilder(args);
 string? updateVersion = null;
 string? openPage = null;
 bool openDebugPage = false;
+// ===================== 关键修改1：新增--no-newtab参数检测（优先级最高） =====================
+bool noNewTab = args != null && args.Contains("--no-newtab", StringComparer.OrdinalIgnoreCase);
+
+// 输出日志提示--no-newtab参数已生效
+if (noNewTab)
+{
+    ConsoleOutput("检测到--no-newtab参数，将禁用自动打开浏览器窗口");
+    Logger.LogInfo("Detected --no-newtab parameter, automatic browser window opening is disabled");
+}
+// ==========================================================================================
 
 foreach (var arg in args)
 {
@@ -481,48 +491,53 @@ lifetime.ApplicationStarted.Register(() =>
         ConsoleOutput(finalRunningMessage);
         Logger.LogInfo($"Application running on localhost:{port}");
 
-        List<string> urlsToOpen = new List<string>();
-
-        if (openDebugPage)
+        // ===================== 关键修改2：判断--no-newtab参数，优先级最高 =====================
+        if (!noNewTab) // 仅当未传入--no-newtab时，才执行打开浏览器逻辑
         {
-            urlsToOpen.Add($"http://localhost:{port}/DebugPage");
-            ConsoleOutput($"Opening debug page");
-            Logger.LogInfo($"Opening debug page");
+            List<string> urlsToOpen = new List<string>();
 
-            if (!string.IsNullOrEmpty(openPage) && openPage.ToLower() != "debugpage")
+            if (openDebugPage)
+            {
+                urlsToOpen.Add($"http://localhost:{port}/DebugPage");
+                ConsoleOutput($"Opening debug page");
+                Logger.LogInfo($"Opening debug page");
+
+                if (!string.IsNullOrEmpty(openPage) && openPage.ToLower() != "debugpage")
+                {
+                    urlsToOpen.Add($"http://localhost:{port}/{openPage}");
+                    ConsoleOutput($"Opening specified page: {openPage}");
+                    Logger.LogInfo($"Opening specified page: {openPage}");
+                }
+            }
+            else if (!string.IsNullOrEmpty(openPage))
             {
                 urlsToOpen.Add($"http://localhost:{port}/{openPage}");
                 ConsoleOutput($"Opening specified page: {openPage}");
                 Logger.LogInfo($"Opening specified page: {openPage}");
             }
-        }
-        else if (!string.IsNullOrEmpty(openPage))
-        {
-            urlsToOpen.Add($"http://localhost:{port}/{openPage}");
-            ConsoleOutput($"Opening specified page: {openPage}");
-            Logger.LogInfo($"Opening specified page: {openPage}");
-        }
-        else if (!string.IsNullOrEmpty(updateVersion))
-        {
-            urlsToOpen.Add($"http://localhost:{port}/WhatsNew?version={updateVersion}");
-            ConsoleOutput($"Opening What's New page for version: {updateVersion}");
-            Logger.LogInfo($"Opening What's New page for version: {updateVersion}");
-        }
-        else
-        {
-            urlsToOpen.Add($"http://localhost:{port}");
-        }
-
-        foreach (var url in urlsToOpen)
-        {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            else if (!string.IsNullOrEmpty(updateVersion))
             {
-                FileName = url,
-                UseShellExecute = true
-            });
-            ConsoleOutput(finalBrowserOpenedMessage);
-            Logger.LogInfo($"Browser opened with URL: {url}");
+                urlsToOpen.Add($"http://localhost:{port}/WhatsNew?version={updateVersion}");
+                ConsoleOutput($"Opening What's New page for version: {updateVersion}");
+                Logger.LogInfo($"Opening What's New page for version: {updateVersion}");
+            }
+            else
+            {
+                urlsToOpen.Add($"http://localhost:{port}");
+            }
+
+            foreach (var url in urlsToOpen)
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+                ConsoleOutput(finalBrowserOpenedMessage);
+                Logger.LogInfo($"Browser opened with URL: {url}");
+            }
         }
+        // ======================================================================================
     }
     catch (Exception ex)
     {
