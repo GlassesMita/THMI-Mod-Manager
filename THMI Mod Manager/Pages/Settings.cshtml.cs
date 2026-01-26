@@ -88,6 +88,11 @@ namespace THMI_Mod_Manager.Pages
         // 通知设置属性
         public bool EnableNotifications { get; set; } = false; // 是否启用浏览器通知
         
+        // 日期时间显示设置属性
+        public bool ShowSeconds { get; set; } = false; // 是否显示秒
+        public bool Use12Hour { get; set; } = false; // 是否使用12小时制
+        public string DateFormat { get; set; } = "yyyy-mm-dd"; // 日期格式
+        
         // Mod信息属性
         public string ModName { get; set; } = "THMI Mod Manager";
         public string ModVersion { get; set; } = ReadCsprojVersion();
@@ -147,6 +152,15 @@ namespace THMI_Mod_Manager.Pages
                 var enableNotificationsValue = _appConfig.Get("[Notifications]Enable", "false");
                 EnableNotifications = enableNotificationsValue?.ToLower() == "true";
                 
+                var showSecondsValue = _appConfig.Get("[DateTime]ShowSeconds", "false");
+                ShowSeconds = showSecondsValue?.ToLower() == "true";
+                
+                var use12HourValue = _appConfig.Get("[DateTime]Use12Hour", "false");
+                Use12Hour = use12HourValue?.ToLower() == "true";
+                
+                var dateFormatValue = _appConfig.Get("[DateTime]DateFormat", "yyyy-mm-dd");
+                DateFormat = dateFormatValue ?? "yyyy-mm-dd";
+                
                 // Load program version information from AppConfig
                 try
                 {
@@ -163,7 +177,7 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications)
+        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications, bool showSeconds, bool use12Hour, string dateFormat)
         {
             if (string.IsNullOrEmpty(language))
             {
@@ -216,6 +230,14 @@ namespace THMI_Mod_Manager.Pages
 
                 // Save enable notifications setting
                 _appConfig.Set("[Notifications]Enable", enableNotifications.ToString());
+
+                // Save date/time display settings
+                _appConfig.Set("[DateTime]ShowSeconds", showSeconds.ToString());
+                _appConfig.Set("[DateTime]Use12Hour", use12Hour.ToString());
+                if (!string.IsNullOrEmpty(dateFormat))
+                {
+                    _appConfig.Set("[DateTime]DateFormat", dateFormat);
+                }
 
                 // Save custom cursor setting
                 _appConfig.Set("[Cursor]UseCustomCursor", useCustomCursor.ToString());

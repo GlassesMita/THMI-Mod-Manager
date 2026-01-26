@@ -9,11 +9,29 @@ namespace THMI_Mod_Manager.Controllers
     {
         private readonly AppConfigManager _appConfig;
         private readonly ILogger<ConfigController> _logger;
+        private readonly IHostApplicationLifetime _lifetime;
 
-        public ConfigController(AppConfigManager appConfig, ILogger<ConfigController> logger)
+        public ConfigController(AppConfigManager appConfig, ILogger<ConfigController> logger, IHostApplicationLifetime lifetime)
         {
             _appConfig = appConfig;
             _logger = logger;
+            _lifetime = lifetime;
+        }
+
+        [HttpPost("exit")]
+        public IActionResult ExitApplication()
+        {
+            try
+            {
+                _logger.LogInformation("Application exit requested from web interface");
+                _lifetime.StopApplication();
+                return Ok(new { success = true, message = "Application is shutting down" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to stop application");
+                return StatusCode(500, new { success = false, message = "Failed to stop application" });
+            }
         }
 
         [HttpGet("get")]

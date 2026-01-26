@@ -87,6 +87,30 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('enableNotifications value:', enableNotificationsValue);
         }
         
+        // 确保 showSeconds 字段被正确包含
+        const showSecondsCheckbox = document.getElementById('showSeconds');
+        if (showSecondsCheckbox) {
+            const showSecondsValue = showSecondsCheckbox.checked;
+            formData.set('showSeconds', showSecondsValue);
+            console.log('showSeconds value:', showSecondsValue);
+        }
+        
+        // 确保 use12Hour 字段被正确包含
+        const use12HourCheckbox = document.getElementById('use12Hour');
+        if (use12HourCheckbox) {
+            const use12HourValue = use12HourCheckbox.checked;
+            formData.set('use12Hour', use12HourValue);
+            console.log('use12Hour value:', use12HourValue);
+        }
+        
+        // 确保 dateFormat 字段被正确包含
+        const dateFormatSelect = document.getElementById('dateFormat');
+        if (dateFormatSelect) {
+            const dateFormatValue = dateFormatSelect.value;
+            formData.set('dateFormat', dateFormatValue);
+            console.log('dateFormat value:', dateFormatValue);
+        }
+        
         // 发送到后端保存
         fetch('/settings?handler=SaveLanguage', {
             method: 'POST',
@@ -687,4 +711,45 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    const showSecondsHidden = document.getElementById('showSecondsHidden');
+    const use12HourHidden = document.getElementById('use12HourHidden');
+    const dateFormatHidden = document.getElementById('dateFormatHidden');
+    const showSecondsCheckbox = document.getElementById('showSeconds');
+    const use12HourCheckbox = document.getElementById('use12Hour');
+    const dateFormatSelect = document.getElementById('dateFormat');
+    
+    if (showSecondsHidden && showSecondsCheckbox) {
+        showSecondsCheckbox.checked = showSecondsHidden.value === 'true';
+    }
+    if (use12HourHidden && use12HourCheckbox) {
+        use12HourCheckbox.checked = use12HourHidden.value === 'true';
+    }
+    if (dateFormatHidden && dateFormatSelect) {
+        dateFormatSelect.value = dateFormatHidden.value;
+    }
 });
+
+function saveDateTimeSettings() {
+    const showSeconds = document.getElementById('showSeconds')?.checked || false;
+    const use12Hour = document.getElementById('use12Hour')?.checked || false;
+    const dateFormat = document.getElementById('dateFormat')?.value || 'yyyy-mm-dd';
+    
+    localStorage.setItem('datetimeShowSeconds', showSeconds);
+    localStorage.setItem('datetimeUse12Hour', use12Hour);
+    localStorage.setItem('datetimeDateFormat', dateFormat);
+    
+    const showSecondsHidden = document.getElementById('showSecondsHidden');
+    const use12HourHidden = document.getElementById('use12HourHidden');
+    const dateFormatHidden = document.getElementById('dateFormatHidden');
+    
+    if (showSecondsHidden) showSecondsHidden.value = showSeconds;
+    if (use12HourHidden) use12HourHidden.value = use12Hour;
+    if (dateFormatHidden) dateFormatHidden.value = dateFormat;
+    
+    if (window.dateTimeSettings) {
+        window.dateTimeSettings.showSeconds = showSeconds;
+        window.dateTimeSettings.use12Hour = use12Hour;
+        window.dateTimeSettings.dateFormat = dateFormat;
+    }
+}

@@ -11,6 +11,13 @@
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
         ?? "0.0.0";
+    
+    var dtShowSeconds = AppConfig.Get("[DateTime]ShowSeconds", "false");
+    var dtUse12Hour = AppConfig.Get("[DateTime]Use12Hour", "false");
+    var dtDateFormat = AppConfig.Get("[DateTime]DateFormat", "yyyy-mm-dd");
+    var showSecondsBool = dtShowSeconds?.ToLower() == "true" ? "True" : "False";
+    var use12HourBool = dtUse12Hour?.ToLower() == "true" ? "True" : "False";
+    var dateFormatStr = dtDateFormat ?? "yyyy-mm-dd";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -116,9 +123,84 @@
         .nav-link:hover {
             transform: translateX(5px);
         }
+        
+        /* 时间显示样式 */
+        .oojs-ui-sidebar-time {
+            font-size: 0.85rem;
+            color: var(--color-text-muted, #72777d);
+            margin-top: 4px;
+            font-family: var(--font-family-sans-serif, sans-serif);
+            letter-spacing: 0.02em;
+        }
+        
+        /* 移动端顶部栏时间显示 */
+        .navbar-time-display {
+            font-size: 0.9rem;
+            color: #72777d;
+        }
+        
+        /* 固定顶部时间栏 - 与侧边栏等宽等高 */
+        .top-time-bar {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 56px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #eaecf0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 24px;
+            box-sizing: border-box;
+            z-index: 100;
+        }
+        
+        .top-time-text {
+            font-size: 0.9rem;
+            color: #54595d;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        
+        .oojs-button-danger {
+            background-color: #d73333;
+            color: #ffffff;
+            border: 1px solid #d73333;
+            padding: 6px 12px;
+            font-size: 0.875rem;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .oojs-button-danger:hover {
+            background-color: #b32424;
+        }
+        
+        .oojs-button-danger:active {
+            background-color: #a61721;
+        }
+        
+        .oojs-button-danger i {
+            margin-right: 4px;
+        }
+        
+        /* 侧边栏调整 */
+        .oojs-ui-sidebar {
+            z-index: 1040;
+        }
+        
+        /* 主内容区域 */
+        #mainContent {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
     </style>
 </head>
-<body>
+<body data-show-seconds="@showSecondsBool"
+      data-use-12hour="@use12HourBool"
+      data-date-format="@dateFormatStr">
     <!-- Top navbar for small screens: shows brand and toggle for offcanvas sidebar -->
     <nav class="navbar navbar-light bg-white border-bottom d-md-none">
         <div class="container-fluid">
@@ -217,6 +299,22 @@
 
         <!-- Main content -->
         <div id="mainContent" class="flex-grow-1" style="position:relative; min-height:100vh;">
+            <!-- Hidden localization strings -->
+            <input type="hidden" id="localizedExitConfirm" value="@AppConfig.GetLocalized("Common:ExitConfirm", "Are you sure you want to exit?")" />
+            <input type="hidden" id="localizedExitConfirmButton" value="@AppConfig.GetLocalized("Common:ExitConfirmButton", "Exit")" />
+            <input type="hidden" id="localizedExitCancelButton" value="@AppConfig.GetLocalized("Common:ExitCancelButton", "Cancel")" />
+            
+            <!-- Time bar at top of main content -->
+            <div id="topTimeBar" class="top-time-bar">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button id="exitButton" class="oojs-button oojs-button-danger" onclick="showExitConfirmation()">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>@AppConfig.GetLocalized("Common:Exit", "Exit")</span>
+                    </button>
+                    <span id="topTimeDisplay" class="top-time-text"></span>
+                </div>
+            </div>
+            
             <!-- Update notification banner -->
             <div id="updateNotificationBanner" class="alert alert-info alert-dismissible fade show" style="display: none; border-radius: 0; margin: 0; position: sticky; top: 0; z-index: 1050;">
                 <div class="container d-flex align-items-center justify-content-between">
@@ -727,6 +825,117 @@
         document.addEventListener('DOMContentLoaded', function() {
             startNotificationPoll();
         });
+    </script>
+    
+    <script>
+        const serverDateTimeSettings = {
+            showSeconds: document.body.getAttribute('data-show-seconds') === 'True',
+            use12Hour: document.body.getAttribute('data-use-12hour') === 'True',
+            dateFormat: document.body.getAttribute('data-date-format') || 'yyyy-mm-dd'
+        };
+        
+        const dateTimeSettings = {
+            showSeconds: localStorage.getItem('datetimeShowSeconds') === 'true' ? true : (serverDateTimeSettings.showSeconds),
+            use12Hour: localStorage.getItem('datetimeUse12Hour') === 'true' ? true : (serverDateTimeSettings.use12Hour),
+            dateFormat: localStorage.getItem('datetimeDateFormat') || serverDateTimeSettings.dateFormat
+        };
+        
+        window.dateTimeSettings = dateTimeSettings;
+        
+        function formatTime(date, options) {
+            const showSeconds = dateTimeSettings.showSeconds;
+            const use12Hour = dateTimeSettings.use12Hour;
+            
+            const timeOptions = {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: use12Hour
+            };
+            
+            if (showSeconds) {
+                timeOptions.second = '2-digit';
+            }
+            
+            return date.toLocaleTimeString('en-US', timeOptions);
+        }
+        
+        function formatDate(date, format) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const displayMonth = date.toLocaleDateString(navigator.language || 'en-US', { month: 'short' });
+            const displayDay = date.getDate();
+            
+            switch (format) {
+                case 'dd-mm-yyyy':
+                    return `${day}-${month}-${year}`;
+                case 'mm-dd-yyyy':
+                    return `${month}-${day}-${year}`;
+                case 'yyyy/mm/mm/dd':
+                    return `${year}/${month}/${day}`;
+                case 'month-dd':
+                    return `${displayMonth} ${displayDay}`;
+                case 'dd-month':
+                    return `${displayDay} ${displayMonth}`;
+                default: // yyyy-mm-dd
+                    return `${year}-${month}-${day}`;
+            }
+        }
+        
+        function updateTimeDisplay() {
+            const now = new Date();
+            const timeStr = formatTime(now);
+            const dateStr = formatDate(now, dateTimeSettings.dateFormat);
+            const fullStr = `${dateStr}  ${timeStr}`;
+            
+            const topTimeDisplay = document.getElementById('topTimeDisplay');
+            
+            if (topTimeDisplay) {
+                topTimeDisplay.textContent = fullStr;
+            }
+        }
+        
+        function initTimeDisplay() {
+            updateTimeDisplay();
+            setInterval(updateTimeDisplay, 1000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initTimeDisplay();
+        });
+        
+        window.dateTimeSettings = dateTimeSettings;
+        
+        function showExitConfirmation() {
+            const exitText = document.getElementById('localizedExitConfirm')?.value || 'Are you sure you want to exit?';
+            const confirmText = document.getElementById('localizedExitConfirmButton')?.value || 'Exit';
+            const cancelText = document.getElementById('localizedExitCancelButton')?.value || 'Cancel';
+            
+            ModalUtils.confirmExit('', exitText, function() {
+                fetch('/api/config/exit', {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Application exit request sent');
+                        setTimeout(function() {
+                            window.close();
+                        }, 500);
+                    } else {
+                        console.error('Failed to send exit request');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending exit request:', error);
+                });
+            }, null, {
+                confirmText: confirmText,
+                cancelText: cancelText
+            });
+        }
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

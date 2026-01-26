@@ -32,6 +32,31 @@
             </select>
         </div>
         <hr class="oojs-section-divider" />
+        
+        <div class="oojs-form-group">
+            <label class="oojs-label">@AppConfig.GetLocalized("Settings:DateTimeLabel", "Date & Time Display")</label>
+            <div class="oojs-checkbox-container">
+                <input type="checkbox" id="showSeconds" name="showSeconds" @(Model.ShowSeconds ? "checked" : "") onchange="saveDateTimeSettings()" />
+                <label for="showSeconds" class="oojs-checkbox-label">@AppConfig.GetLocalized("Settings:ShowSeconds", "Show seconds in time display")</label>
+            </div>
+            <div class="oojs-checkbox-container" style="margin-top: var(--spacing-sm);">
+                <input type="checkbox" id="use12Hour" name="use12Hour" @(Model.Use12Hour ? "checked" : "") onchange="saveDateTimeSettings()" />
+                <label for="use12Hour" class="oojs-checkbox-label">@AppConfig.GetLocalized("Settings:Use12Hour", "Use 12-hour time format (AM/PM)")</label>
+            </div>
+            <div class="oojs-form-group" style="margin-top: var(--spacing-md);">
+                <label for="dateFormat" class="oojs-label">@AppConfig.GetLocalized("Settings:DateFormatLabel", "Date Format")</label>
+                <select id="dateFormat" name="dateFormat" class="oojs-select" onchange="saveDateTimeSettings()">
+                    <option value="yyyy-mm-dd" selected="@(Model.DateFormat == "yyyy-mm-dd")">@AppConfig.GetLocalized("Settings:DateFormatYMD", "YYYY-MM-DD")</option>
+                    <option value="dd-mm-yyyy" selected="@(Model.DateFormat == "dd-mm-yyyy")">@AppConfig.GetLocalized("Settings:DateFormatDMY", "DD-MM-YYYY")</option>
+                    <option value="mm-dd-yyyy" selected="@(Model.DateFormat == "mm-dd-yyyy")">@AppConfig.GetLocalized("Settings:DateFormatMDY", "MM-DD-YYYY")</option>
+                    <option value="yyyy/mm/dd" selected="@(Model.DateFormat == "yyyy/mm/dd")">@AppConfig.GetLocalized("Settings:DateFormatYSlashM", "YYYY/MM/DD")</option>
+                    <option value="month-dd" selected="@(Model.DateFormat == "month-dd")">@AppConfig.GetLocalized("Settings:DateFormatMonthD", "Mon DD")</option>
+                    <option value="dd-month" selected="@(Model.DateFormat == "dd-month")">@AppConfig.GetLocalized("Settings:DateFormatDM", "DD Mon")</option>
+                </select>
+            </div>
+        </div>
+        
+        <hr class="oojs-section-divider" />
         <!--
         <div class="mb-3 form-group-animated">
             <label for="statusSelect" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:GameStatusLabel", "Game Purchase Status")</label>
@@ -216,6 +241,10 @@
                 </div>
             </div>
         </div>
+
+        <input type="hidden" id="showSecondsHidden" name="showSeconds" value="@Model.ShowSeconds.ToString().ToLower()" />
+        <input type="hidden" id="use12HourHidden" name="use12Hour" value="@Model.Use12Hour.ToString().ToLower()" />
+        <input type="hidden" id="dateFormatHidden" name="dateFormat" value="@Model.DateFormat" />
 
         <button type="submit" class="oojs-button oojs-button-primary" id="saveButton">
             <span id="saveText">@AppConfig.GetLocalized("Common:Save", "Save")</span>

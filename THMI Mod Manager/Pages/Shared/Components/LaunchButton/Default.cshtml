@@ -112,10 +112,11 @@
     }
     
     function confirmStopGame() {
-        if (typeof OOUIModalManager !== 'undefined') {
+        if (typeof ModalUtils !== 'undefined') {
             const confirmMessage = '@Html.Raw(Model.ConfirmStopMessage.Replace("\n", "\\n"))';
             return new Promise((resolve) => {
-                OOUIModalManager.showConfirmStopGameDialog(
+                ModalUtils.confirmStopGame(
+                    '',
                     confirmMessage,
                     () => resolve(true),
                     () => resolve(false)

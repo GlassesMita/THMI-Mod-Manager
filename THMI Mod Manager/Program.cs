@@ -11,6 +11,55 @@ using System.Diagnostics;
 using THMI_Mod_Manager;
 using THMI_Mod_Manager.Services;
 
+// ===================== 关键修改1：将隐藏逻辑移到最顶部 + 增加安全校验 =====================
+// Windows API 声明用于隐藏控制台窗口
+[DllImport("kernel32.dll")]
+static extern IntPtr GetConsoleWindow();
+
+[DllImport("user32.dll")]
+static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+const int SW_HIDE = 0;
+const int SW_SHOW = 5;
+
+// 1. 优先检测--no-console参数（忽略大小写，增强健壮性）
+bool hideConsole = args != null && args.Contains("--no-console", StringComparer.OrdinalIgnoreCase);
+
+// 2. 仅在Windows系统执行隐藏逻辑（避免跨平台报错）
+if (hideConsole && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+{
+    // 3. 循环尝试获取控制台句柄（解决启动初期句柄未创建的问题）
+    int retryCount = 0;
+    IntPtr consoleHandle = IntPtr.Zero;
+    while (consoleHandle == IntPtr.Zero && retryCount < 5)
+    {
+        consoleHandle = GetConsoleWindow();
+        if (consoleHandle == IntPtr.Zero)
+        {
+            System.Threading.Thread.Sleep(10); // 短暂等待句柄创建
+            retryCount++;
+        }
+    }
+
+    // 4. 确保获取到有效句柄后再隐藏
+    if (consoleHandle != IntPtr.Zero)
+    {
+        ShowWindow(consoleHandle, SW_HIDE);
+        // 额外调用一次确保隐藏生效（兜底处理）
+        ShowWindow(consoleHandle, SW_HIDE);
+    }
+}
+// ===================== 隐藏逻辑修改结束 =====================
+
+// 辅助函数：控制台输出（仅在控制台可见时输出）
+void ConsoleOutput(string message)
+{
+    if (!hideConsole)
+    {
+        Console.WriteLine(message);
+    }
+}
+
 #if DEBUG
 Console.Title = "THMI Mod Manager - Console (Debug Build)";
 #else
@@ -18,24 +67,24 @@ Console.Title = "THMI Mod Manager - Console";
 #endif
 
 // 简单的权限检查 - 仅使用管理员权限运行
-Console.WriteLine("正在检查权限状态...");
+ConsoleOutput("正在检查权限状态...");
 Logger.LogInfo("Checking permission status...");
 
 // 检查是否以管理员身份运行
 bool isAdmin = PermissionHelper.IsRunAsAdmin();
-Console.WriteLine($"管理员权限: {isAdmin}");
+ConsoleOutput($"管理员权限: {isAdmin}");
 Logger.LogInfo($"Administrator privileges: {isAdmin}");
 
 if (!isAdmin)
 {
-    Console.WriteLine("没有管理员权限，有可能会导致部分功能不可用，算了还是继续加载吧...");
+    ConsoleOutput("没有管理员权限，有可能会导致部分功能不可用，算了还是继续加载吧...");
     Logger.LogWarning("Administrator privileges not available. Some features may be limited. Proceeding with loading...");
     /* PermissionHelper.RestartAsAdministrator(); */
     /* Environment.Exit(0); */
 }
 else
 {
-    Console.WriteLine("已获得管理员权限，继续启动应用...");
+    ConsoleOutput("已获得管理员权限，继续启动应用...");
     Logger.LogInfo("Administrator privileges acquired. Continuing application startup...");
 }
 
@@ -47,7 +96,7 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     if (osArchitecture.Contains("Arm"))
     {
         platform = "Windows (ARM)";
-        Console.WriteLine($"Warning: Windows ARM detected. Some features may be limited.");
+        ConsoleOutput($"Warning: Windows ARM detected. Some features may be limited.");
         Logger.LogWarning($"Windows ARM detected. Some features may be limited.");
     }
     else
@@ -58,30 +107,28 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 else
 {
     platform = RuntimeInformation.OSDescription;
-    Console.WriteLine($"Note: Running on non-Windows platform ({platform}). This is an early preview for future cross-platform support.");
+    ConsoleOutput($"Note: Running on non-Windows platform ({platform}). This is an early preview for future cross-platform support.");
     Logger.LogInfo($"Running on non-Windows platform ({platform}). This is an early preview for future cross-platform support.");
 }
 
 string runtimeId = RuntimeInformation.RuntimeIdentifier;
 string arch = runtimeId.Contains("x64") ? "64-Bit" : (runtimeId.Contains("x86") ? "32-Bit" : "Unknown");
-Console.WriteLine($"Platform: {platform}");
+ConsoleOutput($"Platform: {platform}");
 Logger.LogInfo($"Platform: {platform}");
-Console.WriteLine($"Architecture: {arch}");
+ConsoleOutput($"Architecture: {arch}");
 Logger.LogInfo($"Architecture: {arch}");
 
-Console.Write("\n");
+ConsoleOutput("\n");
 Logger.Log("\t");
 
-Console.WriteLine("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
+ConsoleOutput("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
 Logger.LogInfo("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
 
-Console.WriteLine("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
+ConsoleOutput("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
 Logger.LogInfo("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
 
 Console.Write('\n');
 Logger.Log("\t");
-
-
 
 // 在应用启动前预加载本地化消息（避免在 ApplicationStarted 回调中读取文件）
 string currentLanguageForMessages = "en_US";
@@ -168,20 +215,20 @@ foreach (var arg in args)
     if (arg.StartsWith("--updated-version="))
     {
         updateVersion = arg.Substring("--updated-version=".Length);
-        Console.WriteLine($"Update version parameter detected: {updateVersion}");
+        ConsoleOutput($"Update version parameter detected: {updateVersion}");
         Logger.LogInfo($"Update version parameter detected: {updateVersion}");
         break;
     }
     else if (arg.StartsWith("--open="))
     {
         openPage = arg.Substring("--open=".Length);
-        Console.WriteLine($"Open page parameter detected: {openPage}");
+        ConsoleOutput($"Open page parameter detected: {openPage}");
         Logger.LogInfo($"Open page parameter detected: {openPage}");
     }
     else if (arg == "--open-debug-page")
     {
         openDebugPage = true;
-        Console.WriteLine($"Open debug page parameter detected");
+        ConsoleOutput($"Open debug page parameter detected");
         Logger.LogInfo($"Open debug page parameter detected");
     }
 }
@@ -427,11 +474,11 @@ lifetime.ApplicationStarted.Register(() =>
         // 先输出欢迎消息（如果存在）
         if (!string.IsNullOrEmpty(welcomeMessage))
         {
-            Console.WriteLine(welcomeMessage);
+            ConsoleOutput(welcomeMessage);
             Logger.LogInfo("Welcome message displayed");
         }
         
-        Console.WriteLine(finalRunningMessage);
+        ConsoleOutput(finalRunningMessage);
         Logger.LogInfo($"Application running on localhost:{port}");
 
         List<string> urlsToOpen = new List<string>();
@@ -439,26 +486,26 @@ lifetime.ApplicationStarted.Register(() =>
         if (openDebugPage)
         {
             urlsToOpen.Add($"http://localhost:{port}/DebugPage");
-            Console.WriteLine($"Opening debug page");
+            ConsoleOutput($"Opening debug page");
             Logger.LogInfo($"Opening debug page");
 
             if (!string.IsNullOrEmpty(openPage) && openPage.ToLower() != "debugpage")
             {
                 urlsToOpen.Add($"http://localhost:{port}/{openPage}");
-                Console.WriteLine($"Opening specified page: {openPage}");
+                ConsoleOutput($"Opening specified page: {openPage}");
                 Logger.LogInfo($"Opening specified page: {openPage}");
             }
         }
         else if (!string.IsNullOrEmpty(openPage))
         {
             urlsToOpen.Add($"http://localhost:{port}/{openPage}");
-            Console.WriteLine($"Opening specified page: {openPage}");
+            ConsoleOutput($"Opening specified page: {openPage}");
             Logger.LogInfo($"Opening specified page: {openPage}");
         }
         else if (!string.IsNullOrEmpty(updateVersion))
         {
             urlsToOpen.Add($"http://localhost:{port}/WhatsNew?version={updateVersion}");
-            Console.WriteLine($"Opening What's New page for version: {updateVersion}");
+            ConsoleOutput($"Opening What's New page for version: {updateVersion}");
             Logger.LogInfo($"Opening What's New page for version: {updateVersion}");
         }
         else
@@ -473,13 +520,13 @@ lifetime.ApplicationStarted.Register(() =>
                 FileName = url,
                 UseShellExecute = true
             });
-            Console.WriteLine(finalBrowserOpenedMessage);
+            ConsoleOutput(finalBrowserOpenedMessage);
             Logger.LogInfo($"Browser opened with URL: {url}");
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"无法自动打开浏览器: {ex.Message}");
+        ConsoleOutput($"无法自动打开浏览器: {ex.Message}");
         Logger.LogError($"Cannot open browser automatically: {ex.Message}");
     }
 });
@@ -494,7 +541,7 @@ lifetime.ApplicationStopping.Register(() =>
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error during shutdown logging: {ex.Message}");
+        ConsoleOutput($"Error during shutdown logging: {ex.Message}");
         Logger.LogError($"Error during shutdown logging: {ex.Message}");
     }
 });
