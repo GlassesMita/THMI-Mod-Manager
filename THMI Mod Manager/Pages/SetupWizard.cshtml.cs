@@ -8,6 +8,7 @@ using THMI_Mod_Manager.Services;
 
 namespace THMI_Mod_Manager.Pages
 {
+    [IgnoreAntiforgeryToken]
     public class SetupWizardModel : PageModel
     {
         private readonly ILogger<SetupWizardModel> _logger;
@@ -36,12 +37,16 @@ namespace THMI_Mod_Manager.Pages
         [BindProperty]
         public bool SkipRemainingQuestions { get; set; } = false;
 
+        [BindProperty]
+        public int CurrentStep { get; set; } = 1;
+
         public string Message { get; set; } = string.Empty;
         public string MessageType { get; set; } = string.Empty;
         public bool IsReConfiguration { get; set; } = false;
         public bool IsConfigured { get; set; } = false;
         public string? ExistingLanguage { get; set; }
         public string? ExistingThemeColor { get; set; }
+        public int TotalSteps { get; set; } = 3;
 
         public SetupWizardModel(ILogger<SetupWizardModel> logger, AppConfigManager appConfig, IWebHostEnvironment env)
         {
@@ -110,7 +115,7 @@ namespace THMI_Mod_Manager.Pages
             return defaultValue ?? key;
         }
 
-        public void OnGet(string? language = null, bool? reconfigure = null)
+        public void OnGet(int step = 1, string? language = null, bool? reconfigure = null)
         {
             var isDevBuild = _appConfig.Get("[Dev]IsDevBuild", "False");
 
@@ -145,16 +150,86 @@ namespace THMI_Mod_Manager.Pages
                     IsReConfiguration = true;
                     Message = _appConfig.GetLocalized("SetupWizard:AlreadyConfigured", "系统已配置完成，您可以重新调整设置。");
                     MessageType = "info";
+                    CurrentStep = step;
                 }
                 else
                 {
                     IsConfigured = true;
                 }
             }
+            else
+            {
+                CurrentStep = step;
+            }
 
             if (!string.IsNullOrEmpty(language))
             {
                 SelectedLanguage = language;
+            }
+        }
+
+        public IActionResult OnPostSaveStep1()
+        {
+            try
+            {
+                _appConfig.Set("[Localization]Language", SelectedLanguage);
+                _appConfig.Set("[App]ThemeColor", ThemeColor);
+                _appConfig.Set("[Updates]UpdateFrequency", UpdateFrequency);
+
+                return new JsonResult(new { success = true, nextStep = 2 });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = _appConfig.GetLocalized("SetupWizard:SaveError", "保存配置时出错，请重试。") });
+            }
+        }
+
+        public IActionResult OnPostSaveStep2()
+        {
+            try
+            {
+                _appConfig.Set("[Updates]CheckForUpdates", AutoCheckUpdates.ToString());
+                _appConfig.Set("[Notifications]Enable", EnableNotifications.ToString());
+                _appConfig.Set("[Game]ModifyTitle", ModifyTitle.ToString());
+                _appConfig.Set("[App]IsFirstRun", "False");
+
+                var semanticVersion = Assembly.GetExecutingAssembly()
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                    ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+                    ?? "0.0.0";
+                _appConfig.Set("[App]Version", semanticVersion);
+
+                return new JsonResult(new { success = true, redirectTo = "/" });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = _appConfig.GetLocalized("SetupWizard:SaveError", "保存配置时出错，请重试。") });
+            }
+        }
+
+        public IActionResult OnPostSaveStep1AndFinish()
+        {
+            try
+            {
+                _appConfig.Set("[Localization]Language", SelectedLanguage);
+                _appConfig.Set("[App]ThemeColor", ThemeColor);
+                _appConfig.Set("[Updates]UpdateFrequency", UpdateFrequency);
+                _appConfig.Set("[Updates]CheckForUpdates", AutoCheckUpdates.ToString());
+                _appConfig.Set("[Notifications]Enable", EnableNotifications.ToString());
+                _appConfig.Set("[Game]ModifyTitle", ModifyTitle.ToString());
+                _appConfig.Set("[App]IsFirstRun", "False");
+
+                var semanticVersion = Assembly.GetExecutingAssembly()
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                    ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+                    ?? "0.0.0";
+                _appConfig.Set("[App]Version", semanticVersion);
+
+                return new JsonResult(new { success = true, redirectTo = "/" });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = _appConfig.GetLocalized("SetupWizard:SaveError", "保存配置时出错，请重试。") });
             }
         }
 

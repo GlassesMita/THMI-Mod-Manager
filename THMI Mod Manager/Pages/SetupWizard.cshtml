@@ -6,6 +6,7 @@
     ViewData["Title"] = AppConfig.GetLocalized("SetupWizard:Title", "设置向导");
     Layout = "_SetupWizardLayout";
     var locales = LocalizationManager.GetAvailableLocales();
+    var totalSteps = Model.TotalSteps;
 }
 
 <style>
@@ -44,43 +45,6 @@
         --border-radius: 2px;
         --border-radius--medium: 4px;
         --spacing: 8px;
-    }
-
-    .mw-body {
-        background-color: var(--color-surface);
-        color: var(--color-base);
-        font-family: var(--font-family-sans);
-        line-height: 1.6;
-        max-width: 50rem;
-        margin: 0 auto;
-        padding: 1.5rem 2rem;
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius--medium);
-        box-shadow: var(--box-shadow);
-    }
-
-    .mw-body h1,
-    .mw-body h2 {
-        font-family: "Linux Libertine", "Georgia", "Times", "Source Serif Pro", serif;
-        font-weight: normal;
-        margin-top: 0;
-        margin-bottom: 0.5em;
-        line-height: 1.2;
-    }
-
-    .mw-body h1 {
-        font-size: 1.8em;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 0.25em;
-    }
-
-    .mw-body h2 {
-        font-size: 1.5em;
-        margin-top: 1em;
-    }
-
-    .mw-body p {
-        margin: 0.5em 0 1em 0;
     }
 
     .setup-wizard-container {
@@ -126,6 +90,67 @@
 
     .wizard-body {
         padding: 1.5rem 2rem;
+    }
+
+    .wizard-step-indicator {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color--weak);
+    }
+
+    .wizard-step {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--color-base--subtle);
+        font-size: 0.85em;
+    }
+
+    .wizard-step.active {
+        color: var(--color-progressive);
+        font-weight: bold;
+    }
+
+    .wizard-step.completed {
+        color: var(--color-success);
+    }
+
+    .wizard-step-number {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        background-color: var(--color-background--hover);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8em;
+    }
+
+    .wizard-step.active .wizard-step-number {
+        background-color: var(--color-progressive);
+        color: white;
+    }
+
+    .wizard-step.completed .wizard-step-number {
+        background-color: var(--color-success);
+        color: white;
+    }
+
+    .wizard-step-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .wizard-step-content.active {
+        display: block;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .wizard-body label {
@@ -262,10 +287,6 @@
         text-decoration: none;
     }
 
-    .mw-form-filetyped {
-        margin-bottom: 1rem;
-    }
-
     .mw-successbox {
         padding: 0.75rem 1rem;
         margin: 1rem 0;
@@ -293,15 +314,6 @@
         color: var(--color-destructive);
     }
 
-    .mw-infobox {
-        padding: 0.75rem 1rem;
-        margin: 1rem 0;
-        border-radius: var(--border-radius);
-        background-color: var(--color-surface--raised--secondary);
-        border: 1px solid var(--border-color);
-        color: var(--color-base);
-    }
-
     .oo-ui-icon-check {
         color: var(--color-success);
     }
@@ -314,15 +326,6 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%2314866d' d='M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm-1.25 14.543l-4.5-4.364 1.857-1.858 2.643 2.506 6.143-6.143 1.857 1.857-8 8z'/%3E%3C/svg%3E");
         background-size: contain;
         background-repeat: no-repeat;
-    }
-
-    .mw-grid {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .mw-grid--2-columns {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
 
     .mw-footer {
@@ -420,12 +423,34 @@
         flex-shrink: 0;
     }
 
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--color-background--hover);
+        border-top-color: var(--color-progressive);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
     @@media (max-width: 768px) {
         .setup-wizard-container {
-            padding: 1rem;
-        }
-
-        .mw-body {
             padding: 1rem;
         }
 
@@ -435,6 +460,14 @@
 
         .wizard-body {
             padding: 1rem;
+        }
+
+        .wizard-step-indicator {
+            flex-wrap: wrap;
+        }
+
+        .wizard-step-label {
+            display: none;
         }
 
         .button-group {
@@ -452,118 +485,160 @@
         <div class="wizard-header">
             @if (Model.IsReConfiguration)
             {
-                <h1>@Model.GetLocalizedForLanguage("SetupWizard:ReconfigureTitle", Model.SelectedLanguage, "重新配置 / Re-configure")</h1>
-                <p class="mb-0">@Model.GetLocalizedForLanguage("SetupWizard:ReconfigureSubtitle", Model.SelectedLanguage, "调整您的设置")</p>
+                <h1 data-i18n="SetupWizard:ReconfigureTitle">@Model.GetLocalizedForLanguage("SetupWizard:ReconfigureTitle", Model.SelectedLanguage, "重新配置 / Re-configure")</h1>
+                <p class="mb-0" data-i18n="SetupWizard:ReconfigureSubtitle">@Model.GetLocalizedForLanguage("SetupWizard:ReconfigureSubtitle", Model.SelectedLanguage, "调整您的设置")</p>
             }
             else if (Model.IsConfigured)
             {
-                <h1>@Model.GetLocalizedForLanguage("SetupWizard:AlreadyConfigured", Model.SelectedLanguage, "您已无需配置")</h1>
-                <p class="mb-0">@Model.GetLocalizedForLanguage("SetupWizard:AlreadyConfiguredSubtitle", Model.SelectedLanguage, "系统已设置完成")</p>
+                <h1 data-i18n="SetupWizard:AlreadyConfigured">@Model.GetLocalizedForLanguage("SetupWizard:AlreadyConfigured", Model.SelectedLanguage, "您已无需配置")</h1>
+                <p class="mb-0" data-i18n="SetupWizard:AlreadyConfiguredSubtitle">@Model.GetLocalizedForLanguage("SetupWizard:AlreadyConfiguredSubtitle", Model.SelectedLanguage, "系统已设置完成")</p>
             }
             else
             {
-                <h1>@Model.GetLocalizedForLanguage("SetupWizard:Welcome", Model.SelectedLanguage, "欢迎使用")</h1>
-                <p class="mb-0">@Model.GetLocalizedForLanguage("SetupWizard:Subtitle", Model.SelectedLanguage, "THMI Mod Manager 初始设置")</p>
+                <h1 data-i18n="SetupWizard:Welcome">@Model.GetLocalizedForLanguage("SetupWizard:Welcome", Model.SelectedLanguage, "欢迎使用")</h1>
+                <p class="mb-0" data-i18n="SetupWizard:Subtitle">@Model.GetLocalizedForLanguage("SetupWizard:Subtitle", Model.SelectedLanguage, "THMI Mod Manager 初始设置")</p>
             }
         </div>
         <div class="wizard-body">
+            <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="loading-spinner"></div>
+            </div>
+
             @if (Model.IsConfigured && !Model.IsReConfiguration)
             {
                 <div class="text-center py-4">
                     <div class="mb-4 oo-ui-icon-check" style="height: 48px;"></div>
-                    <p class="text-muted mb-4">@Model.GetLocalizedForLanguage("SetupWizard:ConfigurationComplete", Model.SelectedLanguage, "所有设置已完成，您现在可以开始使用 THMI Mod Manager")</p>
+                    <p class="text-muted mb-4" data-i18n="SetupWizard:ConfigurationComplete">@Model.GetLocalizedForLanguage("SetupWizard:ConfigurationComplete", Model.SelectedLanguage, "所有设置已完成，您现在可以开始使用 THMI Mod Manager")</p>
                     <div class="button-group" style="justify-content: center;">
-                        <a href="/" class="mw-button mw-button--primary">@Model.GetLocalizedForLanguage("SetupWizard:BackToHome", Model.SelectedLanguage, "← 返回首页")</a>
+                        <a href="/" class="mw-button mw-button--primary" data-i18n="SetupWizard:BackToHome">@Model.GetLocalizedForLanguage("SetupWizard:BackToHome", Model.SelectedLanguage, "← 返回首页")</a>
                     </div>
                 </div>
                 <div class="text-center mt-4">
-                    <a href="?reconfigure=true" class="mw-button mw-button--link text-decoration-none small">
+                    <a href="?reconfigure=true&step=1" class="mw-button mw-button--link text-decoration-none small" data-i18n="SetupWizard:WantToReconfigure">
                         @Model.GetLocalizedForLanguage("SetupWizard:WantToReconfigure", Model.SelectedLanguage, "想要更改设置？重新配置 →")
                     </a>
                 </div>
             }
             else
             {
-                @if (!string.IsNullOrEmpty(Model.Message) && !Model.IsReConfiguration)
-                {
-                    <div class="mw-@Model.MessageType">
-                        @Model.Message
+                <div class="wizard-step-indicator">
+                    <div class="wizard-step @(Model.CurrentStep >= 1 ? "active" : "") @(Model.CurrentStep > 1 ? "completed" : "")" data-step="1">
+                        <span class="wizard-step-number">@(Model.CurrentStep > 1 ? "✓" : "1")</span>
+                        <span class="wizard-step-label" data-i18n="SetupWizard:LanguageLabel">@Model.GetLocalizedForLanguage("SetupWizard:LanguageLabel", Model.SelectedLanguage, "语言")</span>
                     </div>
-                }
+                    <div class="wizard-step @(Model.CurrentStep >= 2 ? "active" : "") @(Model.CurrentStep > 2 ? "completed" : "")" data-step="2">
+                        <span class="wizard-step-number">@(Model.CurrentStep > 2 ? "✓" : "2")</span>
+                        <span class="wizard-step-label" data-i18n="SetupWizard:UpdateFrequencyLabel">@Model.GetLocalizedForLanguage("SetupWizard:UpdateFrequencyLabel", Model.SelectedLanguage, "更新")</span>
+                    </div>
+                    <div class="wizard-step @(Model.CurrentStep >= 3 ? "active" : "") @(Model.CurrentStep > 3 ? "completed" : "")" data-step="3">
+                        <span class="wizard-step-number">@(Model.CurrentStep > 3 ? "✓" : "3")</span>
+                        <span class="wizard-step-label" data-i18n="SetupWizard:NotificationsLabel">@Model.GetLocalizedForLanguage("SetupWizard:NotificationsLabel", Model.SelectedLanguage, "通知")</span>
+                    </div>
+                    <div class="wizard-step @(Model.CurrentStep >= 4 ? "active" : "")" data-step="4">
+                        <span class="wizard-step-number">4</span>
+                        <span class="wizard-step-label" data-i18n="SetupWizard:ModifyTitleLabel">@Model.GetLocalizedForLanguage("SetupWizard:ModifyTitleLabel", Model.SelectedLanguage, "标题")</span>
+                    </div>
+                </div>
 
-                <form method="post" id="setupWizardForm">
+                <form id="setupWizardForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="CurrentStep" id="currentStep" value="@Model.CurrentStep" />
                     <input type="hidden" asp-for="IsReConfiguration" value="@Model.IsReConfiguration.ToString().ToLower()" />
 
-                    <div class="form-group">
-                        <label for="languageSelect" class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:LanguageLabel", Model.SelectedLanguage, "选择语言 / Select Language")</label>
-                        <select id="languageSelect" name="language" class="mw-select" onchange="handleLanguageChange()">
-                            @foreach (var loc in locales)
-                            {
-                                var fileName = loc.FileName;
-                                <option value="@fileName" selected="@(fileName == Model.SelectedLanguage ? "selected" : null)">@loc.FriendlyName</option>
-                            }
-                        </select>
-                        <input type="hidden" asp-for="SelectedLanguage" id="SelectedLanguage" />
-                    </div>
+                    <div id="messageContainer"></div>
 
-                    <input type="hidden" id="themeColor" name="themeColor" value="@Model.ThemeColor" />
+                    <div class="wizard-step-content @(Model.CurrentStep == 1 ? "active" : "")" data-step="1">
+                        <div class="form-group">
+                            <label for="languageSelect" class="mw-label" data-i18n="SetupWizard:LanguageLabel">@Model.GetLocalizedForLanguage("SetupWizard:LanguageLabel", Model.SelectedLanguage, "选择语言 / Select Language")</label>
+                            <select id="languageSelect" class="mw-select" onchange="handleLanguageChange()">
+                                @foreach (var loc in locales)
+                                {
+                                    var fileName = loc.FileName;
+                                    <option value="@fileName" selected="@(fileName == Model.SelectedLanguage ? "selected" : null)">@loc.FriendlyName</option>
+                                }
+                            </select>
+                            <input type="hidden" asp-for="SelectedLanguage" id="SelectedLanguage" value="@Model.SelectedLanguage" />
+                        </div>
 
-                    <div class="form-group">
-                        <label class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:UpdateFrequencyLabel", Model.SelectedLanguage, "更新检查频率 / Update Check Frequency")</label>
-                        <select id="updateFrequency" name="updateFrequency" class="mw-select">
-                            <option value="startup" selected="@(Model.UpdateFrequency == "startup")">@Model.GetLocalizedForLanguage("SetupWizard:FrequencyStartup", Model.SelectedLanguage, "每次启动 / On Startup")</option>
-                            <option value="weekly" selected="@(Model.UpdateFrequency == "weekly")">@Model.GetLocalizedForLanguage("SetupWizard:FrequencyWeekly", Model.SelectedLanguage, "每周一 / Every Monday")</option>
-                            <option value="monthly" selected="@(Model.UpdateFrequency == "monthly")">@Model.GetLocalizedForLanguage("SetupWizard:FrequencyMonthly", Model.SelectedLanguage, "每月第一天 / First Day of Month")</option>
-                        </select>
-                    </div>
+                        <input type="hidden" id="themeColor" name="themeColor" value="@Model.ThemeColor" />
 
-                    <div class="form-group">
-                        <label class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:QuickSetupLabel", Model.SelectedLanguage, "快速设置 / Quick Setup")</label>
-                        <div class="mw-radio-group">
-                            <div class="mw-radio-container">
-                                <input type="radio" id="skipRemainingYes" name="skipRemainingQuestions" value="true" checked="@(Model.SkipRemainingQuestions ? "checked" : null)" onchange="toggleAdditionalSettings()" />
-                                <label for="skipRemainingYes" class="mw-radio-label">@Model.GetLocalizedForLanguage("SetupWizard:SkipRemainingYes", Model.SelectedLanguage, "我已经不耐烦了，让我赶快进入主界面 / I'm impatient, let me go to the main interface")</label>
-                            </div>
-                            <div class="mw-radio-container">
-                                <input type="radio" id="skipRemainingNo" name="skipRemainingQuestions" value="false" checked="@(!Model.SkipRemainingQuestions ? "checked" : null)" onchange="toggleAdditionalSettings()" />
-                                <label for="skipRemainingNo" class="mw-radio-label">@Model.GetLocalizedForLanguage("SetupWizard:SkipRemainingNo", Model.SelectedLanguage, "再多问我一些问题吧 / Ask me more questions")</label>
-                            </div>
+                        <div class="button-group">
+                            <button type="button" class="mw-button mw-button--progressive" onclick="saveStep1()" data-i18n="SetupWizard:CompleteButton">
+                                @Model.GetLocalizedForLanguage("SetupWizard:CompleteButton", Model.SelectedLanguage, "下一步 / Next")
+                            </button>
                         </div>
                     </div>
 
-                    <div id="additionalSettings" style="display: @(Model.SkipRemainingQuestions ? "none" : "block");">
+                    <div class="wizard-step-content @(Model.CurrentStep == 2 ? "active" : "")" data-step="2">
                         <div class="form-group">
-                            <label class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:NotificationsLabel", Model.SelectedLanguage, "浏览器通知 / Browser Notifications")</label>
+                            <label class="mw-label" data-i18n="SetupWizard:UpdateFrequencyLabel">@Model.GetLocalizedForLanguage("SetupWizard:UpdateFrequencyLabel", Model.SelectedLanguage, "更新检查频率 / Update Check Frequency")</label>
+                            <select id="updateFrequency" name="updateFrequency" class="mw-select">
+                                <option value="startup" data-i18n="SetupWizard:FrequencyStartup" selected="@(Model.UpdateFrequency == "startup")">@Model.GetLocalizedForLanguage("SetupWizard:FrequencyStartup", Model.SelectedLanguage, "每次启动 / On Startup")</option>
+                                <option value="weekly" data-i18n="SetupWizard:FrequencyWeekly" selected="@(Model.UpdateFrequency == "weekly")">@Model.GetLocalizedForLanguage("SetupWizard:FrequencyWeekly", Model.SelectedLanguage, "每周一 / Every Monday")</option>
+                                <option value="monthly" data-i18n="SetupWizard:FrequencyMonthly" selected="@(Model.UpdateFrequency == "monthly")">@Model.GetLocalizedForLanguage("SetupWizard:FrequencyMonthly", Model.SelectedLanguage, "每月第一天 / First Day of Month")</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="mw-label" data-i18n="SetupWizard:QuickSetupLabel">@Model.GetLocalizedForLanguage("SetupWizard:QuickSetupLabel", Model.SelectedLanguage, "快速设置 / Quick Setup")</label>
+                            <div class="mw-radio-group">
+                                <div class="mw-radio-container">
+                                    <input type="radio" id="finishNow" name="finishChoice" value="finish" checked onchange="toggleStep3()" />
+                                    <label for="finishNow" class="mw-radio-label" data-i18n="SetupWizard:SkipRemainingYes">@Model.GetLocalizedForLanguage("SetupWizard:SkipRemainingYes", Model.SelectedLanguage, "我已经不耐烦了，让我赶快进入主界面")</label>
+                                </div>
+                                <div class="mw-radio-container">
+                                    <input type="radio" id="continueQuestions" name="finishChoice" value="continue" onchange="toggleStep3()" />
+                                    <label for="continueQuestions" class="mw-radio-label" data-i18n="SetupWizard:SkipRemainingNo">@Model.GetLocalizedForLanguage("SetupWizard:SkipRemainingNo", Model.SelectedLanguage, "再多问我一些问题吧")</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <button type="button" class="mw-button" onclick="goToStep(1)" data-i18n="SetupWizard:BackButton">
+                                @Model.GetLocalizedForLanguage("SetupWizard:BackButton", Model.SelectedLanguage, "← 上一步")
+                            </button>
+                            <button type="button" id="btnStep2Primary" class="mw-button mw-button--progressive" onclick="handleStep2Finish()" data-i18n="SetupWizard:CompleteButton">
+                                @Model.GetLocalizedForLanguage("SetupWizard:CompleteButton", Model.SelectedLanguage, "完成设置 / Complete Setup")
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="wizard-step-content @(Model.CurrentStep == 3 ? "active" : "")" data-step="3">
+                        <div class="form-group">
+                            <label class="mw-label" data-i18n="SetupWizard:NotificationsLabel">@Model.GetLocalizedForLanguage("SetupWizard:NotificationsLabel", Model.SelectedLanguage, "浏览器通知 / Browser Notifications")</label>
                             <div class="mw-checkbox-container">
                                 <input type="checkbox" id="enableNotifications" name="enableNotifications" @(Model.EnableNotifications ? "checked" : "") />
-                                <label for="enableNotifications" class="mw-checkbox-label">@Model.GetLocalizedForLanguage("SetupWizard:EnableNotificationsDesc", Model.SelectedLanguage, "接收更新和重要事件的通知 / Receive notifications for updates and important events")</label>
+                                <label for="enableNotifications" class="mw-checkbox-label" data-i18n="SetupWizard:EnableNotificationsDesc">@Model.GetLocalizedForLanguage("SetupWizard:EnableNotificationsDesc", Model.SelectedLanguage, "接收更新和重要事件的通知")</label>
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:ModifyTitleLabel", Model.SelectedLanguage, "应用标题 / Application Title")</label>
-                            <div class="mw-checkbox-container">
-                                <input type="checkbox" id="modifyTitle" name="modifyTitle" @(Model.ModifyTitle ? "checked" : "") />
-                                <label for="modifyTitle" class="mw-checkbox-label">@Model.GetLocalizedForLanguage("SetupWizard:ModifyTitleDesc", Model.SelectedLanguage, "在游戏窗口标题添加 Modded 前缀 / Add 'Modded' prefix to game window title")</label>
-                            </div>
+                        <div class="button-group">
+                            <button type="button" class="mw-button" onclick="goToStep(2)" data-i18n="SetupWizard:BackButton">
+                                @Model.GetLocalizedForLanguage("SetupWizard:BackButton", Model.SelectedLanguage, "← 上一步")
+                            </button>
+                            <button type="button" class="mw-button mw-button--progressive" onclick="goToStep(4)" data-i18n="SetupWizard:CompleteButton">
+                                @Model.GetLocalizedForLanguage("SetupWizard:CompleteButton", Model.SelectedLanguage, "下一步 / Next")
+                            </button>
                         </div>
                     </div>
 
-                    <div class="button-group">
-                        <button type="submit" class="mw-button mw-button--progressive">
-                            @if (Model.IsReConfiguration)
-                            {
-                                @Model.GetLocalizedForLanguage("SetupWizard:SaveButton", Model.SelectedLanguage, "保存设置 / Save Settings")
-                            }
-                            else
-                            {
+                    <div class="wizard-step-content @(Model.CurrentStep == 4 ? "active" : "")" data-step="4">
+                        <div class="form-group">
+                            <label class="mw-label" data-i18n="SetupWizard:ModifyTitleLabel">@Model.GetLocalizedForLanguage("SetupWizard:ModifyTitleLabel", Model.SelectedLanguage, "应用标题 / Application Title")</label>
+                            <div class="mw-checkbox-container">
+                                <input type="checkbox" id="modifyTitle" name="modifyTitle" @(Model.ModifyTitle ? "checked" : "") />
+                                <label for="modifyTitle" class="mw-checkbox-label" data-i18n="SetupWizard:ModifyTitleDesc">@Model.GetLocalizedForLanguage("SetupWizard:ModifyTitleDesc", Model.SelectedLanguage, "在游戏窗口标题添加 Modded 前缀")</label>
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <button type="button" class="mw-button" onclick="goToStep(3)" data-i18n="SetupWizard:BackButton">
+                                @Model.GetLocalizedForLanguage("SetupWizard:BackButton", Model.SelectedLanguage, "← 上一步")
+                            </button>
+                            <button type="button" class="mw-button mw-button--progressive" onclick="saveStep2()" data-i18n="SetupWizard:CompleteButton">
                                 @Model.GetLocalizedForLanguage("SetupWizard:CompleteButton", Model.SelectedLanguage, "完成设置 / Complete Setup")
-                            }
-                        </button>
-                        @if (Model.IsReConfiguration)
-                        {
-                            <a href="/" class="mw-button">@Model.GetLocalizedForLanguage("SetupWizard:BackToApp", Model.SelectedLanguage, "返回应用 / Back to App")</a>
-                        }
+                            </button>
+                        </div>
                     </div>
                 </form>
             }
@@ -572,27 +647,343 @@
 </div>
 
 <script>
+    const i18nDict = {
+        'en_US': {
+            'SetupWizard:Title': 'Setup Wizard',
+            'SetupWizard:ReconfigureTitle': 'Re-configure',
+            'SetupWizard:ReconfigureSubtitle': 'Adjust your settings',
+            'SetupWizard:AlreadyConfigured': 'Configuration Complete',
+            'SetupWizard:AlreadyConfiguredSubtitle': 'System has been configured',
+            'SetupWizard:Welcome': 'Welcome',
+            'SetupWizard:Subtitle': 'THMI Mod Manager Initial Setup',
+            'SetupWizard:ConfigurationComplete': 'All settings are complete. You can now start using THMI Mod Manager.',
+            'SetupWizard:BackToHome': '← Back to Home',
+            'SetupWizard:WantToReconfigure': 'Want to change settings? Reconfigure →',
+            'SetupWizard:LanguageLabel': 'Select Language',
+            'SetupWizard:CompleteButton': 'Next →',
+            'SetupWizard:BackButton': '← Back',
+            'SetupWizard:UpdateFrequencyLabel': 'Update Check Frequency',
+            'SetupWizard:FrequencyStartup': 'On Startup',
+            'SetupWizard:FrequencyWeekly': 'Every Monday',
+            'SetupWizard:FrequencyMonthly': 'First Day of Month',
+            'SetupWizard:QuickSetupLabel': 'Quick Setup',
+            'SetupWizard:SkipRemainingYes': "I'm impatient, let me go to the main interface",
+            'SetupWizard:SkipRemainingNo': 'Ask me more questions',
+            'SetupWizard:NotificationsLabel': 'Browser Notifications',
+            'SetupWizard:EnableNotificationsDesc': 'Receive notifications for updates and important events',
+            'SetupWizard:ModifyTitleLabel': 'Application Title',
+            'SetupWizard:ModifyTitleDesc': "Add 'Modded' prefix to game window title"
+        },
+        'zh_HANS': {
+            'SetupWizard:Title': '设置向导',
+            'SetupWizard:ReconfigureTitle': '重新配置',
+            'SetupWizard:ReconfigureSubtitle': '调整您的设置',
+            'SetupWizard:AlreadyConfigured': '您已无需配置',
+            'SetupWizard:AlreadyConfiguredSubtitle': '系统已设置完成',
+            'SetupWizard:Welcome': '欢迎使用',
+            'SetupWizard:Subtitle': 'THMI Mod Manager 初始设置',
+            'SetupWizard:ConfigurationComplete': '所有设置已完成，您现在可以开始使用 THMI Mod Manager',
+            'SetupWizard:BackToHome': '← 返回首页',
+            'SetupWizard:WantToReconfigure': '想要更改设置？重新配置 →',
+            'SetupWizard:LanguageLabel': '选择语言',
+            'SetupWizard:CompleteButton': '下一步 →',
+            'SetupWizard:BackButton': '← 上一步',
+            'SetupWizard:UpdateFrequencyLabel': '更新检查频率',
+            'SetupWizard:FrequencyStartup': '每次启动',
+            'SetupWizard:FrequencyWeekly': '每周一',
+            'SetupWizard:FrequencyMonthly': '每月第一天',
+            'SetupWizard:QuickSetupLabel': '快速设置',
+            'SetupWizard:SkipRemainingYes': '我已经不耐烦了，让我赶快进入主界面',
+            'SetupWizard:SkipRemainingNo': '再多问我一些问题吧',
+            'SetupWizard:NotificationsLabel': '浏览器通知',
+            'SetupWizard:EnableNotificationsDesc': '接收更新和重要事件的通知',
+            'SetupWizard:ModifyTitleLabel': '应用标题',
+            'SetupWizard:ModifyTitleDesc': '在游戏窗口标题添加 Modded 前缀'
+        },
+        'zh_HANT': {
+            'SetupWizard:Title': '設定嚮導',
+            'SetupWizard:ReconfigureTitle': '重新配置',
+            'SetupWizard:ReconfigureSubtitle': '調整您的設定',
+            'SetupWizard:AlreadyConfigured': '您已無需配置',
+            'SetupWizard:AlreadyConfiguredSubtitle': '系統已設置完成',
+            'SetupWizard:Welcome': '歡迎使用',
+            'SetupWizard:Subtitle': 'THMI Mod Manager 初始設置',
+            'SetupWizard:ConfigurationComplete': '所有設置已完成，您現在可以開始使用 THMI Mod Manager',
+            'SetupWizard:BackToHome': '← 返回首頁',
+            'SetupWizard:WantToReconfigure': '想要更改設定？重新配置 →',
+            'SetupWizard:LanguageLabel': '選擇語言',
+            'SetupWizard:CompleteButton': '下一步 →',
+            'SetupWizard:BackButton': '← 上一步',
+            'SetupWizard:UpdateFrequencyLabel': '更新檢查頻率',
+            'SetupWizard:FrequencyStartup': '每次啟動',
+            'SetupWizard:FrequencyWeekly': '每週一',
+            'SetupWizard:FrequencyMonthly': '每月第一天',
+            'SetupWizard:QuickSetupLabel': '快速設置',
+            'SetupWizard:SkipRemainingYes': '我已經不耐煩了，讓我趕快進入主界面',
+            'SetupWizard:SkipRemainingNo': '再多問我一些問題吧',
+            'SetupWizard:NotificationsLabel': '瀏覽器通知',
+            'SetupWizard:EnableNotificationsDesc': '接收更新和重要事件的通知',
+            'SetupWizard:ModifyTitleLabel': '應用標題',
+            'SetupWizard:ModifyTitleDesc': '在遊戲窗口標題添加 Modded 前綴'
+        }
+    };
+
+    let selectedLanguage = '@Model.SelectedLanguage';
+    let themeColor = '@Model.ThemeColor';
+    let updateFrequency = '@Model.UpdateFrequency';
+    let enableNotifications = @Model.EnableNotifications.ToString().ToLower();
+    let modifyTitle = @Model.ModifyTitle.ToString().ToLower();
+
+    const pageUrl = window.location.pathname;
+    const saveStep1Url = '@Url.Page("/SetupWizard", "SaveStep1")';
+    const saveStep2Url = '@Url.Page("/SetupWizard", "SaveStep2")';
+    const saveStep1AndFinishUrl = '@Url.Page("/SetupWizard", "SaveStep1AndFinish")';
+
+    function t(key) {
+        const dict = i18nDict[selectedLanguage] || i18nDict['en_US'];
+        return dict[key] || key;
+    }
+
+    function updateAllLocalizedText() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.dataset.i18n;
+            el.textContent = t(key);
+        });
+    }
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function showMessage(message, type) {
+        const container = document.getElementById('messageContainer');
+        container.innerHTML = `<div class="mw-${type}">${message}</div>`;
+    }
+
+    function clearMessage() {
+        document.getElementById('messageContainer').innerHTML = '';
+    }
+
     function handleLanguageChange() {
         const languageSelect = document.getElementById('languageSelect');
-        const selectedLanguage = languageSelect.value;
+        selectedLanguage = languageSelect.value;
         document.getElementById('SelectedLanguage').value = selectedLanguage;
-        
+        updateAllLocalizedText();
+    }
+
+    function goToStep(step) {
         const urlParams = new URLSearchParams(window.location.search);
         const reconfigure = urlParams.get('reconfigure');
-        let url = `?language=${encodeURIComponent(selectedLanguage)}`;
+        let url = `?step=${step}`;
         if (reconfigure === 'true') {
             url += '&reconfigure=true';
         }
-        location.href = url;
+        window.history.pushState({step: step}, '', url);
+        renderStep(step);
     }
 
-    function toggleAdditionalSettings() {
-        const skipRemainingYes = document.getElementById('skipRemainingYes').checked;
-        const additionalSettings = document.getElementById('additionalSettings');
-        additionalSettings.style.display = skipRemainingYes ? 'none' : 'block';
+    function renderStep(step) {
+        document.querySelectorAll('.wizard-step-content').forEach(el => {
+            el.classList.remove('active');
+        });
+        document.querySelectorAll('.wizard-step').forEach(el => {
+            const elStep = parseInt(el.dataset.step);
+            el.classList.remove('active', 'completed');
+            if (elStep < step) {
+                el.classList.add('completed');
+                el.querySelector('.wizard-step-number').textContent = '✓';
+            } else if (elStep === step) {
+                el.classList.add('active');
+                el.querySelector('.wizard-step-number').textContent = elStep;
+            } else {
+                el.querySelector('.wizard-step-number').textContent = elStep;
+            }
+        });
+
+        const targetContent = document.querySelector(`.wizard-step-content[data-step="${step}"]`);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+
+        document.getElementById('currentStep').value = step;
+        clearMessage();
     }
+
+    function toggleStep3() {
+        const finishNow = document.getElementById('finishNow').checked;
+        const btn = document.getElementById('btnStep2Primary');
+        if (finishNow) {
+            btn.textContent = t('SetupWizard:CompleteButton');
+            btn.onclick = saveStep1AndFinish;
+        } else {
+            btn.textContent = t('SetupWizard:CompleteButton');
+            btn.onclick = () => goToStep(3);
+        }
+    }
+
+    async function saveStep1() {
+        showLoading();
+        clearMessage();
+
+        updateFrequency = document.getElementById('updateFrequency').value;
+        selectedLanguage = document.getElementById('languageSelect').value;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        console.log('Anti-forgery token:', token ? 'present' : 'missing');
+
+        console.log('Saving step 1...');
+        console.log('Data:', { selectedLanguage, themeColor, updateFrequency });
+
+        try {
+            const response = await fetch(saveStep1Url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: `SelectedLanguage=${encodeURIComponent(selectedLanguage)}&ThemeColor=${encodeURIComponent(themeColor)}&UpdateFrequency=${encodeURIComponent(updateFrequency)}`
+            });
+
+            console.log('Response status:', response.status);
+            console.log('Response headers:', [...response.headers.entries()]);
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Error response:', text);
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text.substring(0, 200)}`);
+            }
+
+            const result = await response.json();
+            console.log('Result:', result);
+
+            if (result.success) {
+                goToStep(result.nextStep);
+            } else {
+                showMessage(result.message || '保存失败，请重试。', 'error');
+            }
+        } catch (error) {
+            console.error('SaveStep1 error:', error);
+            showMessage('网络错误，请重试。错误详情：' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function saveStep2() {
+        showLoading();
+        clearMessage();
+
+        enableNotifications = document.getElementById('enableNotifications').checked;
+        modifyTitle = document.getElementById('modifyTitle').checked;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        console.log('Saving step 2...');
+        console.log('Data:', { enableNotifications, modifyTitle });
+
+        try {
+            const response = await fetch(saveStep2Url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: `EnableNotifications=${enableNotifications}&ModifyTitle=${modifyTitle}`
+            });
+
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Error response:', text);
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text.substring(0, 200)}`);
+            }
+
+            const result = await response.json();
+            console.log('Result:', result);
+
+            if (result.success) {
+                window.location.href = result.redirectTo;
+            } else {
+                showMessage(result.message || '保存失败，请重试。', 'error');
+            }
+        } catch (error) {
+            console.error('SaveStep2 error:', error);
+            showMessage('网络错误，请重试。错误详情：' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function saveStep1AndFinish() {
+        showLoading();
+        clearMessage();
+
+        enableNotifications = document.getElementById('enableNotifications')?.checked ?? false;
+        modifyTitle = document.getElementById('modifyTitle')?.checked ?? true;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        console.log('Saving step 1 and finishing...');
+        console.log('Data:', { selectedLanguage, themeColor, updateFrequency, enableNotifications, modifyTitle });
+
+        try {
+            const response = await fetch(saveStep1AndFinishUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: `SelectedLanguage=${encodeURIComponent(selectedLanguage)}&ThemeColor=${encodeURIComponent(themeColor)}&UpdateFrequency=${encodeURIComponent(updateFrequency)}&EnableNotifications=${enableNotifications}&ModifyTitle=${modifyTitle}`
+            });
+
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Error response:', text);
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text.substring(0, 200)}`);
+            }
+
+            const result = await response.json();
+            console.log('Result:', result);
+
+            if (result.success) {
+                window.location.href = result.redirectTo;
+            } else {
+                showMessage(result.message || '保存失败，请重试。', 'error');
+            }
+        } catch (error) {
+            console.error('SaveStep1AndFinish error:', error);
+            showMessage('网络错误，请重试。错误详情：' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function handleStep2Finish() {
+        const finishNow = document.getElementById('finishNow').checked;
+        if (finishNow) {
+            saveStep1AndFinish();
+        } else {
+            goToStep(3);
+        }
+    }
+
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.step) {
+            renderStep(event.state.step);
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', function() {
-        toggleAdditionalSettings();
+        const currentStep = @Model.CurrentStep;
+        toggleStep3();
+
+        history.replaceState({step: currentStep}, '', window.location.href);
     });
 </script>
