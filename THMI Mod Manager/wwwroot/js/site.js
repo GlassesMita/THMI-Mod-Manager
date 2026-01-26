@@ -112,9 +112,19 @@ function getLocalizedString(key, defaultValue) {
     return defaultValue;
 }
 
-// Initialize update notifications when DOM is ready
+// Initialize update notifications when DOM is ready (delayed to not block page render)
 document.addEventListener('DOMContentLoaded', function() {
-    UpdateNotification.init();
+    // Delay update check to allow page to render first
+    // This reduces perceived load time and avoids conflicts with browser extensions
+    if (window.requestIdleCallback) {
+        requestIdleCallback(function() {
+            UpdateNotification.init();
+        }, { timeout: 5000 });
+    } else {
+        setTimeout(function() {
+            UpdateNotification.init();
+        }, 1000);
+    }
 });
 
 // Global function to manually check for updates

@@ -1,15 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <!-- 基础配置（保留你原有内容） -->
+    <!-- 基础配置 -->
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>THMI_Mod_Manager</RootNamespace>
     <IsPackable>true</IsPackable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>0.6.0</Version>
+    
+    <!-- 语义化版本号配置 -->
+    <!-- Version: 用于 NuGet 包和 informational 版本显示，支持预发布标签 -->
+    <Version>0.6.0-rc2</Version>
+    <!-- AssemblyVersion: 必须为 4 部分数字格式，用于程序集标识 -->
     <AssemblyVersion>0.6.0.0</AssemblyVersion>
+    <!-- FileVersion: 必须为 4 部分数字格式，用于文件属性对话框显示 -->
     <FileVersion>0.6.0.0</FileVersion>
+    <!-- AssemblyInformationalVersion: 支持完整语义化版本，用于程序集属性显示 -->
+    <AssemblyInformationalVersion>0.6.0-rc2</AssemblyInformationalVersion>
+    
+    <!-- 禁用源代码控制信息生成（避免版本号后出现 Git 哈希） -->
+    <Deterministic>false</Deterministic>
+    <ContinuousIntegrationBuild>false</ContinuousIntegrationBuild>
+    <SourceLinkRemoveCommitHash>true</SourceLinkRemoveCommitHash>
+    
+    <!-- 强制覆盖 AssemblyInformationalVersion（确保无哈希） -->
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
     
     <!-- 核心：自定义BuildAll参数（默认false，传入\-\-build-all则为true） -->
     <BuildAll>false</BuildAll>

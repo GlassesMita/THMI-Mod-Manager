@@ -7,7 +7,10 @@
 @inject AppConfigManager AppConfig
 @{ 
     var themeColor = AppConfig.Get("[App]ThemeColor", "#c670ff");
-    var appVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
+    var appVersion = Assembly.GetExecutingAssembly()
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+        ?? "0.0.0";
 }
 <!DOCTYPE html>
 <html lang="en">

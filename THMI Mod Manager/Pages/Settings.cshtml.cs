@@ -4,6 +4,7 @@ using System.Diagnostics;
 using THMI_Mod_Manager.Services;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace THMI_Mod_Manager.Pages
 {
@@ -11,6 +12,43 @@ namespace THMI_Mod_Manager.Pages
     [IgnoreAntiforgeryToken]
     public class SettingsModel : PageModel
     {
+        private static string? _cachedCsprojVersion;
+
+        private static string ReadCsprojVersion()
+        {
+            if (_cachedCsprojVersion != null)
+                return _cachedCsprojVersion;
+
+            try
+            {
+                var csprojPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "THMI Mod Manager.csproj");
+                if (!System.IO.File.Exists(csprojPath))
+                {
+                    csprojPath = Path.Combine(AppContext.BaseDirectory, "THMI Mod Manager.csproj");
+                }
+                if (!System.IO.File.Exists(csprojPath))
+                {
+                    csprojPath = "c:\\Users\\Mila\\source\\repos\\THMI Mod Manager\\THMI Mod Manager\\THMI Mod Manager.csproj";
+                }
+
+                if (System.IO.File.Exists(csprojPath))
+                {
+                    var doc = XDocument.Load(csprojPath);
+                    var versionElement = doc.Root?.Element("PropertyGroup")?.Element("Version");
+                    if (versionElement != null && !string.IsNullOrEmpty(versionElement.Value))
+                    {
+                        _cachedCsprojVersion = versionElement.Value;
+                        return _cachedCsprojVersion;
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            _cachedCsprojVersion = "0.0.0";
+            return _cachedCsprojVersion;
+        }
         public string? RequestId { get; set; }
 
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
@@ -52,7 +90,7 @@ namespace THMI_Mod_Manager.Pages
         
         // Mod信息属性
         public string ModName { get; set; } = "THMI Mod Manager";
-        public string ModVersion { get; set; } = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
+        public string ModVersion { get; set; } = ReadCsprojVersion();
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -63,21 +101,18 @@ namespace THMI_Mod_Manager.Pages
         public void OnGet()
         {
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
-            Logger.LogInfo($"Settings page accessed - RequestId: {RequestId}");
 
             try
             {
                 var languageValue = _appConfig.Get("[Localization]Language", "en_US");
                 CurrentLanguage = languageValue ?? "en_US";
                 SelectedLanguage = CurrentLanguage ?? "en_US";
-                Logger.LogInfo($"Loaded language settings: {CurrentLanguage}");
 
                 var devBuildValue = _appConfig.Get("[Dev]IsDevBuild", "false");
                 IsDevMode = devBuildValue?.ToLower() == "true";
                 
                 var cveWarningValue = _appConfig.Get("[Dev]ShowCVEWarning", "true");
                 ShowCVEWarning = cveWarningValue?.ToLower() != "false";
-                Logger.LogInfo($"Loaded developer settings - DevMode: {IsDevMode}, ShowCVEWarning: {ShowCVEWarning}");
 
                 var cursorValue = _appConfig.Get("[Cursor]UseMystiaCursor", "false");
                 UseOsuCursor = cursorValue?.ToLower() == "true";
@@ -89,14 +124,10 @@ namespace THMI_Mod_Manager.Pages
                 {
                     CursorType = "osu";
                     _appConfig.Set("[Cursor]CursorType", "osu");
-                    Logger.LogInfo("Converted legacy UseOsuCursor setting to new CursorType: osu");
                 }
-                
-                Logger.LogInfo($"Loaded cursor settings: CursorType: {CursorType}");
                 
                 var themeColorValue = _appConfig.Get("[App]ThemeColor", "#c670ff");
                 ThemeColor = themeColorValue ?? "#c670ff";
-                Logger.LogInfo($"Loaded theme color: {ThemeColor}");
                 
                 var launchModeValue = _appConfig.Get("[Game]LaunchMode", "steam_launch");
                 LaunchMode = launchModeValue ?? "steam_launch";
@@ -106,46 +137,36 @@ namespace THMI_Mod_Manager.Pages
                 
                 var modifyTitleValue = _appConfig.Get("[Game]ModifyTitle", "true");
                 ModifyTitle = modifyTitleValue?.ToLower() != "false";
-                Logger.LogInfo($"Loaded game launch mode settings: LaunchMode: {LaunchMode}, LauncherPath: {LauncherPath}, ModifyTitle: {ModifyTitle}");
                 
                 var autoCheckUpdatesValue = _appConfig.Get("[Updates]CheckForUpdates", "true");
                 AutoCheckUpdates = autoCheckUpdatesValue?.ToLower() != "false";
                 
                 var updateFrequencyValue = _appConfig.Get("[Updates]UpdateFrequency", "startup");
                 UpdateFrequency = updateFrequencyValue ?? "startup";
-                Logger.LogInfo($"Loaded update settings: AutoCheckUpdates: {AutoCheckUpdates}, UpdateFrequency: {UpdateFrequency}");
                 
                 var enableNotificationsValue = _appConfig.Get("[Notifications]Enable", "false");
                 EnableNotifications = enableNotificationsValue?.ToLower() == "true";
-                Logger.LogInfo($"Loaded notification settings: EnableNotifications: {EnableNotifications}");
                 
                 // Load program version information from AppConfig
                 try
                 {
                     ModName = _appConfig.Get("[App]Name", "THMI Mod Manager") ?? "THMI Mod Manager";
-                    Logger.LogInfo($"Loaded program information: {ModName} v{ModVersion}");
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Logger.LogError($"Error loading program information: {ex.Message}");
                     // Keep default values
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error loading settings: {ex.Message}");
                 throw;
             }
         }
 
         public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications)
         {
-            Logger.LogInfo($"Saving settings - Language: {language}, Status: {status}, UseOsuCursor: {useOsuCursor}, UseCustomCursor: {useCustomCursor}, CursorType: {cursorType}, ThemeColor: {themeColor}, LaunchMode: {launchMode}, LauncherPath: {launcherPath}, ModsPath: {modsPath}, GamePath: {gamePath}, ModifyTitle: {modifyTitle}, AutoCheckUpdates: {autoCheckUpdates}, UpdateFrequency: {updateFrequency}, EnableNotifications: {enableNotifications}");
-            
-            
             if (string.IsNullOrEmpty(language))
             {
-                Logger.LogWarning("Language parameter is empty, returning to page");
                 return Page();
             }
 
@@ -153,78 +174,63 @@ namespace THMI_Mod_Manager.Pages
             {
                 // Save into AppConfig.Schale under [Localization] Language=... (preserve naming like en_US)
                 _appConfig.Set("[Localization]Language", language);
-                Logger.LogInfo($"Language setting saved: {language}");
                 
                 // Save game status
                 _appConfig.Set("[Game]Status", status);
-                Logger.LogInfo($"Game status saved: {status}");
                 
                 // Save cursor setting (向后兼容)
                 _appConfig.Set("[Cursor]UseMystiaCursor", useOsuCursor.ToString());
-                Logger.LogInfo($"Legacy cursor setting saved: {useOsuCursor}");
                 
                 // Save new cursor type setting
                 if (!string.IsNullOrEmpty(cursorType))
                 {
                     _appConfig.Set("[Cursor]CursorType", cursorType);
-                    Logger.LogInfo($"Cursor type saved: {cursorType}");
                 }
                 
                 // Save theme color setting
                 if (!string.IsNullOrEmpty(themeColor))
                 {
                     _appConfig.Set("[App]ThemeColor", themeColor);
-                    Logger.LogInfo($"Theme color saved: {themeColor}");
                 }
                 
                 // Save game launch mode settings
                 if (!string.IsNullOrEmpty(launchMode))
                 {
                     _appConfig.Set("[Game]LaunchMode", launchMode);
-                    Logger.LogInfo($"Game launch mode saved: {launchMode}");
                 }
                 
                 // Save user-specified external program path
                 _appConfig.Set("[Game]LauncherPath", launcherPath);
-                Logger.LogInfo($"User-specified external program path saved: {launcherPath}");
                 
                 // Save modify title setting
                 _appConfig.Set("[Game]ModifyTitle", modifyTitle.ToString());
-                Logger.LogInfo($"Modify title setting saved: {modifyTitle}");
 
                 // Save auto check updates setting
                 _appConfig.Set("[Updates]CheckForUpdates", autoCheckUpdates.ToString());
-                Logger.LogInfo($"Auto check updates setting saved: {autoCheckUpdates}");
 
                 // Save update frequency setting
                 if (!string.IsNullOrEmpty(updateFrequency))
                 {
                     _appConfig.Set("[Updates]UpdateFrequency", updateFrequency);
-                    Logger.LogInfo($"Update frequency setting saved: {updateFrequency}");
                 }
 
                 // Save enable notifications setting
                 _appConfig.Set("[Notifications]Enable", enableNotifications.ToString());
-                Logger.LogInfo($"Enable notifications setting saved: {enableNotifications}");
 
                 // Save custom cursor setting
                 _appConfig.Set("[Cursor]UseCustomCursor", useCustomCursor.ToString());
-                Logger.LogInfo($"Custom cursor setting saved: {useCustomCursor}");
 
                 // Save mods path setting - automatically set to current directory + Mods folder
                 string autoModsPath = Path.Combine(AppContext.BaseDirectory, "Mods");
-                // Ensure the Mods directory exists
                 if (!Directory.Exists(autoModsPath))
                 {
                     Directory.CreateDirectory(autoModsPath);
                 }
                 _appConfig.Set("[App]ModsPath", autoModsPath);
-                Logger.LogInfo($"Mods path automatically set to: {autoModsPath}");
 
                 // Save game path setting - automatically set to current directory
                 string autoGamePath = AppContext.BaseDirectory;
                 _appConfig.Set("[App]GamePath", autoGamePath);
-                Logger.LogInfo($"Game path automatically set to: {autoGamePath}");
 
                 // Optionally reload configuration
                 _appConfig.Reload();
@@ -258,11 +264,9 @@ namespace THMI_Mod_Manager.Pages
 
                 // Optionally reload configuration
                 _appConfig.Reload();
-                Logger.LogInfo("Configuration reloaded successfully after cursor settings update");
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error saving cursor settings: {ex.Message}");
                 return new JsonResult(new { success = false, message = $"Error saving cursor settings: {ex.Message}" });
             }
 
@@ -272,22 +276,17 @@ namespace THMI_Mod_Manager.Pages
 
         public IActionResult OnPostSaveDeveloperSettings(bool devMode, bool showCVEWarning)
         {
-            Logger.LogInfo($"Saving developer settings - DevMode: {devMode}, ShowCVEWarning: {showCVEWarning}");
-            
             try
             {
                 // Save developer settings to AppConfig.Schale
                 _appConfig.Set("[Dev]IsDevBuild", devMode.ToString());
                 _appConfig.Set("[Dev]ShowCVEWarning", showCVEWarning.ToString());
-                Logger.LogInfo("Developer settings saved successfully");
 
                 // Reload configuration
                 _appConfig.Reload();
-                Logger.LogInfo("Configuration reloaded after developer settings update");
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error saving developer settings: {ex.Message}");
                 return new JsonResult(new { success = false, message = $"Error saving settings: {ex.Message}" });
             }
 

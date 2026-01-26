@@ -10,7 +10,18 @@
             this.apiEndpoint = window.location.origin + '/api/mods';
             console.log('[ModRenderer] Initializing with endpoint:', this.apiEndpoint);
             this.setupObserver();
-            this.loadMods();
+            
+            // Delay mod loading to allow page to render first
+            // This improves perceived performance and reduces conflicts with browser extensions
+            const doLoadMods = () => {
+                this.loadMods();
+            };
+            
+            if (window.requestIdleCallback) {
+                requestIdleCallback(doLoadMods, { timeout: 3000 });
+            } else {
+                setTimeout(doLoadMods, 500);
+            }
         },
         
         setupObserver: function() {

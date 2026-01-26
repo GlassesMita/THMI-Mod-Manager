@@ -19,10 +19,14 @@ namespace THMI_Mod_Manager.Pages
         public string SelectedLanguage { get; set; } = "en_US";
 
         [BindProperty]
-        public string ThemeColor { get; set; } = "#c670ff";
+        public string ThemeColor { get; set; } = "#ACCEED";
 
         public string Message { get; set; } = string.Empty;
         public string MessageType { get; set; } = string.Empty;
+        public bool IsReConfiguration { get; set; } = false;
+        public bool IsConfigured { get; set; } = false;
+        public string? ExistingLanguage { get; set; }
+        public string? ExistingThemeColor { get; set; }
 
         public SetupWizardModel(ILogger<SetupWizardModel> logger, AppConfigManager appConfig, IWebHostEnvironment env)
         {
@@ -91,18 +95,43 @@ namespace THMI_Mod_Manager.Pages
             return defaultValue ?? key;
         }
 
-        public void OnGet(string? language = null)
+        public void OnGet(string? language = null, bool? reconfigure = null)
         {
-            if (!string.IsNullOrEmpty(language))
-            {
-                SelectedLanguage = language;
-            }
-
+            var existingLanguage = _appConfig.Get("Localization", "Language");
+            var isFirstRun = _appConfig.Get("App", "IsFirstRun");
             var isDevBuild = _appConfig.Get("[Dev]IsDevBuild", "False");
+
             if (!string.IsNullOrEmpty(isDevBuild) && bool.Parse(isDevBuild))
             {
                 Message = _appConfig.GetLocalized("SetupWizard:DevModeWarning", "当前处于开发模式，跳过设置向导。");
                 MessageType = "warning";
+                return;
+            }
+
+            var isAlreadyConfigured = !string.IsNullOrEmpty(existingLanguage) && isFirstRun?.ToLower() != "true";
+
+            if (isAlreadyConfigured)
+            {
+                ExistingLanguage = existingLanguage;
+                ExistingThemeColor = _appConfig.Get("App", "ThemeColor");
+                SelectedLanguage = existingLanguage;
+                ThemeColor = ExistingThemeColor ?? "#ACCEED";
+
+                if (reconfigure == true)
+                {
+                    IsReConfiguration = true;
+                    Message = _appConfig.GetLocalized("SetupWizard:AlreadyConfigured", "系统已配置完成，您可以重新调整设置。");
+                    MessageType = "info";
+                }
+                else
+                {
+                    IsConfigured = true;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(language))
+            {
+                SelectedLanguage = language;
             }
         }
 
@@ -114,17 +143,16 @@ namespace THMI_Mod_Manager.Pages
                 _appConfig.Set("[App]ThemeColor", ThemeColor);
                 _appConfig.Set("[App]IsFirstRun", "False");
 
-                var assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
-                var semanticVersion = $"{assemblyVersion?.Major ?? 0}.{assemblyVersion?.Minor ?? 0}.{assemblyVersion?.Build ?? 0}";
+                var semanticVersion = Assembly.GetExecutingAssembly()
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                    ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+                    ?? "0.0.0";
                 _appConfig.Set("[App]Version", semanticVersion);
-
-                _logger.LogInformation("Setup wizard completed. Language: {Language}, ThemeColor: {ThemeColor}, Version: {Version}", SelectedLanguage, ThemeColor, semanticVersion);
 
                 return RedirectToPage("/Index");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during setup wizard completion");
                 Message = _appConfig.GetLocalized("SetupWizard:SaveError", "保存配置时出错，请重试。");
                 MessageType = "danger";
                 return Page();

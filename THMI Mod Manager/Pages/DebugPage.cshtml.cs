@@ -25,7 +25,10 @@ namespace THMI_Mod_Manager.Pages
         private readonly IHttpClientFactory _httpClientFactory;
 
         public string AppName { get; set; } = "THMI Mod Manager";
-        public string AppVersion { get; set; } = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
+        public string AppVersion { get; set; } = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion 
+            ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) 
+            ?? "0.0.0";
         public string RuntimeVersion { get; set; } = "";
         public string OSVersion { get; set; } = "";
         public string OSFriendlyName { get; set; } = "";

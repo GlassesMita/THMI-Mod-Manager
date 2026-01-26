@@ -83,6 +83,80 @@ Logger.Log("\t");
 
 
 
+// 在应用启动前预加载本地化消息（避免在 ApplicationStarted 回调中读取文件）
+string currentLanguageForMessages = "en_US";
+string runningMessage = "Running on localhost:{port}";
+string browserOpenedMessage = "Opening URL: {url}";
+string? welcomeMessage = null;
+
+// 尝试从 AppConfig 读取语言设置
+try
+{
+    var tempConfigPath = Path.Combine(AppContext.BaseDirectory, "Config", "app.ini");
+    if (File.Exists(tempConfigPath))
+    {
+        foreach (var line in File.ReadAllLines(tempConfigPath))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("Language="))
+            {
+                currentLanguageForMessages = trimmed.Substring("Language=".Length).Replace("_", "-").Replace("-HANS", "").Replace("-HANT", "");
+                if (currentLanguageForMessages.Length > 2 && currentLanguageForMessages.Contains("-"))
+                {
+                    try { currentLanguageForMessages = new System.Globalization.CultureInfo(currentLanguageForMessages).Name; } catch { }
+                }
+                break;
+            }
+        }
+    }
+}
+catch { }
+
+// 构建本地化文件路径并读取消息
+var localizationFileForMessages = Path.Combine(AppContext.BaseDirectory, "Localization", $"{currentLanguageForMessages}.ini");
+if (!File.Exists(localizationFileForMessages))
+{
+    localizationFileForMessages = Path.Combine(AppContext.BaseDirectory, "Localization", "en_US.ini");
+}
+
+if (File.Exists(localizationFileForMessages))
+{
+    try
+    {
+        var lines = File.ReadAllLines(localizationFileForMessages);
+        string currentSection = "";
+        
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.Trim();
+            if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith(";"))
+                continue;
+            
+            if (line.StartsWith("[") && line.EndsWith("]"))
+            {
+                currentSection = line.Substring(1, line.Length - 2).Trim();
+            }
+            else if (currentSection == "Console" || currentSection == "Messages")
+            {
+                var idx = line.IndexOf('=');
+                if (idx > 0)
+                {
+                    var key = line.Substring(0, idx).Trim();
+                    var value = line.Substring(idx + 1).Trim().Replace("\\n", "\n");
+                    
+                    if (key == "AppRunningMessage")
+                        runningMessage = value;
+                    else if (key == "BrowserOpenedMessage")
+                        browserOpenedMessage = value;
+                    else if (key == "WelcomeMessage")
+                        welcomeMessage = value;
+                }
+            }
+        }
+    }
+    catch { }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 string? updateVersion = null;
@@ -346,61 +420,9 @@ lifetime.ApplicationStarted.Register(() =>
             }
         }
         
-        // 从本地化文件读取消息
-        var appConfigManager = app.Services.GetRequiredService<THMI_Mod_Manager.Services.AppConfigManager>();
-        string currentLanguage = appConfigManager.GetSection("Localization").TryGetValue("Language", out var langValue) ? langValue : "zh_CN";
-        
-        // 构建本地化文件路径
-        var localizationFile = Path.Combine(app.Environment.ContentRootPath, "Localization", $"{currentLanguage}.ini");
-        string runningMessage = $"Running on localhost:{port}"; // 默认消息
-        string browserOpenedMessage = $"Opened URL: http://localhost:{port}"; // 默认消息
-        string? welcomeMessage = null;
-        
-        if (File.Exists(localizationFile))
-        {
-            try
-            {
-                var lines = File.ReadAllLines(localizationFile, Encoding.UTF8);
-                string currentSection = "";
-                
-                foreach (var rawLine in lines)
-                {
-                    var line = rawLine.Trim();
-                    if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith(";"))
-                        continue;
-                    
-                    if (line.StartsWith("[") && line.EndsWith("]"))
-                    {
-                        currentSection = line.Substring(1, line.Length - 2).Trim();
-                        continue;
-                    }
-                    
-                    var idx = line.IndexOf('=');
-                    if (idx <= 0) continue;
-                    
-                    var key = line.Substring(0, idx).Trim();
-                    var value = line.Substring(idx + 1).Trim();
-                    
-                    // 解析换行符（支持\n作为换行符）
-                    value = value.Replace("\\n", "\n");
-                    
-                    if (currentSection == "Console" || currentSection == "Messages")
-                    {
-                        if (key == "AppRunningMessage")
-                            runningMessage = value.Replace("{port}", port.ToString());
-                        else if (key == "BrowserOpenedMessage")
-                            browserOpenedMessage = value.Replace("{url}", $"http://localhost:{port}");
-                        else if (key == "WelcomeMessage")
-                            welcomeMessage = value;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"读取本地化文件失败: {ex.Message}");
-                Logger.LogError($"Failed to read localization file: {ex.Message}");
-            }
-        }
+        // 从本地化文件读取消息（使用预加载的消息，避免重复读取）
+        string finalRunningMessage = runningMessage.Replace("{port}", port.ToString());
+        string finalBrowserOpenedMessage = browserOpenedMessage.Replace("{url}", $"http://localhost:{port}");
         
         // 先输出欢迎消息（如果存在）
         if (!string.IsNullOrEmpty(welcomeMessage))
@@ -409,7 +431,7 @@ lifetime.ApplicationStarted.Register(() =>
             Logger.LogInfo("Welcome message displayed");
         }
         
-        Console.WriteLine(runningMessage);
+        Console.WriteLine(finalRunningMessage);
         Logger.LogInfo($"Application running on localhost:{port}");
 
         List<string> urlsToOpen = new List<string>();
@@ -451,7 +473,7 @@ lifetime.ApplicationStarted.Register(() =>
                 FileName = url,
                 UseShellExecute = true
             });
-            Console.WriteLine(browserOpenedMessage);
+            Console.WriteLine(finalBrowserOpenedMessage);
             Logger.LogInfo($"Browser opened with URL: {url}");
         }
     }

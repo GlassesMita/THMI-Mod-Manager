@@ -129,7 +129,10 @@ namespace THMI_Mod_Manager.Pages
             markdown = markdown.Replace("@versionCode", versionCode);
             
             // Replace @version with app version from assembly
-            var assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
+            var assemblyVersion = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+                ?? "0.0.0";
             markdown = markdown.Replace("@version", assemblyVersion);
             
             // Replace @appName with localized app name

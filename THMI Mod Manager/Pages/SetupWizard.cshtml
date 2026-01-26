@@ -9,74 +9,491 @@
 }
 
 <style>
+    :root {
+        --color-progressive: #0068bf;
+        --color-progressive--hover: #0058a3;
+        --color-progressive--active: #00488a;
+        --color-progressive--focus: #0068bf;
+        --color-destructive: #d11;
+        --color-destructive--hover: #c00;
+        --color-destructive--active: #a00;
+        --color-base: #202122;
+        --color-base--emphasized: #404244;
+        --color-base--subtle: #72777d;
+        --color-surface: #ffffff;
+        --color-surface--raised: #ffffff;
+        --color-surface--raised--secondary: #f8f9fa;
+        --color-background: #f6f6f6;
+        --color-background--hover: #e8e8e8;
+        --color-interactive: #a2a9b1;
+        --color-interactive--hover: #c8c8c8;
+        --color-interactive--active: #a2a9b1;
+        --color-success: #14866d;
+        --color-success--hover: #169b6d;
+        --color-warning: #ac6600;
+        --color-link: #0068bf;
+        --color-link--hover: #00488a;
+        --color-link--active: #002855;
+        --border-color: #a2a9b1;
+        --border-color--weak: #c8c8c8;
+        --background-color-success-subtle: #e6f7ee;
+        --background-color-warning-subtle: #fffae6;
+        --background-color-destructive-subtle: #ffe6e6;
+        --box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Lato, sans-serif;
+        --border-radius: 2px;
+        --border-radius--medium: 4px;
+        --spacing: 8px;
+    }
+
+    .mw-body {
+        background-color: var(--color-surface);
+        color: var(--color-base);
+        font-family: var(--font-family-sans);
+        line-height: 1.6;
+        max-width: 50rem;
+        margin: 0 auto;
+        padding: 1.5rem 2rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius--medium);
+        box-shadow: var(--box-shadow);
+    }
+
+    .mw-body h1,
+    .mw-body h2 {
+        font-family: "Linux Libertine", "Georgia", "Times", "Source Serif Pro", serif;
+        font-weight: normal;
+        margin-top: 0;
+        margin-bottom: 0.5em;
+        line-height: 1.2;
+    }
+
+    .mw-body h1 {
+        font-size: 1.8em;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.25em;
+    }
+
+    .mw-body h2 {
+        font-size: 1.5em;
+        margin-top: 1em;
+    }
+
+    .mw-body p {
+        margin: 0.5em 0 1em 0;
+    }
+
     .setup-wizard-container {
         min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--color-background);
         padding: 2rem;
+        box-sizing: border-box;
     }
+
     .setup-wizard-card {
-        max-width: 500px;
         width: 100%;
-        border-radius: 15px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        max-width: 50rem;
+        background: var(--color-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius--medium);
+        box-shadow: var(--box-shadow);
     }
+
     .wizard-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 15px 15px 0 0;
-        padding: 2rem;
+        background: linear-gradient(to bottom, #f8f9fa 0%, #eaecf0 100%);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem 2rem;
+        border-radius: var(--border-radius--medium) var(--border-radius--medium) 0 0;
+    }
+
+    .wizard-header h1,
+    .wizard-header h2 {
+        font-family: "Linux Libertine", "Georgia", "Times", "Source Serif Pro", serif;
+        font-weight: normal;
+        margin: 0 0 0.25em 0;
+        color: var(--color-base);
+        font-size: 1.5em;
+    }
+
+    .wizard-header p {
+        margin: 0;
+        color: var(--color-base--subtle);
+        font-size: 0.9em;
+    }
+
+    .wizard-body {
+        padding: 1.5rem 2rem;
+    }
+
+    .wizard-body label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: var(--color-base);
+        font-size: 0.95em;
+    }
+
+    .mw-input,
+    .mw-select {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 0.5rem;
+        font-size: 0.9em;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--color-surface);
+        color: var(--color-base);
+        font-family: inherit;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .mw-input:focus,
+    .mw-select:focus {
+        border-color: var(--color-progressive--focus);
+        box-shadow: 0 0 0 1px var(--color-progressive--focus);
+        outline: none;
+    }
+
+    .mw-select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2372777d' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        padding-right: 2rem;
+    }
+
+    .mw-button {
+        display: inline-block;
+        min-height: 2.5rem;
+        padding: 0.5rem 1.25rem;
+        margin: 0;
+        font-family: inherit;
+        font-size: 0.9em;
+        font-weight: bold;
+        line-height: 1.4;
+        text-align: center;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--color-surface);
+        color: var(--color-base);
+        transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+    }
+
+    .mw-button:hover {
+        background-color: var(--color-background--hover);
+        border-color: var(--color-interactive--hover);
+    }
+
+    .mw-button:active {
+        background-color: var(--color-interactive--active);
+        border-color: var(--color-interactive--active);
+    }
+
+    .mw-button:focus {
+        border-color: var(--color-progressive--focus);
+        box-shadow: 0 0 0 1px var(--color-progressive--focus);
+        outline: none;
+    }
+
+    .mw-button--primary {
+        background-color: var(--color-progressive);
+        border-color: var(--color-progressive);
+        color: #ffffff;
+    }
+
+    .mw-button--primary:hover {
+        background-color: var(--color-progressive--hover);
+        border-color: var(--color-progressive--hover);
+        color: #ffffff;
+    }
+
+    .mw-button--primary:active {
+        background-color: var(--color-progressive--active);
+        border-color: var(--color-progressive--active);
+        color: #ffffff;
+    }
+
+    .mw-button--progressive {
+        background-color: var(--color-progressive);
+        border-color: var(--color-progressive);
+        color: #ffffff;
+    }
+
+    .mw-button--progressive:hover {
+        background-color: var(--color-progressive--hover);
+        border-color: var(--color-progressive--hover);
+        color: #ffffff;
+    }
+
+    .mw-button--destructive {
+        background-color: var(--color-destructive);
+        border-color: var(--color-destructive);
+        color: #ffffff;
+    }
+
+    .mw-button--destructive:hover {
+        background-color: var(--color-destructive--hover);
+        border-color: var(--color-destructive--hover);
+        color: #ffffff;
+    }
+
+    .mw-button--link {
+        background: none;
+        border: none;
+        color: var(--color-link);
+        text-decoration: underline;
+        min-height: auto;
+        padding: 0;
+        font-weight: normal;
+    }
+
+    .mw-button--link:hover {
+        color: var(--color-link--hover);
+        background: none;
+        text-decoration: none;
+    }
+
+    .mw-form-filetyped {
+        margin-bottom: 1rem;
+    }
+
+    .mw-successbox {
+        padding: 0.75rem 1rem;
+        margin: 1rem 0;
+        border-radius: var(--border-radius);
+        background-color: var(--background-color-success-subtle);
+        border: 1px solid var(--color-success);
+        color: var(--color-success);
+    }
+
+    .mw-warningbox {
+        padding: 0.75rem 1rem;
+        margin: 1rem 0;
+        border-radius: var(--border-radius);
+        background-color: var(--background-color-warning-subtle);
+        border: 1px solid var(--color-warning);
+        color: var(--color-warning);
+    }
+
+    .mw-errorbox {
+        padding: 0.75rem 1rem;
+        margin: 1rem 0;
+        border-radius: var(--border-radius);
+        background-color: var(--background-color-destructive-subtle);
+        border: 1px solid var(--color-destructive);
+        color: var(--color-destructive);
+    }
+
+    .mw-infobox {
+        padding: 0.75rem 1rem;
+        margin: 1rem 0;
+        border-radius: var(--border-radius);
+        background-color: var(--color-surface--raised--secondary);
+        border: 1px solid var(--border-color);
+        color: var(--color-base);
+    }
+
+    .oo-ui-icon-check {
+        color: var(--color-success);
+    }
+
+    .oo-ui-icon-check::before {
+        content: "";
+        display: inline-block;
+        width: 48px;
+        height: 48px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%2314866d' d='M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm-1.25 14.543l-4.5-4.364 1.857-1.858 2.643 2.506 6.143-6.143 1.857 1.857-8 8z'/%3E%3C/svg%3E");
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
+
+    .mw-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .mw-grid--2-columns {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .mw-footer {
+        padding: 1rem 2rem;
+        border-top: 1px solid var(--border-color);
+        background-color: var(--color-surface--raised--secondary);
+        border-radius: 0 0 var(--border-radius--medium) var(--border-radius--medium);
+    }
+
+    .mw-footer a {
+        color: var(--color-link);
+    }
+
+    .text-center {
         text-align: center;
     }
-    .wizard-body {
-        padding: 2rem;
+
+    .mb-0 {
+        margin-bottom: 0 !important;
+    }
+
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
+
+    .mt-4 {
+        margin-top: 1.5rem !important;
+    }
+
+    .py-4 {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+
+    .text-muted {
+        color: var(--color-base--subtle);
+    }
+
+    .text-decoration-none {
+        text-decoration: none;
+    }
+
+    .small {
+        font-size: 0.85em;
+    }
+
+    .text-success {
+        color: var(--color-success);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    .button-group .mw-button {
+        flex-shrink: 0;
+    }
+
+    @@media (max-width: 768px) {
+        .setup-wizard-container {
+            padding: 1rem;
+        }
+
+        .mw-body {
+            padding: 1rem;
+        }
+
+        .wizard-header {
+            padding: 1rem;
+        }
+
+        .wizard-body {
+            padding: 1rem;
+        }
+
+        .button-group {
+            flex-direction: column;
+        }
+
+        .button-group .mw-button {
+            width: 100%;
+        }
     }
 </style>
 
 <div class="setup-wizard-container">
-    <div class="card setup-wizard-card">
+    <div class="setup-wizard-card">
         <div class="wizard-header">
-            <h2>@Model.GetLocalizedForLanguage("SetupWizard:Welcome", Model.SelectedLanguage, "欢迎使用")</h2>
-            <p class="mb-0">@Model.GetLocalizedForLanguage("SetupWizard:Subtitle", Model.SelectedLanguage, "THMI Mod Manager 初始设置")</p>
+            @if (Model.IsReConfiguration)
+            {
+                <h1>@Model.GetLocalizedForLanguage("SetupWizard:ReconfigureTitle", Model.SelectedLanguage, "重新配置 / Re-configure")</h1>
+                <p class="mb-0">@Model.GetLocalizedForLanguage("SetupWizard:ReconfigureSubtitle", Model.SelectedLanguage, "调整您的设置")</p>
+            }
+            else if (Model.IsConfigured)
+            {
+                <h1>@Model.GetLocalizedForLanguage("SetupWizard:AlreadyConfigured", Model.SelectedLanguage, "您已无需配置")</h1>
+                <p class="mb-0">@Model.GetLocalizedForLanguage("SetupWizard:AlreadyConfiguredSubtitle", Model.SelectedLanguage, "系统已设置完成")</p>
+            }
+            else
+            {
+                <h1>@Model.GetLocalizedForLanguage("SetupWizard:Welcome", Model.SelectedLanguage, "欢迎使用")</h1>
+                <p class="mb-0">@Model.GetLocalizedForLanguage("SetupWizard:Subtitle", Model.SelectedLanguage, "THMI Mod Manager 初始设置")</p>
+            }
         </div>
         <div class="wizard-body">
-            @if (!string.IsNullOrEmpty(Model.Message))
+            @if (Model.IsConfigured && !Model.IsReConfiguration)
             {
-                <div class="alert alert-@Model.MessageType alert-dismissible fade show" role="alert">
-                    @Model.Message
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-
-            <form method="post" id="setupWizardForm">
-                <div class="mb-4">
-                    <label for="languageSelect" class="form-label fw-bold">@Model.GetLocalizedForLanguage("SetupWizard:LanguageLabel", Model.SelectedLanguage, "选择语言 / Select Language")</label>
-                    <select id="languageSelect" name="language" class="form-select" onchange="handleLanguageChange()">
-                        @foreach (var loc in locales)
-                        {
-                            var fileName = loc.FileName;
-                            <option value="@fileName" selected="@(fileName == Model.SelectedLanguage ? "selected" : null)">@loc.FriendlyName</option>
-                        }
-                    </select>
-                    <input type="hidden" asp-for="SelectedLanguage" id="SelectedLanguage" />
-                </div>
-
-                <div class="mb-4">
-                    <label for="themeColor" class="form-label fw-bold">@Model.GetLocalizedForLanguage("SetupWizard:ThemeLabel", Model.SelectedLanguage, "选择主题色 / Select Theme Color")</label>
-                    <div class="input-group">
-                        <input type="color" id="themeColor" name="themeColor" class="form-control form-control-color" value="@Model.ThemeColor" title="Choose your theme color" />
-                        <input type="text" id="themeColorText" name="themeColorText" class="form-control" value="@Model.ThemeColor" />
+                <div class="text-center py-4">
+                    <div class="mb-4 oo-ui-icon-check" style="height: 48px;"></div>
+                    <p class="text-muted mb-4">@Model.GetLocalizedForLanguage("SetupWizard:ConfigurationComplete", Model.SelectedLanguage, "所有设置已完成，您现在可以开始使用 THMI Mod Manager")</p>
+                    <div class="button-group" style="justify-content: center;">
+                        <a href="/" class="mw-button mw-button--primary">@Model.GetLocalizedForLanguage("SetupWizard:BackToHome", Model.SelectedLanguage, "← 返回首页")</a>
                     </div>
                 </div>
-
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        @Model.GetLocalizedForLanguage("SetupWizard:CompleteButton", Model.SelectedLanguage, "完成设置 / Complete Setup")
-                    </button>
+                <div class="text-center mt-4">
+                    <a href="?reconfigure=true" class="mw-button mw-button--link text-decoration-none small">
+                        @Model.GetLocalizedForLanguage("SetupWizard:WantToReconfigure", Model.SelectedLanguage, "想要更改设置？重新配置 →")
+                    </a>
                 </div>
-            </form>
+            }
+            else
+            {
+                @if (!string.IsNullOrEmpty(Model.Message) && !Model.IsReConfiguration)
+                {
+                    <div class="mw-@Model.MessageType">
+                        @Model.Message
+                    </div>
+                }
+
+                <form method="post" id="setupWizardForm">
+                    <input type="hidden" asp-for="IsReConfiguration" value="@Model.IsReConfiguration.ToString().ToLower()" />
+
+                    <div class="form-group">
+                        <label for="languageSelect" class="mw-label">@Model.GetLocalizedForLanguage("SetupWizard:LanguageLabel", Model.SelectedLanguage, "选择语言 / Select Language")</label>
+                        <select id="languageSelect" name="language" class="mw-select" onchange="handleLanguageChange()">
+                            @foreach (var loc in locales)
+                            {
+                                var fileName = loc.FileName;
+                                <option value="@fileName" selected="@(fileName == Model.SelectedLanguage ? "selected" : null)">@loc.FriendlyName</option>
+                            }
+                        </select>
+                        <input type="hidden" asp-for="SelectedLanguage" id="SelectedLanguage" />
+                    </div>
+
+                    <input type="hidden" id="themeColor" name="themeColor" value="@Model.ThemeColor" />
+
+                    <div class="button-group">
+                        <button type="submit" class="mw-button mw-button--progressive">
+                            @if (Model.IsReConfiguration)
+                            {
+                                @Model.GetLocalizedForLanguage("SetupWizard:SaveButton", Model.SelectedLanguage, "保存设置 / Save Settings")
+                            }
+                            else
+                            {
+                                @Model.GetLocalizedForLanguage("SetupWizard:CompleteButton", Model.SelectedLanguage, "完成设置 / Complete Setup")
+                            }
+                        </button>
+                        @if (Model.IsReConfiguration)
+                        {
+                            <a href="/" class="mw-button">@Model.GetLocalizedForLanguage("SetupWizard:BackToApp", Model.SelectedLanguage, "返回应用 / Back to App")</a>
+                        }
+                    </div>
+                </form>
+            }
         </div>
     </div>
 </div>
@@ -87,29 +504,15 @@
         const selectedLanguage = languageSelect.value;
         document.getElementById('SelectedLanguage').value = selectedLanguage;
         
-        location.href = `?language=${encodeURIComponent(selectedLanguage)}`;
+        const urlParams = new URLSearchParams(window.location.search);
+        const reconfigure = urlParams.get('reconfigure');
+        let url = `?language=${encodeURIComponent(selectedLanguage)}`;
+        if (reconfigure === 'true') {
+            url += '&reconfigure=true';
+        }
+        location.href = url;
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        const themeColor = document.getElementById('themeColor');
-        const themeColorText = document.getElementById('themeColorText');
-
-        themeColor.addEventListener('input', function() {
-            themeColorText.value = this.value;
-        });
-
-        themeColorText.addEventListener('input', function() {
-            if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
-                themeColor.value = this.value;
-            }
-        });
-
-        themeColorText.addEventListener('change', function() {
-            if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
-                themeColor.value = this.value;
-            } else {
-                this.value = themeColor.value;
-            }
-        });
     });
 </script>
