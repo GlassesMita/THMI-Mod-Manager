@@ -1,6 +1,6 @@
 @model THMI_Mod_Manager.ViewComponents.LaunchButtonViewModel
 
-<form id="launcherForm" style="display: inline; width: 100%;" 
+<form id="launcherForm" style="display: block; width: 100%;" 
       onsubmit="handleLauncherSubmit(event)">
     <button type="submit" class="oojs-button oojs-button-primary oojs-launch-button" id="launchButton">
         <i class="bi @Model.ButtonIcon" style="margin-right: 0.5rem;"></i> 
@@ -9,40 +9,40 @@
 </form>
 
 <style>
-.oojs-launch-button.oojs-button-safe {
+#launcherForm .oojs-launch-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start !important;
+    padding: 0.5rem 0.75rem !important;
+    box-sizing: border-box;
+    font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+}
+
+#launcherForm .oojs-launch-button.oojs-button-safe {
     background-color: var(--color-success, #14866d) !important;
     border-color: var(--color-success, #14866d) !important;
     color: #ffffff !important;
 }
 
-.oojs-launch-button.oojs-button-safe:hover,
-.oojs-launch-button.oojs-button-safe:focus {
+#launcherForm .oojs-launch-button.oojs-button-safe:hover,
+#launcherForm .oojs-launch-button.oojs-button-safe:focus {
     background-color: var(--color-success--hover, #179c82) !important;
     border-color: var(--color-success--hover, #179c82) !important;
     color: #ffffff !important;
 }
 
-.oojs-launch-button.oojs-button-destructive {
+#launcherForm .oojs-launch-button.oojs-button-destructive {
     background-color: var(--color-destructive, #d73333) !important;
     border-color: var(--color-destructive, #d73333) !important;
     color: #ffffff !important;
 }
 
-.oojs-launch-button.oojs-button-destructive:hover,
-.oojs-launch-button.oojs-button-destructive:focus {
+#launcherForm .oojs-launch-button.oojs-button-destructive:hover,
+#launcherForm .oojs-launch-button.oojs-button-destructive:focus {
     background-color: var(--color-destructive--hover, #e03535) !important;
     border-color: var(--color-destructive--hover, #e03535) !important;
     color: #ffffff !important;
-}
-
-.oojs-launch-button {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 0.5rem 0.75rem !important;
-    box-sizing: border-box;
-    font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
 }
 </style>
 

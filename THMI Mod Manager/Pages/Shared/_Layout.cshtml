@@ -149,7 +149,7 @@
             border-bottom: 1px solid #eaecf0;
             display: flex;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: space-between;
             padding: 0 24px;
             box-sizing: border-box;
             z-index: 100;
@@ -161,6 +161,24 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             letter-spacing: 0.02em;
             white-space: nowrap;
+        }
+        
+        .session-time-display {
+            font-size: 0.9rem;
+            color: #54595d;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            cursor: default;
+        }
+        
+        .session-time-display .time-value {
+            text-decoration: none;
+        }
+        
+        .session-time-display .time-value.completed {
+            text-decoration: line-through;
+            color: #72777d;
         }
         
         .oojs-button-danger {
@@ -306,6 +324,10 @@
             
             <!-- Time bar at top of main content -->
             <div id="topTimeBar" class="top-time-bar">
+                <div id="sessionTimeDisplay" class="session-time-display">
+                    <span>@AppConfig.GetLocalized("Session:Time", "Session Time"): </span>
+                    <span id="sessionTimeValue" class="time-value">00:00:00</span>
+                </div>
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <button id="exitButton" class="oojs-button oojs-button-danger" onclick="showExitConfirmation()">
                         <i class="bi bi-box-arrow-right"></i>
@@ -905,6 +927,111 @@
         });
         
         window.dateTimeSettings = dateTimeSettings;
+        
+        // 会话时长管理
+        const sessionTimeManager = {
+            interval: null,
+            updateInterval: 1000,
+            currentState: {
+                isRunning: false,
+                formattedTime: "00:00:00",
+                totalSeconds: 0
+            },
+            startTime: null,
+            accumulatedSeconds: 0,
+            
+            async init() {
+                await this.updateState();
+                this.startPolling();
+            },
+            
+            async updateState() {
+                try {
+                    const response = await fetch('/api/launcher/session-time');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const previousState = this.currentState.isRunning;
+                        this.currentState = data;
+                        
+                        // 如果游戏刚开始运行，记录开始时间
+                        if (data.isRunning && !previousState) {
+                            this.startTime = Date.now();
+                            this.accumulatedSeconds = data.totalSeconds || 0;
+                        }
+                        
+                        // 更新UI
+                        this.updateDisplay();
+                    }
+                } catch (error) {
+                    console.error('Failed to update session time:', error);
+                }
+            },
+            
+            updateDisplay() {
+                const timeElement = document.getElementById('sessionTimeValue');
+                if (!timeElement) return;
+                
+                let displayTime = this.currentState.formattedTime;
+                
+                // 如果正在运行，实时更新显示
+                if (this.currentState.isRunning && this.startTime) {
+                    const elapsedSeconds = this.accumulatedSeconds + (Date.now() - this.startTime) / 1000;
+                    displayTime = this.formatTime(elapsedSeconds);
+                }
+                
+                timeElement.textContent = displayTime;
+                
+                // 根据状态添加/移除删除线
+                if (this.currentState.isRunning) {
+                    timeElement.classList.remove('completed');
+                } else {
+                    timeElement.classList.add('completed');
+                }
+            },
+            
+            formatTime(totalSeconds) {
+                const seconds = Math.floor(totalSeconds);
+                const days = Math.floor(seconds / 86400);
+                const hours = Math.floor((seconds % 86400) / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                
+                if (days > 0) {
+                    return `${days}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                } else {
+                    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }
+            },
+            
+            startPolling() {
+                // 立即更新一次
+                this.updateDisplay();
+                
+                // 每秒更新显示
+                this.interval = setInterval(() => {
+                    if (this.currentState.isRunning) {
+                        this.updateDisplay();
+                    }
+                }, this.updateInterval);
+                
+                // 每5秒从服务器同步状态（检测游戏开始/结束）
+                setInterval(() => {
+                    this.updateState();
+                }, 5000);
+            },
+            
+            stop() {
+                if (this.interval) {
+                    clearInterval(this.interval);
+                    this.interval = null;
+                }
+            }
+        };
+        
+        // 页面加载完成后初始化会话时长管理
+        document.addEventListener('DOMContentLoaded', function() {
+            sessionTimeManager.init();
+        });
         
         function showExitConfirmation() {
             const exitText = document.getElementById('localizedExitConfirm')?.value || 'Are you sure you want to exit?';

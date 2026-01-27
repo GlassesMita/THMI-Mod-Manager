@@ -303,6 +303,12 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.UpdateCheckService>();
 builder.Services.AddHttpClient<THMI_Mod_Manager.UpdateModule>();
 builder.Services.AddSingleton<THMI_Mod_Manager.UpdateModule>();
 
+// Register SessionTimeService
+builder.Services.AddSingleton<THMI_Mod_Manager.Services.SessionTimeService>();
+
+// Register SessionTimeMonitor background service
+builder.Services.AddHostedService<THMI_Mod_Manager.Services.SessionTimeMonitor>();
+
 // Register WhatsNewController HttpClient
 builder.Services.AddHttpClient<THMI_Mod_Manager.Controllers.WhatsNewController>();
 

@@ -11,12 +11,14 @@ namespace THMI_Mod_Manager.Controllers
         private readonly ILogger<ModsController> _logger;
         private readonly ModService _modService;
         private readonly AppConfigManager _appConfig;
+        private readonly SessionTimeService _sessionTimeService;
 
-        public ModsController(ILogger<ModsController> logger, ModService modService, AppConfigManager appConfig)
+        public ModsController(ILogger<ModsController> logger, ModService modService, AppConfigManager appConfig, SessionTimeService sessionTimeService)
         {
             _logger = logger;
             _modService = modService;
             _appConfig = appConfig;
+            _sessionTimeService = sessionTimeService;
         }
 
         [HttpGet]
@@ -137,13 +139,12 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                // Call the launcher controller's method to check game status
                 var launcherLogger = _logger as ILogger<LauncherController>;
                 if (launcherLogger == null)
                 {
                     return StatusCode(500, new { success = false, message = "Failed to create launcher logger" });
                 }
-                var launcherController = new LauncherController(launcherLogger, _appConfig);
+                var launcherController = new LauncherController(launcherLogger, _appConfig, _sessionTimeService);
                 var gameStatus = launcherController.GetStatus();
                 return gameStatus;
             }

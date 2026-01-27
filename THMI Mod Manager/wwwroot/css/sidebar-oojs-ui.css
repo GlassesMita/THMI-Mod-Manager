@@ -232,6 +232,8 @@
     padding: var(--oojs-spacing-vertical) var(--oojs-spacing-horizontal);
     border-top: var(--oojs-border-width) solid var(--oojs-color-border--light);
     background-color: var(--oojs-color-surface);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Status Indicators */
@@ -243,6 +245,8 @@
     font-size: var(--oojs-font-size-small);
     color: var(--oojs-color-text--muted);
     margin-bottom: var(--oojs-spacing-vertical);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .oojs-ui-status-icon {

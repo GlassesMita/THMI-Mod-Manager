@@ -14,6 +14,7 @@ namespace THMI_Mod_Manager.Controllers
     {
         private readonly ILogger<LauncherController> _logger;
         private readonly AppConfigManager _appConfig;
+        private readonly SessionTimeService _sessionTimeService;
         private const string STEAM_APP_ID = "1584090";
         private const string PROCESS_NAME = "Touhou Mystia Izakaya";
         private static readonly string[] GAME_PROCESS_NAMES = new[] 
@@ -64,10 +65,11 @@ namespace THMI_Mod_Manager.Controllers
         private static extern int geteuid();
 #endif
 
-        public LauncherController(ILogger<LauncherController> logger, AppConfigManager appConfig)
+        public LauncherController(ILogger<LauncherController> logger, AppConfigManager appConfig, SessionTimeService sessionTimeService)
         {
             _logger = logger;
             _appConfig = appConfig;
+            _sessionTimeService = sessionTimeService;
             
             // 启动时检查权限（已禁用以防止权限问题）
             // TryElevatePermissions();
@@ -85,6 +87,9 @@ namespace THMI_Mod_Manager.Controllers
                     _logger.LogWarning("Game process is already running");
                     return BadRequest("Process is already running");
                 }
+
+                _sessionTimeService.StartSession();
+                _logger.LogInformation("Session time tracking started");
 
                 var launchModeValue = _appConfig.Get("[Game]LaunchMode", "steam_launch");
                 string launchMode = launchModeValue ?? "steam_launch";
@@ -259,6 +264,9 @@ namespace THMI_Mod_Manager.Controllers
                     return BadRequest("Process is not running");
                 }
 
+                _sessionTimeService.StopSession();
+                _logger.LogInformation("Session time tracking stopped");
+
                 var processes = Process.GetProcessesByName(PROCESS_NAME);
                 int stoppedCount = 0;
 
@@ -304,6 +312,24 @@ namespace THMI_Mod_Manager.Controllers
         {
             bool isRunning = IsSteamRunning();
             return Ok(new { isRunning });
+        }
+
+        [HttpGet("session-time")]
+        public IActionResult GetSessionTime()
+        {
+            var state = _sessionTimeService.GetState();
+            return Ok(new { 
+                isRunning = state.IsRunning, 
+                formattedTime = state.FormattedTime,
+                totalSeconds = state.TotalSeconds 
+            });
+        }
+
+        [HttpPost("session-time/reset")]
+        public IActionResult ResetSessionTime()
+        {
+            _sessionTimeService.ResetSession();
+            return Ok(new { success = true, message = "Session time reset" });
         }
 
         [HttpGet("permissions")]
