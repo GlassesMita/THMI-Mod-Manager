@@ -49,9 +49,15 @@
                     <option value="yyyy-mm-dd" selected="@(Model.DateFormat == "yyyy-mm-dd")">@AppConfig.GetLocalized("Settings:DateFormatYMD", "YYYY-MM-DD")</option>
                     <option value="dd-mm-yyyy" selected="@(Model.DateFormat == "dd-mm-yyyy")">@AppConfig.GetLocalized("Settings:DateFormatDMY", "DD-MM-YYYY")</option>
                     <option value="mm-dd-yyyy" selected="@(Model.DateFormat == "mm-dd-yyyy")">@AppConfig.GetLocalized("Settings:DateFormatMDY", "MM-DD-YYYY")</option>
-                    <option value="yyyy/mm/dd" selected="@(Model.DateFormat == "yyyy/mm/dd")">@AppConfig.GetLocalized("Settings:DateFormatYSlashM", "YYYY/MM/DD")</option>
                     <option value="month-dd" selected="@(Model.DateFormat == "month-dd")">@AppConfig.GetLocalized("Settings:DateFormatMonthD", "Mon DD")</option>
                     <option value="dd-month" selected="@(Model.DateFormat == "dd-month")">@AppConfig.GetLocalized("Settings:DateFormatDM", "DD Mon")</option>
+                </select>
+            </div>
+            <div class="oojs-form-group" style="margin-top: var(--spacing-md);">
+                <label for="dateSeparator" class="oojs-label">@AppConfig.GetLocalized("Settings:DateSeparatorLabel", "Date Separator")</label>
+                <select id="dateSeparator" name="dateSeparator" class="oojs-select" onchange="saveDateTimeSettings()">
+                    <option value="-" selected="@(Model.DateSeparator == "-")">@AppConfig.GetLocalized("Settings:DateSeparatorDash", "- (Dash)")</option>
+                    <option value="/" selected="@(Model.DateSeparator == "/")">@AppConfig.GetLocalized("Settings:DateSeparatorSlash", "/ (Slash)")</option>
                 </select>
             </div>
         </div>

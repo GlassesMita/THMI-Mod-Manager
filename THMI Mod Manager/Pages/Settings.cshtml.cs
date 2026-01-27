@@ -92,6 +92,7 @@ namespace THMI_Mod_Manager.Pages
         public bool ShowSeconds { get; set; } = false; // 是否显示秒
         public bool Use12Hour { get; set; } = false; // 是否使用12小时制
         public string DateFormat { get; set; } = "yyyy-mm-dd"; // 日期格式
+        public string DateSeparator { get; set; } = "-"; // 日期分隔符
         
         // Mod信息属性
         public string ModName { get; set; } = "THMI Mod Manager";
@@ -161,6 +162,9 @@ namespace THMI_Mod_Manager.Pages
                 var dateFormatValue = _appConfig.Get("[DateTime]DateFormat", "yyyy-mm-dd");
                 DateFormat = dateFormatValue ?? "yyyy-mm-dd";
                 
+                var dateSeparatorValue = _appConfig.Get("[DateTime]DateSeparator", "-");
+                DateSeparator = dateSeparatorValue ?? "-";
+                
                 // Load program version information from AppConfig
                 try
                 {
@@ -177,7 +181,7 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications, bool showSeconds, bool use12Hour, string dateFormat)
+        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications, bool showSeconds, bool use12Hour, string dateFormat, string dateSeparator)
         {
             if (string.IsNullOrEmpty(language))
             {
@@ -237,6 +241,10 @@ namespace THMI_Mod_Manager.Pages
                 if (!string.IsNullOrEmpty(dateFormat))
                 {
                     _appConfig.Set("[DateTime]DateFormat", dateFormat);
+                }
+                if (!string.IsNullOrEmpty(dateSeparator))
+                {
+                    _appConfig.Set("[DateTime]DateSeparator", dateSeparator);
                 }
 
                 // Save custom cursor setting

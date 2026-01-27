@@ -15,9 +15,11 @@
     var dtShowSeconds = AppConfig.Get("[DateTime]ShowSeconds", "false");
     var dtUse12Hour = AppConfig.Get("[DateTime]Use12Hour", "false");
     var dtDateFormat = AppConfig.Get("[DateTime]DateFormat", "yyyy-mm-dd");
+    var dtDateSeparator = AppConfig.Get("[DateTime]DateSeparator", "-");
     var showSecondsBool = dtShowSeconds?.ToLower() == "true" ? "True" : "False";
     var use12HourBool = dtUse12Hour?.ToLower() == "true" ? "True" : "False";
     var dateFormatStr = dtDateFormat ?? "yyyy-mm-dd";
+    var dateSeparatorStr = dtDateSeparator ?? "-";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -216,9 +218,7 @@
         }
     </style>
 </head>
-<body data-show-seconds="@showSecondsBool"
-      data-use-12hour="@use12HourBool"
-      data-date-format="@dateFormatStr">
+<body data-show-seconds="@showSecondsBool" data-use-12hour="@use12HourBool" data-date-format="@dateFormatStr" data-date-separator="@dateSeparatorStr">
     <!-- Top navbar for small screens: shows brand and toggle for offcanvas sidebar -->
     <nav class="navbar navbar-light bg-white border-bottom d-md-none">
         <div class="container-fluid">
@@ -853,13 +853,15 @@
         const serverDateTimeSettings = {
             showSeconds: document.body.getAttribute('data-show-seconds') === 'True',
             use12Hour: document.body.getAttribute('data-use-12hour') === 'True',
-            dateFormat: document.body.getAttribute('data-date-format') || 'yyyy-mm-dd'
+            dateFormat: document.body.getAttribute('data-date-format') || 'yyyy-mm-dd',
+            dateSeparator: document.body.getAttribute('data-date-separator') || '-'
         };
         
         const dateTimeSettings = {
             showSeconds: localStorage.getItem('datetimeShowSeconds') === 'true' ? true : (serverDateTimeSettings.showSeconds),
             use12Hour: localStorage.getItem('datetimeUse12Hour') === 'true' ? true : (serverDateTimeSettings.use12Hour),
-            dateFormat: localStorage.getItem('datetimeDateFormat') || serverDateTimeSettings.dateFormat
+            dateFormat: localStorage.getItem('datetimeDateFormat') || serverDateTimeSettings.dateFormat,
+            dateSeparator: localStorage.getItem('datetimeDateSeparator') || serverDateTimeSettings.dateSeparator
         };
         
         window.dateTimeSettings = dateTimeSettings;
@@ -881,7 +883,7 @@
             return date.toLocaleTimeString('en-US', timeOptions);
         }
         
-        function formatDate(date, format) {
+        function formatDate(date, format, separator) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
@@ -890,24 +892,24 @@
             
             switch (format) {
                 case 'dd-mm-yyyy':
-                    return `${day}-${month}-${year}`;
+                    return `${day}${separator}${month}${separator}${year}`;
                 case 'mm-dd-yyyy':
-                    return `${month}-${day}-${year}`;
-                case 'yyyy/mm/mm/dd':
-                    return `${year}/${month}/${day}`;
+                    return `${month}${separator}${day}${separator}${year}`;
+                case 'yyyy/mm/dd':
+                    return `${year}${separator}${month}${separator}${day}`;
                 case 'month-dd':
                     return `${displayMonth} ${displayDay}`;
                 case 'dd-month':
                     return `${displayDay} ${displayMonth}`;
                 default: // yyyy-mm-dd
-                    return `${year}-${month}-${day}`;
+                    return `${year}${separator}${month}${separator}${day}`;
             }
         }
         
         function updateTimeDisplay() {
             const now = new Date();
             const timeStr = formatTime(now);
-            const dateStr = formatDate(now, dateTimeSettings.dateFormat);
+            const dateStr = formatDate(now, dateTimeSettings.dateFormat, dateTimeSettings.dateSeparator);
             const fullStr = `${dateStr}  ${timeStr}`;
             
             const topTimeDisplay = document.getElementById('topTimeDisplay');
