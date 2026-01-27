@@ -1,48 +1,85 @@
 @model THMI_Mod_Manager.ViewComponents.LaunchButtonViewModel
 
-<form id="launcherForm" style="display: block; width: 100%;" 
-      onsubmit="handleLauncherSubmit(event)">
-    <button type="submit" class="oojs-button oojs-button-primary oojs-launch-button" id="launchButton">
+<div style="display: block; width: 100%;">
+    <button type="button" class="oojs-button oojs-button-primary oojs-launch-button" id="launchButton" onclick="handleLauncherClick()">
         <i class="bi @Model.ButtonIcon" style="margin-right: 0.5rem;"></i> 
-        <span id="buttonText">@Model.ButtonText</span>
+        <span id="buttonText" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: inline-block;">@Model.ButtonText</span>
     </button>
-</form>
+</div>
 
 <style>
-#launcherForm .oojs-launch-button {
+.oojs-launch-button {
     width: 100%;
+    max-width: 100%;
     display: flex;
     align-items: center;
     justify-content: flex-start !important;
     padding: 0.5rem 0.75rem !important;
     box-sizing: border-box;
     font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    min-height: 44px;
+    transition: all 0.2s ease-in-out;
+    color: #ffffff !important;
+    margin: 0 !important;
 }
 
-#launcherForm .oojs-launch-button.oojs-button-safe {
+/* 默认状态 - 使用主题色 */
+.oojs-launch-button {
+    background-color: var(--theme-color, #c670ff);
+    border-color: var(--theme-color, #c670ff);
+}
+
+/* 安全状态（启动） - 绿色 */
+.oojs-launch-button.oojs-button-safe {
     background-color: var(--color-success, #14866d) !important;
     border-color: var(--color-success, #14866d) !important;
+}
+
+/* 危险状态（停止） - 红色 */
+.oojs-launch-button.oojs-button-destructive {
+    background-color: var(--color-destructive, #d73333) !important;
+    border-color: var(--color-destructive, #d73333) !important;
+}
+
+.oojs-launch-button:hover,
+.oojs-launch-button:focus {
+    background-color: var(--theme-color--hover, #d18aff);
+    border-color: var(--theme-color--hover, #d18aff);
     color: #ffffff !important;
 }
 
-#launcherForm .oojs-launch-button.oojs-button-safe:hover,
-#launcherForm .oojs-launch-button.oojs-button-safe:focus {
+.oojs-launch-button.oojs-button-safe:hover,
+.oojs-launch-button.oojs-button-safe:focus {
     background-color: var(--color-success--hover, #179c82) !important;
     border-color: var(--color-success--hover, #179c82) !important;
     color: #ffffff !important;
 }
 
-#launcherForm .oojs-launch-button.oojs-button-destructive {
-    background-color: var(--color-destructive, #d73333) !important;
-    border-color: var(--color-destructive, #d73333) !important;
-    color: #ffffff !important;
-}
-
-#launcherForm .oojs-launch-button.oojs-button-destructive:hover,
-#launcherForm .oojs-launch-button.oojs-button-destructive:focus {
+.oojs-launch-button.oojs-button-destructive:hover,
+.oojs-launch-button.oojs-button-destructive:focus {
     background-color: var(--color-destructive--hover, #e03535) !important;
     border-color: var(--color-destructive--hover, #e03535) !important;
     color: #ffffff !important;
+}
+
+/* 小屏幕适配 */
+@@media (max-width: 768px) {
+    .oojs-launch-button {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.9rem;
+        min-height: 40px;
+    }
+    
+    #buttonText {
+        max-width: 80px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .oojs-launch-button i {
+        margin-right: 0.3rem !important;
+    }
 }
 </style>
 
@@ -60,56 +97,54 @@
             checkProcessStatus();
         };
         
-        // 将表单提交处理函数暴露到全局作用域
-        window.handleLauncherSubmit = async function(event) {
-        event.preventDefault();
-        
-        const action = launchButtonComponentCurrentIsRunning ? 'stop' : 'launch';
-        
-        if (launchButtonComponentCurrentIsRunning) {
-            const shouldStop = await confirmStopGame();
-            if (!shouldStop) {
-                return;
-            }
-        }
-        
-        // 准备请求数据
-        const requestData = {};
-        
-        fetch(`/api/launcher/${action}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // 立即更新按钮状态
-                updateButtonState(!launchButtonComponentCurrentIsRunning);
-                
-                // 延迟后重新检查状态确保准确性
-                if (action === 'launch') {
-                    // 启动游戏时，使用更长的延迟和多次检查
-                    setTimeout(() => {
-                        checkProcessStatusWithRetry(5, 2000); // 最多重试5次，每次间隔2秒
-                    }, 3000); // 初始延迟3秒
-                } else {
-                    // 停止游戏时，正常检查
-                    setTimeout(() => {
-                        checkProcessStatus();
-                    }, 1000);
+        // 将按钮点击处理函数暴露到全局作用域
+        window.handleLauncherClick = async function() {
+            const action = launchButtonComponentCurrentIsRunning ? 'stop' : 'launch';
+            
+            if (launchButtonComponentCurrentIsRunning) {
+                const shouldStop = await confirmStopGame();
+                if (!shouldStop) {
+                    return;
                 }
-            } else {
-                alert('操作失败: ' + (data.message || '未知错误'));
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('操作失败，请重试');
-        });
-    }
+            
+            // 准备请求数据
+            const requestData = {};
+            
+            fetch(`/api/launcher/${action}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 立即更新按钮状态
+                    updateButtonState(!launchButtonComponentCurrentIsRunning);
+                    
+                    // 延迟后重新检查状态确保准确性
+                    if (action === 'launch') {
+                        // 启动游戏时，使用更长的延迟和多次检查
+                        setTimeout(() => {
+                            checkProcessStatusWithRetry(5, 2000); // 最多重试5次，每次间隔2秒
+                        }, 3000); // 初始延迟3秒
+                    } else {
+                        // 停止游戏时，正常检查
+                        setTimeout(() => {
+                            checkProcessStatus();
+                        }, 1000);
+                    }
+                } else {
+                    alert('操作失败: ' + (data.message || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        };
     
     function confirmStopGame() {
         if (typeof ModalUtils !== 'undefined') {

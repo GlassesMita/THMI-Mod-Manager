@@ -616,7 +616,7 @@ namespace THMI_Mod_Manager.Controllers
                 {
                     _logger.LogWarning("当前程序没有管理员权限，可能导致窗口标题修改失败");
                     _logger.LogWarning("建议以管理员身份运行此程序");
-                    _logger.LogWarning("Discord叠加面板错误也表明存在权限问题");
+                    _logger.LogWarning("Discord 叠加面板若报告错误则表明存在权限问题");
                     
                     // 提供更详细的权限状态信息
                     var permissionStatus = PermissionHelper.GetPermissionStatus();

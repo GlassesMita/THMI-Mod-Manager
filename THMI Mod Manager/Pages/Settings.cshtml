@@ -31,14 +31,15 @@
                 }
             </select>
         </div>
-        <hr class="oojs-section-divider" />
         
         <div class="oojs-form-group">
             <label class="oojs-label">@AppConfig.GetLocalized("Settings:DateTimeLabel", "Date & Time Display")</label>
+            <br />
             <div class="oojs-checkbox-container">
                 <input type="checkbox" id="showSeconds" name="showSeconds" @(Model.ShowSeconds ? "checked" : "") onchange="saveDateTimeSettings()" />
                 <label for="showSeconds" class="oojs-checkbox-label">@AppConfig.GetLocalized("Settings:ShowSeconds", "Show seconds in time display")</label>
             </div>
+            <br />
             <div class="oojs-checkbox-container" style="margin-top: var(--spacing-sm);">
                 <input type="checkbox" id="use12Hour" name="use12Hour" @(Model.Use12Hour ? "checked" : "") onchange="saveDateTimeSettings()" />
                 <label for="use12Hour" class="oojs-checkbox-label">@AppConfig.GetLocalized("Settings:Use12Hour", "Use 12-hour time format (AM/PM)")</label>
@@ -62,7 +63,6 @@
             </div>
         </div>
         
-        <hr class="oojs-section-divider" />
         <!--
         <div class="mb-3 form-group-animated">
             <label for="statusSelect" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:GameStatusLabel", "Game Purchase Status")</label>
@@ -117,7 +117,6 @@
             </div>
         </div>
         -->
-        
         <div class="oojs-form-group">
             <label class="oojs-label">@AppConfig.GetLocalized("Settings:LaunchModeLabel", "Launch Mode")</label>
             <div class="oojs-radio-group">
@@ -166,9 +165,10 @@
         <input type="hidden" id="localizedNotificationRequestSuccess" value="@AppConfig.GetLocalized("Notifications:PermissionRequestSuccess", "Notification permission granted successfully")" />
         <input type="hidden" id="localizedNotificationRequestDenied" value="@AppConfig.GetLocalized("Notifications:PermissionRequestDenied", "Notification permission denied")" />
         <input type="hidden" id="localizedNotificationRequestFailed" value="@AppConfig.GetLocalized("Notifications:PermissionRequestFailed", "Failed to request notification permission")" />
-
+        
         <div class="oojs-form-group">
             <label class="oojs-label">@AppConfig.GetLocalized("Settings:ModifyTitleLabel", "Modify Application Title")</label>
+            <br />
             <div class="oojs-checkbox-container">
                 <input type="checkbox" id="modifyTitle" name="modifyTitle" @(Model.ModifyTitle ? "checked" : "") />
                 <label for="modifyTitle" class="oojs-checkbox-label">@AppConfig.GetLocalized("Settings:ModifyTitleDescription", "Add 'Modded' prefix to game window title")</label>
@@ -224,7 +224,8 @@
                 </div>
             </div>
         </div>
-
+        
+        
         <div class="oojs-form-group">
             <label class="oojs-label">@AppConfig.GetLocalized("Notifications:Title", "Notifications")</label>
             <div class="oojs-notification-section">
