@@ -1,0 +1,302 @@
+{
+  "repo_notes": [
+    {
+      "content": "使用中文构建文档，介绍本项目的作用"
+    }
+  ],
+  "pages": [
+    {
+      "title": "概览",
+      "purpose": "介绍 THMI Mod Manager, 解释其作为 Touhou Mystia Izakaya Mod 管理器的用途",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "开始使用",
+      "purpose": "指导用户完成设置指南，以开始使用",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "安装",
+      "purpose": "解释此程序的环境需求，告知用户",
+      "parent": "Getting Started",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "First Launch & Setup Wizard",
+      "purpose": "Walk through the setup wizard experience, initial configuration options, and what happens on first application start",
+      "parent": "Getting Started",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "User Guide",
+      "purpose": "Comprehensive guide to using THMI Mod Manager's features from an end-user perspective",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Settings & Configuration",
+      "purpose": "Detail all available settings including language, theme, cursor, launch mode, date/time formats, and developer options",
+      "parent": "User Guide",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Launching the Game",
+      "purpose": "Explain game launch modes (Steam vs external), game status monitoring, stopping the game, and title modification features",
+      "parent": "User Guide",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Managing Mods",
+      "purpose": "Describe mod management features including enable/disable/delete operations and planned future functionality",
+      "parent": "User Guide",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Updates & Notifications",
+      "purpose": "Explain the update checking system, auto-update configuration, browser notifications, and release notes viewing",
+      "parent": "User Guide",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Debug Panel",
+      "purpose": "Document the debug panel's features including system information, API testing, configuration management, and log viewing",
+      "parent": "User Guide",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Architecture Overview",
+      "purpose": "Provide a high-level overview of the application's architecture including frontend, backend, and communication patterns",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Application Bootstrap",
+      "purpose": "Detail the application startup sequence, command-line arguments, permission checks, and initialization process",
+      "parent": "Architecture Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Service Architecture",
+      "purpose": "Explain the dependency injection container, registered services, and service dependencies",
+      "parent": "Architecture Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Middleware Pipeline",
+      "purpose": "Document the ASP.NET Core middleware pipeline including localization, setup wizard checks, and request handling",
+      "parent": "Architecture Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Frontend Architecture",
+      "purpose": "Describe the Razor Pages structure, client-side JavaScript patterns, and polling-based communication with backend",
+      "parent": "Architecture Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Backend API Layer",
+      "purpose": "Document the RESTful API endpoints, controller structure, and request/response patterns",
+      "parent": "Architecture Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Core Systems",
+      "purpose": "Deep dive into the major functional subsystems that power the application",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Game Launcher System",
+      "purpose": "Comprehensive documentation of the game launching system including Steam integration, external launchers, process monitoring, and window manipulation",
+      "parent": "Core Systems",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Settings Management System",
+      "purpose": "Explain settings storage, loading, saving, and the client-server interaction for configuration management",
+      "parent": "Core Systems",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Localization System",
+      "purpose": "Detail the INI-based localization system, culture detection, fallback mechanisms, and multi-language support",
+      "parent": "Core Systems",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Update System",
+      "purpose": "Document the GitHub-based update checking, downloading, and application mechanisms",
+      "parent": "Core Systems",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Session Time Tracking",
+      "purpose": "Explain the hybrid client-server session time tracking system and display synchronization",
+      "parent": "Core Systems",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Advanced Topics",
+      "purpose": "Cover advanced features and security considerations for power users and developers",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Window Title Modification",
+      "purpose": "Detail the window title modification feature including the scoring algorithm, retry logic, and permission requirements",
+      "parent": "Advanced Topics",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Permission Management",
+      "purpose": "Explain administrator privilege detection, UAC integration, and elevation mechanisms",
+      "parent": "Advanced Topics",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "CVE Detection & Security",
+      "purpose": "Document the CVE-2025-59489 detection system, Unity Player vulnerability checking, and security warnings",
+      "parent": "Advanced Topics",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Backend Connection & Error Recovery",
+      "purpose": "Explain the backend health checking system, connection loss detection, and recovery strategies",
+      "parent": "Advanced Topics",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Internationalization",
+      "purpose": "Cover the multi-language support and translation contribution process",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Supported Languages",
+      "purpose": "List all 11 supported languages with their locale codes and example translations",
+      "parent": "Internationalization",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Contributing Translations",
+      "purpose": "Guide for contributors on INI file format, translation conventions, and submission process",
+      "parent": "Internationalization",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    }
+  ]
+}
