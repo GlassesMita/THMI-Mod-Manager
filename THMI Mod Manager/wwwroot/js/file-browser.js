@@ -290,7 +290,7 @@ class FileBrowser {
                     if (data.parentDirectory) {
                         const parentItem = document.createElement('div');
                         parentItem.className = 'file-item directory';
-                        parentItem.innerHTML = '<span class="file-icon"><i class="bi bi-arrow-up-circle"></i></span><span class="file-name"> ..</span>';
+                        parentItem.innerHTML = '<span class="file-icon"><i data-icon="icon-folder-up"></i></span><span class="file-name"> ..</span>';
                         parentItem.onclick = () => this.loadDirectoryFiles(data.parentDirectory);
                         filesList.appendChild(parentItem);
                     }
@@ -299,7 +299,7 @@ class FileBrowser {
                     data.directories.forEach(dir => {
                         const dirItem = document.createElement('div');
                         dirItem.className = 'file-item directory';
-                        dirItem.innerHTML = '<span class="file-icon"><i class="bi bi-folder"></i></span><span class="file-name">' + dir.name + '</span>';
+                        dirItem.innerHTML = '<span class="file-icon"><i data-icon="icon-folder"></i></span><span class="file-name">' + dir.name + '</span>';
                         
                         // 根据当前文件浏览器类型决定点击目录的行为
                         if (this.currentFileBrowserType === 'modsPath' || this.currentFileBrowserType === 'gamePath' || this.currentFileBrowserType === 'folder') {
@@ -320,7 +320,7 @@ class FileBrowser {
                             if (this.shouldShowFile(file)) {
                                 const fileItem = document.createElement('div');
                                 fileItem.className = 'file-item';
-                                fileItem.innerHTML = `<span class="file-icon"><i class="bi bi-file-earmark"></i></span><span class="file-name">${file.name}</span>`;
+                                fileItem.innerHTML = `<span class="file-icon"><i data-icon="icon-file"></i></span><span class="file-name">${file.name}</span>`;
                                 fileItem.onclick = () => this.selectFile(file.path);
                                 filesList.appendChild(fileItem);
                             }

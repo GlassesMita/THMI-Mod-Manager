@@ -199,7 +199,7 @@
     <!-- 原始 Github 地址：https://github.com/itorr/homo -->
     <div id="homoSection" style="display: none; margin-bottom: 20px;">
         <div class="debug-section">
-            <h3><i class="bi bi-calculator"></i> 恶臭数字论证器</h3>
+            <h3><i data-icon="icon-calculator"></i> 恶臭数字论证器</h3>
             <div style="text-align: center; padding: 20px;">
                 <input type="number" id="homoInput" placeholder="输入任意数字" style="font-size: 20px; line-height: 26px; text-align: center; padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; width: 80%; max-width: 300px;" />
                 <div id="homoOutput" style="font-size: 24px; font-family: 'Comic Sans MS', cursive; padding: 40px 10px 100px;"></div>
@@ -208,7 +208,7 @@
     </div>
     
     <div class="debug-section">
-        <h3><i class="bi bi-info-circle"></i> @AppConfig.GetLocalized("Debug:SystemInformation", "System Information")</h3>
+        <h3><i data-icon="icon-info"></i> @AppConfig.GetLocalized("Debug:SystemInformation", "System Information")</h3>
         <div class="debug-info">
             <p><strong>@AppConfig.GetLocalized("Debug:Application", "Application"):</strong> @Model.AppName v@Model.AppVersion</p>
             <p><strong>@AppConfig.GetLocalized("Debug:Runtime", ".NET 版本"):</strong> @Model.RuntimeVersion</p>
@@ -219,7 +219,7 @@
     </div>
     
     <div class="debug-section">
-        <h3><i class="bi bi-gear"></i> @AppConfig.GetLocalized("Debug:DeveloperMode", "Developer Mode")</h3>
+        <h3><i data-icon="icon-gear"></i> @AppConfig.GetLocalized("Debug:DeveloperMode", "Developer Mode")</h3>
         <div class="debug-toggle">
             <input type="checkbox" id="devMode" @(Model.IsDevMode ? "checked" : "") onchange="toggleDevMode(this)" />
             <label for="devMode">@AppConfig.GetLocalized("Debug:EnableDeveloperMode", "Enable Developer Mode")</label>
@@ -239,7 +239,7 @@
     </div>
     
     <div class="debug-section">
-        <h3><i class="bi bi-wifi"></i> @AppConfig.GetLocalized("Debug:NetworkStatus", "Network Status")</h3>
+        <h3><i data-icon="icon-wifi"></i> @AppConfig.GetLocalized("Debug:NetworkStatus", "Network Status")</h3>
         <div class="debug-info">
             <p><strong>@AppConfig.GetLocalized("Debug:ConnectionStatus", "Connection Status"):</strong> <span id="connectionStatus" class="debug-status debug-status-info">@AppConfig.GetLocalized("Debug:Checking", "Checking...")</span></p>
             <p><strong>@AppConfig.GetLocalized("Debug:ActiveInterfaces", "Active Interfaces"):</strong> <span id="activeInterfaces">-</span></p>
@@ -247,14 +247,14 @@
         </div>
         <div class="debug-button-group">
             <button type="button" class="debug-button debug-button-primary" onclick="checkNetworkStatus()">
-                <i class="bi bi-arrow-repeat"></i> @AppConfig.GetLocalized("Debug:CheckNetwork", "Check Network")
+                <i data-icon="icon-reload"></i> @AppConfig.GetLocalized("Debug:CheckNetwork", "Check Network")
             </button>
         </div>
         <div id="networkResults" class="debug-output" style="display: none;"></div>
     </div>
     
     <div class="debug-section">
-        <h3><i class="bi bi-bug"></i> @AppConfig.GetLocalized("Debug:APITesting", "API Testing")</h3>
+        <h3><i data-icon="icon-bug"></i> @AppConfig.GetLocalized("Debug:APITesting", "API Testing")</h3>
         <div class="mb-3">
             <label for="apiEndpoint" class="form-label">@AppConfig.GetLocalized("Debug:APIEndpoint", "API Endpoint")</label>
             <input type="text" id="apiEndpoint" class="form-control" value="/api/launcher/status" placeholder="@AppConfig.GetLocalized("Debug:Endpoint", "Enter API endpoint")" />
@@ -270,17 +270,17 @@
         </div>
         <div class="debug-button-group">
             <button type="button" class="debug-button debug-button-primary" onclick="testAPI()">
-                <i class="bi bi-play-fill"></i> @AppConfig.GetLocalized("Debug:TestAPI", "Test API")
+                <i data-icon="icon-play"></i> @AppConfig.GetLocalized("Debug:TestAPI", "Test API")
             </button>
             <button type="button" class="debug-button debug-button-secondary" onclick="clearAPIOutput()">
-                <i class="bi bi-x-circle"></i> @AppConfig.GetLocalized("Debug:ClearOutput", "Clear Output")
+                <i data-icon="icon-clear"></i> @AppConfig.GetLocalized("Debug:ClearOutput", "Clear Output")
             </button>
         </div>
         <div id="apiOutput" class="debug-output" style="display: none;"></div>
     </div>
     
     <div class="debug-section">
-        <h3><i class="bi bi-bell"></i> @AppConfig.GetLocalized("Debug:NotificationTesting", "Browser Notification Testing")</h3>
+        <h3><i data-icon="icon-bell"></i> @AppConfig.GetLocalized("Debug:NotificationTesting", "Browser Notification Testing")</h3>
         <div class="debug-info">
             <p><strong>@AppConfig.GetLocalized("Debug:NotificationPermission", "Notification Permission"):</strong> <span id="notificationPermission">Checking...</span></p>
             <p><strong>@AppConfig.GetLocalized("Debug:NotificationSupport", "Notification Support"):</strong> <span id="notificationSupport">Checking...</span></p>
@@ -295,27 +295,27 @@
         </div>
         <div class="debug-button-group">
             <button type="button" class="debug-button debug-button-primary" onclick="requestNotificationPermission()">
-                <i class="bi bi-shield-lock"></i> @AppConfig.GetLocalized("Debug:RequestPermission", "Request Permission")
+                <i data-icon="icon-permission"></i> @AppConfig.GetLocalized("Debug:RequestPermission", "Request Permission")
             </button>
             <button type="button" class="debug-button debug-button-primary" onclick="sendTestNotification()">
-                <i class="bi bi-bell-fill"></i> @AppConfig.GetLocalized("Debug:SendNotification", "Send Test Notification")
+                <i data-icon="icon-bell"></i> @AppConfig.GetLocalized("Debug:SendNotification", "Send Test Notification")
             </button>
         </div>
         <div id="notificationOutput" class="debug-output" style="display: none;"></div>
     </div>
     
     <div class="debug-section">
-        <h3><i class="bi bi-file-earmark-code"></i> @AppConfig.GetLocalized("Debug:Configuration", "Configuration")</h3>
+        <h3><i data-icon="icon-config"></i> @AppConfig.GetLocalized("Debug:Configuration", "Configuration")</h3>
         <div class="debug-info">
             <p><strong>@AppConfig.GetLocalized("Debug:ConfigFile", "Config File"):</strong> <code>@Model.ConfigFilePath</code></p>
             <p><strong>@AppConfig.GetLocalized("Debug:LastModified", "Last Modified"):</strong> @Model.ConfigLastModified</p>
         </div>
         <div class="debug-button-group">
             <button type="button" class="debug-button debug-button-primary" onclick="reloadConfig()">
-                <i class="bi bi-arrow-repeat"></i> @AppConfig.GetLocalized("Debug:ReloadConfig", "Reload Configuration")
+                <i data-icon="icon-reload"></i> @AppConfig.GetLocalized("Debug:ReloadConfig", "Reload Configuration")
             </button>
             <button type="button" class="debug-button debug-button-secondary" onclick="viewConfig()">
-                <i class="bi bi-eye"></i> @AppConfig.GetLocalized("Debug:ViewConfig", "View Configuration")
+                <i data-icon="icon-view"></i> @AppConfig.GetLocalized("Debug:ViewConfig", "View Configuration")
             </button>
         </div>
         <div id="configOutput" class="debug-output" style="display: none;"></div>
@@ -323,20 +323,20 @@
     </div>
     
     <div class="debug-section">
-        <h3><i class="bi bi-journal-code"></i> @AppConfig.GetLocalized("Debug:Logs", "Logs")</h3>
+        <h3><i data-icon="icon-logs"></i> @AppConfig.GetLocalized("Debug:Logs", "Logs")</h3>
         <div class="debug-info">
             <p><strong>@AppConfig.GetLocalized("Debug:LogFile", "Log File"):</strong> <code>@Model.LogFilePath</code></p>
             <p><strong>@AppConfig.GetLocalized("Debug:LogSize", "Log Size"):</strong> @Model.LogFileSize</p>
         </div>
         <div class="debug-button-group">
             <button type="button" class="debug-button debug-button-primary" onclick="viewLogs()">
-                <i class="bi bi-eye"></i> @AppConfig.GetLocalized("Debug:ViewLogs", "View Logs")
+                <i data-icon="icon-view-logs"></i> @AppConfig.GetLocalized("Debug:ViewLogs", "View Logs")
             </button>
             <button type="button" class="debug-button debug-button-secondary" onclick="downloadLogs()">
-                <i class="bi bi-download"></i> @AppConfig.GetLocalized("Debug:DownloadLogs", "Download Logs")
+                <i data-icon="icon-download-logs"></i> @AppConfig.GetLocalized("Debug:DownloadLogs", "Download Logs")
             </button>
             <button type="button" class="debug-button debug-button-danger" onclick="clearLogs()">
-                <i class="bi bi-trash"></i> @AppConfig.GetLocalized("Debug:ClearLogs", "Clear Logs")
+                <i data-icon="icon-clear-logs"></i> @AppConfig.GetLocalized("Debug:ClearLogs", "Clear Logs")
             </button>
         </div>
         <div id="logOutput" class="debug-output" style="display: none;"></div>
@@ -344,16 +344,16 @@
     
 
     <div class="debug-section">
-        <h3><i class="bi bi-exclamation-triangle"></i> @AppConfig.GetLocalized("Debug:DangerZone", "Danger Zone")</h3>
+        <h3><i data-icon="icon-warning"></i> @AppConfig.GetLocalized("Debug:DangerZone", "Danger Zone")</h3>
         <div class="debug-info" style="border-left-color: #dc3545;">
             <p><strong>@AppConfig.GetLocalized("Debug:Warning", "Warning"):</strong> @AppConfig.GetLocalized("Debug:DangerWarning", "These actions are irreversible and may cause data loss or application instability.")</p>
         </div>
         <div class="debug-button-group">
             <button type="button" class="debug-button debug-button-danger" onclick="resetAllSettings()">
-                <i class="bi bi-arrow-counterclockwise"></i> @AppConfig.GetLocalized("Debug:ResetAllSettings", "Reset All Settings")
+                <i data-icon="icon-reset"></i> @AppConfig.GetLocalized("Debug:ResetAllSettings", "Reset All Settings")
             </button>
             <button type="button" class="debug-button debug-button-danger" onclick="clearBrowserStorage()">
-                <i class="bi bi-trash"></i> @AppConfig.GetLocalized("Debug:ClearBrowserStorage", "Clear Browser Storage")
+                <i data-icon="icon-clear-storage"></i> @AppConfig.GetLocalized("Debug:ClearBrowserStorage", "Clear Browser Storage")
             </button>
         </div>
     </div>

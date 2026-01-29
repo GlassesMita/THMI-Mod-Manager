@@ -138,7 +138,7 @@
             console.log('[ModRenderer] Rendering', this.modsList.length, 'mods');
             
             if (this.modsList.length === 0) {
-                modsListElement.innerHTML = '<div class="mods-empty"><div class="empty-icon"><i class="bi bi-box-seam"></i></div><h2>暂无 Mod</h2><p>BepInEx/plugins 目录中没有找到任何 Mod 文件。</p></div>';
+                modsListElement.innerHTML = '<div class="mods-empty"><div class="empty-icon"><i data-icon="icon-mods"></i></div><h2>暂无 Mod</h2><p>BepInEx/plugins 目录中没有找到任何 Mod 文件。</p></div>';
                 return;
             }
             
@@ -161,7 +161,7 @@
             const isDisabled = mod.isDisabled === true;
             const buttonClass = isDisabled ? 'btn-success' : 'btn-warning';
             const buttonText = isDisabled ? '启用' : '禁用';
-            const buttonIcon = isDisabled ? 'bi-play-fill' : 'bi-pause-fill';
+            const buttonIcon = isDisabled ? 'icon-play' : 'icon-pause';
             const borderClass = isValid ? '' : 'border-warning';
             
             const modId = 'mod-' + fileName.replace(/[^a-zA-Z0-9]/g, '_').replace(/\.dll$/i, '') + '-' + index;
@@ -171,9 +171,9 @@
             html += '<div class="mod-item-header">';
             html += '<div class="mod-item-title"><div class="mod-title-container"><h5 class="mb-0">' + this.escapeHtml(name) + '</h5></div></div>';
             html += '<div class="mod-item-actions">';
-            html += '<button class="btn btn-outline-secondary btn-sm me-2" onclick="ModRenderer.toggleDetails(\'' + modId + '\')"><i class="bi bi-chevron-down" id="toggle-icon-' + modId + '"></i></button>';
-            html += '<button class="btn ' + buttonClass + ' btn-sm me-2 mod-action-btn" onclick="ModRenderer.toggleMod(\'' + this.escapeJs(fileName) + '\')"><i class="bi ' + buttonIcon + '"></i> ' + buttonText + '</button>';
-            html += '<button class="btn btn-danger btn-sm mod-action-btn" onclick="ModRenderer.confirmDelete(\'' + this.escapeJs(fileName) + '\')"><i class="bi bi-trash-fill"></i> 删除</button>';
+            html += '<button class="btn btn-outline-secondary btn-sm me-2" onclick="ModRenderer.toggleDetails(\'' + modId + '\')"><i data-icon="icon-chevron-down" id="toggle-icon-' + modId + '"></i></button>';
+            html += '<button class="btn ' + buttonClass + ' btn-sm me-2 mod-action-btn" onclick="ModRenderer.toggleMod(\'' + this.escapeJs(fileName) + '\')"><i data-icon="' + buttonIcon + '"></i> ' + buttonText + '</button>';
+            html += '<button class="btn btn-danger btn-sm mod-action-btn" onclick="ModRenderer.confirmDelete(\'' + this.escapeJs(fileName) + '\')"><i data-icon="icon-trash"></i> 删除</button>';
             html += '</div></div>';
             html += '<div class="mod-item-body" id="mod-details-' + modId + '" style="display: none;">';
             
@@ -192,7 +192,7 @@
             
             html += '</div>';
             html += '<div class="mod-item-footer">';
-            html += '<span class="small text-muted"><i class="bi bi-file-earmark-code"></i> ' + this.escapeHtml(fileName) + '</span>';
+            html += '<span class="small text-muted"><i data-icon="icon-file-code"></i> ' + this.escapeHtml(fileName) + '</span>';
             html += '<div class="mod-footer-right">';
             
             if (mod.version) {
@@ -202,7 +202,7 @@
             }
             
             if (!isValid && mod.errorMessage) {
-                html += '<span class="text-warning small"><i class="bi bi-exclamation-triangle-fill"></i> ' + this.escapeHtml(mod.errorMessage) + '</span>';
+                html += '<span class="text-warning small"><i data-icon="icon-warning"></i> ' + this.escapeHtml(mod.errorMessage) + '</span>';
             }
             
             html += '</div></div></div></div>';

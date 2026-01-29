@@ -35,6 +35,14 @@
     <link rel="stylesheet" href="~/css/file-browser.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/sidebar-codex.css" asp-append-version="true" />
     <style>
+        /* Local Segoe MDL2 Font */
+        @@font-face {
+            font-family: 'Segoe MDL2 Assets';
+            src: url('~/fonts/SegMDL2.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
         h1 {
             color: @@themeColor !important;
         }
@@ -107,6 +115,60 @@
         /* 卡片悬停效果 */
         .card {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        
+        /* Segoe MDL2 Assets Icons */
+        .segoe-icon {
+            font-family: 'Segoe MDL2 Assets', 'Segoe Fluent Icons', sans-serif;
+            font-weight: normal;
+            font-style: normal;
+            font-size: 1rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1em;
+            height: 1em;
+            text-rendering: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .segoe-icon-small {
+            font-size: 0.875rem;
+        }
+        
+        .segoe-icon-medium {
+            font-size: 1rem;
+        }
+        
+        .segoe-icon-large {
+            font-size: 1.25rem;
+        }
+        
+        .segoe-icon-xlarge {
+            font-size: 1.5rem;
+        }
+        
+        /* Icon alignment */
+        .menu-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            font-size: 1rem;
+        }
+        
+        /* Steam icon - use Bootstrap Icons */
+        .bi-steam {
+            font-family: 'Bootstrap Icons', sans-serif;
+            font-size: 1rem;
+            width: 1em;
+            height: 1em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .card:hover {
@@ -221,7 +283,7 @@
         <div class="container-fluid">
             <a id="navbarBrandMobile" class="navbar-brand" asp-area="" asp-page="/Index" style="cursor: default;">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
             <button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
-                <i class="bi bi-list"></i>
+                                <i data-icon="icon-menu"></i>
             </button>
         </div>
     </nav>
@@ -234,23 +296,23 @@
             </div>
             <ul class="cdx-menu">
                 <li class="cdx-menu-item">
-                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Index"><span class="cdx-menu-icon"><i class="bi bi-house"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
+                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Index"><span class="menu-icon"> <i data-icon="icon-home">    </i> </span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
                 </li>
                 <li class="cdx-menu-item">
-                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Mods"><span class="cdx-menu-icon"><i class="bi bi-box-seam"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
+                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Mods"><span class="menu-icon"> <i data-icon="icon-mods">    </i> </span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
                 </li>
                 <li class="cdx-menu-item">
-                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Explore"><span class="cdx-menu-icon"><i class="bi bi-globe"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
+                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Explore"><span class="menu-icon"> <i data-icon="icon-explore">    </i> </span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
                 </li>
                 <li class="cdx-menu-item">
                     <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Settings">
-                        <span class="cdx-menu-icon"><i class="bi bi-gear"></i></span>
+                        <span class="menu-icon"> <i data-icon="icon-settings">    </i> </span>
                         <span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
                         <span id="settingsUpdateBadge" class="cdx-pill cdx-pill--warning" style="display: none;">!</span>
                     </a>
                 </li>
                 <li class="cdx-menu-item">
-                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/About"><span class="cdx-menu-icon"><i class="bi bi-info-circle"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
+                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/About"><span class="menu-icon"> <i data-icon="icon-about">    </i> </span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
                 </li>
             </ul>
 
@@ -277,23 +339,23 @@
             <div class="offcanvas-body cdx-sidebar" style="display:flex; flex-direction:column; overflow:hidden;">
                 <ul class="cdx-menu">
                     <li class="cdx-menu-item">
-                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Index"><span class="cdx-menu-icon"><i class="bi bi-house"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
+                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Index"><span class="cdx-menu-icon"><i data-icon="icon-home"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
                     </li>
                     <li class="cdx-menu-item">
-                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Mods"><span class="cdx-menu-icon"><i class="bi bi-box-seam"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
+                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Mods"><span class="cdx-menu-icon"><i data-icon="icon-mods"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
                     </li>
                     <li class="cdx-menu-item">
-                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Explore"><span class="cdx-menu-icon"><i class="bi bi-globe"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
+                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Explore"><span class="cdx-menu-icon"><i data-icon="icon-explore"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
                     </li>
                     <li class="cdx-menu-item">
                         <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Settings">
-                            <span class="cdx-menu-icon"><i class="bi bi-gear"></i></span>
+                            <span class="cdx-menu-icon"><i data-icon="icon-settings"></i></span>
                             <span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
                             <span id="settingsUpdateBadgeOffcanvas" class="cdx-pill cdx-pill--warning" style="display: none;">!</span>
                         </a>
                     </li>
                     <li class="cdx-menu-item">
-                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/About"><span class="cdx-menu-icon"><i class="bi bi-info-circle"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
+                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/About"><span class="cdx-menu-icon"><i data-icon="icon-about"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
                     </li>
                 </ul>
 
@@ -327,7 +389,7 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <button id="exitButton" class="cdx-button cdx-button--destructive" onclick="showExitConfirmation()" style="padding: 10px 20px !important; font-size: 14px !important; min-height: 44px !important;">
-                        <i class="bi bi-box-arrow-right"></i>
+                                                <i data-icon="icon-exit"></i>
                         <span>@AppConfig.GetLocalized("Common:Exit", "Exit")</span>
                     </button>
                     <span id="topTimeDisplay" class="top-time-text"></span>
@@ -338,12 +400,12 @@
             <div id="updateNotificationBanner" class="alert alert-info alert-dismissible fade show" style="display: none; border-radius: 0; margin: 0; position: sticky; top: 0; z-index: 1050;">
                 <div class="container d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
-                        <i class="bi bi-bell-fill me-2"></i>
+                                                <i data-icon="icon-bell" class="me-2"></i>
                         <span id="updateNotificationText"></span>
                     </div>
                     <div>
                         <a id="updateDownloadLink" href="#" class="btn btn-primary btn-sm me-2" target="_blank">
-                            <i class="bi bi-download me-1"></i>
+                                                        <i data-icon="icon-download" class="me-1"></i>
                             <span id="updateDownloadText">Download</span>
                         </a>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -367,7 +429,7 @@
             <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
                 <div id="updateToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
                     <div class="toast-header">
-                        <i class="bi bi-bell-fill text-primary me-2"></i>
+                                                <i data-icon="icon-bell" class="text-primary me-2"></i>
                         <strong class="me-auto">@AppConfig.GetLocalized("Updates:UpdateNotificationTitle", "Update Available")</strong>
                         <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
                     </div>
@@ -497,7 +559,7 @@
                         <div class="modal-content">
                             <div class="modal-header bg-danger text-white">
                                 <h5 class="modal-title" id="backendOfflineModalLabel">
-                                    <i class="bi bi-exclamation-triangle-fill"></i> ${title}
+                                                                        <i data-icon="icon-warning"></i> ${title}
                                 </h5>
                             </div>
                             <div class="modal-body">
@@ -510,10 +572,10 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-primary" onclick="location.reload()">
-                                    <i class="bi bi-arrow-clockwise"></i> ${refreshText}
+                                                                        <i data-icon="icon-refresh"></i> ${refreshText}
                                 </button>
                                 <button type="button" class="btn btn-secondary" onclick="backendHealthCheck.checkNow()">
-                                    <i class="bi bi-arrow-repeat"></i> ${retryText}
+                                                                        <i data-icon="icon-retry"></i> ${retryText}
                                 </button>
                             </div>
                         </div>
@@ -1062,6 +1124,87 @@
                 cancelText: cancelText
             });
         }
+        
+        // Icon System - Segoe MDL2 Assets
+        const IconSystem = {
+            iconMappings: {
+                'icon-home': '&#xE80F',
+                'icon-mods': '&#xF133',
+                'icon-explore': '&#xE774',
+                'icon-settings': '&#xE713',
+                'icon-about': '&#xE70B',
+                'icon-exit': '&#xE7E8',
+                'icon-menu': '&#xE700',
+                'icon-language': '&#xF2B7',
+                'icon-time': '&#xEC92',
+                'icon-cursor': '&#xE8B0',
+                'icon-launch': '&#xE8A7',
+                'icon-updates': '&#xE895',
+                'icon-notifications': '&#xE8A7',
+                'icon-title': '&#xE737',
+                'icon-interface': '&#xE8AE',
+                'icon-play': '&#xE768',
+                'icon-stop': '&#xE71A',
+                'icon-warning': '&#xE814',
+                'icon-refresh': '&#xE72C',
+                'icon-trash': '&#xE74D',
+                'icon-folder': '&#xE8B7',
+                'icon-file': '&#xE7A6',
+                'icon-file-code': '&#xE7C4',
+                'icon-chevron-down': '&#xE019',
+                'icon-add': '&#xE109',
+                'icon-gear': '&#xE713',
+                'icon-check': '&#xE930',
+                'icon-clear': '&#xE711',
+                'icon-download': '&#xE896',
+                'icon-info': '&#xE946',
+                'icon-search': '&#xE721',
+                'icon-retry': '&#xE895',
+                'icon-reset': '&#xE7A6',
+                'icon-clear-storage': '&#xE74D',
+                'icon-api-test': '&#xE768',
+                'icon-config': '&#xE7C4',
+                'icon-view': '&#xE1A6',
+                'icon-logs': '&#xE26D',
+                'icon-view-logs': '&#xE1A6',
+                'icon-download-logs': '&#xE896',
+                'icon-clear-logs': '&#xE74D',
+                'icon-danger': '&#xE814',
+                'icon-history': '&#xE81C',
+                'icon-calculator': '&#xE8EF',
+                'icon-wifi': '&#xE701',
+                'icon-permission': '&#xE1E6',
+                'icon-send': '&#xE8A7',
+                'icon-reload': '&#xE72C',
+                'icon-folder-up': '&#xE8AC',
+                'icon-star': '&#xE734',
+                'icon-pause': '&#xE769',
+                'icon-steam': '&#xE1D6',
+                'icon-mods-main': '&#xF133',
+                'icon-warning-mods': '&#xE814'
+            },
+            
+            applyIcons() {
+                document.querySelectorAll('[data-icon]').forEach(el => {
+                    const iconId = el.getAttribute('data-icon');
+                    const content = this.iconMappings[iconId];
+                    if (content) {
+                        el.innerHTML = content;
+                        el.className = 'segoe-icon';
+                    }
+                });
+            },
+            
+            init() {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => this.applyIcons());
+                } else {
+                    this.applyIcons();
+                }
+            }
+        };
+        
+        IconSystem.init();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

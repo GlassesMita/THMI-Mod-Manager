@@ -35,13 +35,13 @@ namespace THMI_Mod_Manager.ViewComponents
             if (model.IsProcessRunning)
             {
                 model.ButtonText = _appConfig.GetLocalized("Buttons:Stop", "Stop");
-                model.ButtonIcon = "bi-stop-fill";
+                model.ButtonIcon = "icon-stop";
                 model.ButtonClass = "btn-danger";
             }
             else
             {
                 model.ButtonText = _appConfig.GetLocalized("Buttons:Launch", "Launch");
-                model.ButtonIcon = "bi-play-fill";
+                model.ButtonIcon = "icon-play";
                 model.ButtonClass = "btn-success";
             }
 

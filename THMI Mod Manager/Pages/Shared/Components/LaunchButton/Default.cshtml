@@ -2,7 +2,10 @@
 
 <div style="display: block; width: 100%;">
     <button type="button" class="cdx-button cdx-button--primary cdx-launch-button" id="launchButton" onclick="handleLauncherClick()" style="width: 100% !important">
-        <i class="bi @Model.ButtonIcon" style="margin-right: 0.5rem;"></i> 
+        <i data-icon="@Model.ButtonIcon" class="segoe-icon" style="margin-right: 0.5rem;">@if (Model.ButtonIcon == "icon-stop")
+        {<text>&#xE71A;</text>}
+        else
+        {<text>&#xE768;</text>}</i> 
         <span id="buttonText" class="cdx-launch-button-text">@Model.ButtonText</span>
     </button>
 </div>
@@ -180,11 +183,13 @@
         
         if (isRunning) {
             button.className = 'cdx-button cdx-button--destructive cdx-launch-button';
-            buttonIcon.className = 'bi bi-stop-fill';
+            buttonIcon.setAttribute('data-icon', 'icon-stop');
+            buttonIcon.innerHTML = '&#xE71A;';
             buttonText.textContent = localizedStrings.stopText;
         } else {
             button.className = 'cdx-button cdx-button--safe cdx-launch-button';
-            buttonIcon.className = 'bi bi-play-fill';
+            buttonIcon.setAttribute('data-icon', 'icon-play');
+            buttonIcon.innerHTML = '&#xE768;';
             buttonText.textContent = localizedStrings.launchText;
         }
     }

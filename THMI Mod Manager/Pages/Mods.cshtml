@@ -13,11 +13,11 @@
         <h1 class="mods-title">@AppConfig.GetLocalized("Mods:Header", "Mod 管理")</h1>
         <div class="mods-actions">
             <button id="installModsButton" class="btn btn-outline-success me-2">
-                <i class="bi bi-plus-circle"></i>
+                                <i data-icon="icon-add"></i>
                 <span>@AppConfig.GetLocalized("Mods:InstallButton", "安装")</span>
             </button>
             <button id="refreshModsButton" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-clockwise"></i>
+                                <i data-icon="icon-refresh"></i>
                 <span>@AppConfig.GetLocalized("Mods:RefreshButton", "刷新")</span>
             </button>
             <select id="sortOrder" class="form-select" onchange="modsManager.changeSortOrder(this.value)">
@@ -38,7 +38,7 @@
         
         <div id="modsEmpty" class="mods-empty" style="display: none;">
             <div class="empty-icon">
-                <i class="bi bi-box-seam"></i>
+                                <i data-icon="icon-mods"></i>
             </div>
             <h2>@AppConfig.GetLocalized("Mods:NoMods", "暂无 Mod")</h2>
             <p>@AppConfig.GetLocalized("Mods:NoModsDesc", "BepInEx/plugins 目录中没有找到任何 Mod 文件。")</p>
@@ -46,7 +46,7 @@
         
         <div id="modsError" class="mods-error" style="display: none;">
             <div class="alert alert-danger" role="alert">
-                <i class="bi bi-exclamation-triangle-fill"></i>
+                                <i data-icon="icon-warning"></i>
                 <span id="modsErrorMessage">@AppConfig.GetLocalized("Mods:LoadError", "加载 Mod 时发生错误")</span>
             </div>
         </div>
