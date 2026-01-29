@@ -26,7 +26,9 @@ namespace THMI_Mod_Manager.ViewComponents
                 ConfirmStopTitle = _appConfig.GetLocalized("Buttons:ConfirmStopTitle", "Confirm Stop"),
                 ConfirmStopMessage = _appConfig.GetLocalized("Buttons:ConfirmStopMessage", "Forcefully stopping the game may cause unsaved progress to be lost.\n\nAre you sure you want to stop the game?"),
                 LaunchText = _appConfig.GetLocalized("Buttons:Launch", "Launch"),
-                StopText = _appConfig.GetLocalized("Buttons:Stop", "Stop")
+                StopText = _appConfig.GetLocalized("Buttons:Stop", "Stop"),
+                CancelText = _appConfig.GetLocalized("Common:Cancel", "Cancel"),
+                ConfirmText = _appConfig.GetLocalized("Common:Confirm", "Confirm")
             };
 
             // 设置按钮状态
@@ -73,5 +75,7 @@ namespace THMI_Mod_Manager.ViewComponents
         public string ConfirmStopMessage { get; set; } = "Forcefully stopping the game may cause unsaved progress to be lost.\n\nAre you sure you want to stop the game?";
         public string LaunchText { get; set; } = "Launch";
         public string StopText { get; set; } = "Stop";
+        public string CancelText { get; set; } = "Cancel";
+        public string ConfirmText { get; set; } = "Confirm";
     }
 }

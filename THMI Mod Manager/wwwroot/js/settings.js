@@ -3,6 +3,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const successToast = document.getElementById('successToast');
     const selects = document.querySelectorAll('.oojs-select');
     let isSaving = false;
+    
+    // 如果表单不存在，直接返回
+    if (!form) {
+        console.log('Settings form not found, skipping settings.js initialization');
+        return;
+    }
 
     const simpleMarkdownParser = (text) => {
         if (!text) return '';

@@ -318,9 +318,9 @@
         <!-- Main content -->
         <div id="mainContent" class="flex-grow-1" style="position:relative; min-height:100vh;">
             <!-- Hidden localization strings -->
-            <input type="hidden" id="localizedExitConfirm" value="@AppConfig.GetLocalized("Common:ExitConfirm", "Are you sure you want to exit?")" />
-            <input type="hidden" id="localizedExitConfirmButton" value="@AppConfig.GetLocalized("Common:ExitConfirmButton", "Exit")" />
-            <input type="hidden" id="localizedExitCancelButton" value="@AppConfig.GetLocalized("Common:ExitCancelButton", "Cancel")" />
+            <input type="hidden" id="localizedExitConfirm" value="@Html.Raw(AppConfig.GetLocalized("Common:ExitConfirm", "Are you sure you want to exit?"))" />
+            <input type="hidden" id="localizedExitConfirmButton" value="@Html.Raw(AppConfig.GetLocalized("Common:ExitConfirmButton", "Exit"))" />
+            <input type="hidden" id="localizedExitCancelButton" value="@Html.Raw(AppConfig.GetLocalized("Common:ExitCancelButton", "Cancel"))" />
             
             <!-- Time bar at top of main content -->
             <div id="topTimeBar" class="top-time-bar">

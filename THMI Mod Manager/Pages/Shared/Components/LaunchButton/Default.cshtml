@@ -1,9 +1,9 @@
 @model THMI_Mod_Manager.ViewComponents.LaunchButtonViewModel
 
 <div style="display: block; width: 100%;">
-    <button type="button" class="oojs-button oojs-button-primary oojs-launch-button" id="launchButton" onclick="handleLauncherClick()">
+    <button type="button" class="oojs-button oojs-button-primary oojs-launch-button" id="launchButton" onclick="handleLauncherClick()" style="width: 100% !important">
         <i class="bi @Model.ButtonIcon" style="margin-right: 0.5rem;"></i> 
-        <span id="buttonText" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: inline-block;">@Model.ButtonText</span>
+        <span id="buttonText" class="oojs-launch-button-text">@Model.ButtonText</span>
     </button>
 </div>
 
@@ -11,16 +11,28 @@
 .oojs-launch-button {
     width: 100%;
     max-width: 100%;
+    min-width: 120px;
     display: flex;
     align-items: center;
-    justify-content: flex-start !important;
-    padding: 0.5rem 0.75rem !important;
+    justify-content: center;
+    padding: 0.5rem 1rem !important;
     box-sizing: border-box;
     font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     min-height: 44px;
     transition: all 0.2s ease-in-out;
     color: #ffffff !important;
     margin: 0 !important;
+    white-space: nowrap;
+    overflow: visible;
+    flex-shrink: 0;
+}
+
+.oojs-launch-button-text {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    display: inline-block;
+    max-width: none;
 }
 
 /* 默认状态 - 使用主题色 */
@@ -65,16 +77,10 @@
 /* 小屏幕适配 */
 @@media (max-width: 768px) {
     .oojs-launch-button {
-        padding: 0.4rem 0.6rem !important;
+        padding: 0.4rem 0.8rem !important;
         font-size: 0.9rem;
         min-height: 40px;
-    }
-    
-    #buttonText {
-        max-width: 80px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        min-width: 100px;
     }
     
     .oojs-launch-button i {
@@ -87,8 +93,10 @@
     // 使用函数作用域避免全局变量冲突
     (function() {
         const localizedStrings = {
-            launchText: '@Html.Raw(Model.LaunchText)',
-            stopText: '@Html.Raw(Model.StopText)'
+            launchText: @Html.Raw(Json.Serialize(Model.LaunchText)),
+            stopText: @Html.Raw(Json.Serialize(Model.StopText)),
+            cancelText: @Html.Raw(Json.Serialize(Model.CancelText)),
+            confirmText: @Html.Raw(Json.Serialize(Model.ConfirmText))
         };
         let launchButtonComponentCurrentIsRunning = @(Model.IsProcessRunning.ToString().ToLower());
         
@@ -127,14 +135,14 @@
                     // 延迟后重新检查状态确保准确性
                     if (action === 'launch') {
                         // 启动游戏时，使用更长的延迟和多次检查
-                        setTimeout(() => {
-                            checkProcessStatusWithRetry(5, 2000); // 最多重试5次，每次间隔2秒
-                        }, 3000); // 初始延迟3秒
-                    } else {
-                        // 停止游戏时，正常检查
-                        setTimeout(() => {
-                            checkProcessStatus();
-                        }, 1000);
+                    setTimeout(function() {
+                        checkProcessStatusWithRetry(5, 2000);
+                    }, 3000);
+                } else {
+                    // 停止游戏时，正常检查
+                    setTimeout(function() {
+                        checkProcessStatus();
+                    }, 1000);
                     }
                 } else {
                     alert('操作失败: ' + (data.message || '未知错误'));
@@ -148,17 +156,24 @@
     
     function confirmStopGame() {
         if (typeof ModalUtils !== 'undefined') {
-            const confirmMessage = '@Html.Raw(Model.ConfirmStopMessage.Replace("\n", "\\n"))';
+            const confirmMessage = @Html.Raw(Json.Serialize(Model.ConfirmStopMessage));
             return new Promise((resolve) => {
                 ModalUtils.confirmStopGame(
                     '',
                     confirmMessage,
                     () => resolve(true),
-                    () => resolve(false)
+                    () => resolve(false),
+                    {
+                        cancelText: localizedStrings.cancelText,
+                        confirmText: localizedStrings.confirmText
+                    }
                 );
             });
         }
-        return Promise.resolve(confirm('@Html.Raw(Model.ConfirmStopMessage.Replace("\n", "\\n"))'));
+        return new Promise((resolve) => {
+            const shouldConfirm = confirm(@Html.Raw(Json.Serialize(Model.ConfirmStopMessage)));
+            resolve(shouldConfirm);
+        });
     }
     
     function updateButtonState(isRunning) {
