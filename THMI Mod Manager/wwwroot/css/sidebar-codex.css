@@ -1,5 +1,6 @@
 /* Codex Sidebar Styles - Wikimedia Design System */
 :root {
+    color-scheme: light only;
     --cdx-sidebar-width: 240px;
     --cdx-sidebar-collapsed-width: 64px;
     --cdx-color-base: #ffffff;

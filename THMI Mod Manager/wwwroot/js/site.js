@@ -21,8 +21,13 @@ const UpdateNotification = {
             // Check if there's a cached update notification
             const updateAvailable = localStorage.getItem(this.updateAvailableKey);
             if (updateAvailable === 'true') {
-                const updateData = JSON.parse(localStorage.getItem(this.updateDataKey) || '{}');
-                this.showUpdateNotification(updateData);
+                try {
+                    const updateData = JSON.parse(localStorage.getItem(this.updateDataKey) || '{}');
+                    this.showUpdateNotification(updateData);
+                } catch (e) {
+                    console.warn('Failed to parse cached update data:', e);
+                    localStorage.removeItem(this.updateDataKey);
+                }
             }
         }
         
@@ -62,7 +67,7 @@ const UpdateNotification = {
             }
         })
         .catch(error => {
-            console.error('Automatic update check failed:', error);
+            console.warn('Automatic update check failed:', error);
             // Don't show error for automatic checks, just try again later
         });
     },

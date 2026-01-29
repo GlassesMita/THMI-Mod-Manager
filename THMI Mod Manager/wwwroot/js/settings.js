@@ -57,10 +57,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const saveText = document.getElementById('saveText');
         const loadingSpinner = document.getElementById('loadingSpinner');
         
-        submitButton.classList.add('loading');
-        submitButton.disabled = true;
-        saveText.style.display = 'none';
-        loadingSpinner.style.display = 'inline-block';
+        if (submitButton) {
+            submitButton.classList.add('loading');
+            submitButton.disabled = true;
+        }
+        if (saveText) saveText.style.display = 'none';
+        if (loadingSpinner) loadingSpinner.style.display = 'inline-block';
         
         // 创建表单数据
         const formData = new FormData(form);
@@ -140,14 +142,16 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Response data:', data);
             
             // 移除加载动画
-            submitButton.classList.remove('loading');
-            submitButton.disabled = false;
-            saveText.style.display = 'inline';
-            loadingSpinner.style.display = 'none';
+            if (submitButton) {
+                submitButton.classList.remove('loading');
+                submitButton.disabled = false;
+            }
+            if (saveText) saveText.style.display = 'inline';
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
             isSaving = false;
             
             // 显示成功提示
-            successToast.classList.add('show');
+            if (successToast) successToast.classList.add('show');
             
             // 刷新自定义光标设置
             if (typeof window.refreshCustomCursor === 'function') {
@@ -169,10 +173,12 @@ document.addEventListener('DOMContentLoaded', function() {
             isSaving = false;
             
             // 移除加载动画
-            submitButton.classList.remove('loading');
-            submitButton.disabled = false;
-            saveText.style.display = 'inline';
-            loadingSpinner.style.display = 'none';
+            if (submitButton) {
+                submitButton.classList.remove('loading');
+                submitButton.disabled = false;
+            }
+            if (saveText) saveText.style.display = 'inline';
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
             
             // 显示错误提示
             ModalUtils.alert('保存失败', '保存设置失败，请重试: ' + error.message);
