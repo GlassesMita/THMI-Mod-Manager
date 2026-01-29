@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('settingsForm');
     const successToast = document.getElementById('successToast');
-    const selects = document.querySelectorAll('.oojs-select');
+    const selects = document.querySelectorAll('.cdx-select');
     let isSaving = false;
     
     // 如果表单不存在，直接返回
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         isSaving = true;
         
-        const submitButton = form.querySelector('.oojs-button-primary');
+        const submitButton = form.querySelector('.cdx-button--primary');
         const saveText = document.getElementById('saveText');
         const loadingSpinner = document.getElementById('loadingSpinner');
         
@@ -182,13 +182,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const cursorRadios = document.querySelectorAll('input[name="cursorType"]');
     cursorRadios.forEach(radio => {
         radio.addEventListener('change', function() {
-            document.querySelectorAll('.oojs-radio-container').forEach(option => {
+            document.querySelectorAll('.cdx-radio-container').forEach(option => {
                 option.style.backgroundColor = 'transparent';
             });
             
             if (this.checked) {
                 const themeColor = document.getElementById('colorPreviewText') ? document.getElementById('colorPreviewText').textContent : '#c670ff';
-                this.closest('.oojs-radio-container').style.backgroundColor = 'rgba(' + parseInt(themeColor.substring(1, 3), 16) + ', ' + parseInt(themeColor.substring(3, 5), 16) + ', ' + parseInt(themeColor.substring(5, 7), 16) + ', 0.1)';
+                this.closest('.cdx-radio-container').style.backgroundColor = 'rgba(' + parseInt(themeColor.substring(1, 3), 16) + ', ' + parseInt(themeColor.substring(3, 5), 16) + ', ' + parseInt(themeColor.substring(5, 7), 16) + ', 0.1)';
             }
         });
     });

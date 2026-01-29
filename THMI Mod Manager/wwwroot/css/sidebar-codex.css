@@ -1,0 +1,253 @@
+/* Codex Sidebar Styles - Wikimedia Design System */
+:root {
+    --cdx-sidebar-width: 240px;
+    --cdx-sidebar-collapsed-width: 64px;
+    --cdx-color-base: #ffffff;
+    --cdx-color-surface: #f8f9fa;
+    --cdx-color-surface--hover: #e9ecef;
+    --cdx-color-surface--active: #dee2e6;
+    --cdx-color-text: #202122;
+    --cdx-color-text--muted: #72777d;
+    --cdx-color-text--subtle: #54595d;
+    --cdx-color-progressive: #3366cc;
+    --cdx-color-progressive--hover: #447ff5;
+    --cdx-color-progressive--active: #2a4d8f;
+    --cdx-color-destructive: #d73333;
+    --cdx-color-destructive--hover: #e53939;
+    --cdx-color-destructive--active: #b33;
+    --cdx-color-border: #a2a9b1;
+    --cdx-color-border--light: #c8ccd1;
+    --cdx-color-success: #14866d;
+    --cdx-color-warning: #ac6600;
+    --cdx-color-error: #d33;
+    --cdx-spacing-horizontal: 12px;
+    --cdx-spacing-vertical: 8px;
+    --cdx-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --cdx-font-size: 14px;
+    --cdx-font-size-small: 12px;
+    --cdx-font-size-heading: 16px;
+    --cdx-border-radius: 2px;
+    --cdx-border-width: 1px;
+    --cdx-transition-fast: 100ms ease-in-out;
+}
+
+.cdx-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--cdx-sidebar-width);
+    height: 100vh;
+    background-color: var(--cdx-color-surface);
+    border-right: var(--cdx-border-width) solid var(--cdx-color-border--light);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.cdx-sidebar-header {
+    padding: var(--cdx-spacing-vertical) var(--cdx-spacing-horizontal);
+    border-bottom: var(--cdx-border-width) solid var(--cdx-color-border--light);
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+}
+
+.cdx-sidebar-title {
+    font-size: var(--cdx-font-size-heading);
+    font-weight: 600;
+    color: var(--cdx-color-text);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-decoration: none;
+}
+
+.cdx-sidebar-title:hover {
+    color: var(--cdx-color-text);
+    text-decoration: none;
+}
+
+.cdx-menu {
+    list-style: none;
+    margin: 0;
+    padding: var(--cdx-spacing-vertical) 0;
+    flex: 1;
+}
+
+.cdx-menu-item {
+    margin: 2px 8px;
+}
+
+.cdx-menu-link {
+    display: flex;
+    align-items: center;
+    padding: 10px var(--cdx-spacing-horizontal);
+    border-radius: var(--cdx-border-radius);
+    color: var(--cdx-color-text);
+    text-decoration: none;
+    font-size: var(--cdx-font-size);
+    font-weight: 400;
+    transition: background-color var(--cdx-transition-fast), color var(--cdx-transition-fast);
+    position: relative;
+}
+
+.cdx-menu-link:hover {
+    background-color: var(--cdx-color-surface--hover);
+    color: var(--cdx-color-text);
+    text-decoration: none;
+}
+
+.cdx-menu-link.cdx-menu-link--active,
+.cdx-menu-link[aria-current="page"] {
+    background-color: rgba(51, 102, 204, 0.1);
+    color: var(--cdx-color-progressive);
+    font-weight: 500;
+}
+
+.cdx-menu-link.cdx-menu-link--active::before,
+.cdx-menu-link[aria-current="page"]::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 24px;
+    background-color: var(--cdx-color-progressive);
+    border-radius: 0 2px 2px 0;
+}
+
+.cdx-menu-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.cdx-menu-icon i.bi,
+.cdx-menu-icon svg {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 1;
+}
+
+.cdx-menu-link.cdx-menu-link--active .cdx-menu-icon,
+.cdx-menu-link[aria-current="page"] .cdx-menu-icon {
+    color: var(--cdx-color-progressive);
+}
+
+.cdx-menu-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 24px;
+}
+
+.cdx-pill {
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.cdx-pill--notice {
+    background-color: var(--cdx-color-progressive);
+    color: #fff;
+}
+
+.cdx-pill--warning {
+    background-color: var(--cdx-color-warning);
+    color: #fff;
+}
+
+.cdx-pill--error {
+    background-color: var(--cdx-color-error);
+    color: #fff;
+}
+
+.cdx-pill--success {
+    background-color: var(--cdx-color-success);
+    color: #fff;
+}
+
+.cdx-sidebar-footer {
+    padding: var(--cdx-spacing-vertical) var(--cdx-spacing-horizontal);
+    border-top: var(--cdx-border-width) solid var(--cdx-color-border--light);
+    background-color: var(--cdx-color-surface);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.cdx-status {
+    display: flex;
+    align-items: center;
+    padding: 8px var(--cdx-spacing-horizontal);
+    border-radius: var(--cdx-border-radius);
+    font-size: var(--cdx-font-size-small);
+    color: var(--cdx-color-text--muted);
+    margin-bottom: var(--cdx-spacing-vertical);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.cdx-status-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cdx-status-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.cdx-status-icon--success,
+.cdx-status[data-status="connected"] .cdx-status-icon {
+    background-color: var(--cdx-color-success);
+}
+
+.cdx-status[data-status="warning"] .cdx-status-icon {
+    background-color: var(--cdx-color-warning);
+}
+
+.cdx-status[data-status="error"] .cdx-status-icon {
+    background-color: var(--cdx-color-error);
+}
+
+.cdx-divider {
+    height: 1px;
+    background-color: var(--cdx-color-border--light);
+    margin: var(--cdx-spacing-vertical) var(--cdx-spacing-horizontal);
+}
+
+@media (max-width: 768px) {
+    .cdx-sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: var(--cdx-border-width) solid var(--cdx-color-border--light);
+    }
+}
+
+#mainContent {
+    margin-left: var(--cdx-sidebar-width);
+}
+
+@media (max-width: 768px) {
+    #mainContent {
+        margin-left: 0;
+    }
+}

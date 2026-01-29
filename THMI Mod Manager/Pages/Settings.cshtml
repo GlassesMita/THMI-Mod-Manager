@@ -12,258 +12,243 @@
     var launcherPath = AppConfig.Get("[Game]LauncherPath", "");
 }
 
-<link rel="stylesheet" href="~/css/settings.css" />
+<link rel="stylesheet" href="~/css/settings-codex.css" />
 
-
-
-<div class="settings-container">
-    <h1 class="oojs-settings-title" id="settingsTitle" style="cursor: default;">@AppConfig.GetLocalized("Settings:Header", "Settings")</h1>
-    <div class="oojs-click-counter" id="clickCounter">点击次数: <span id="clickCount">0</span>/10</div>
+<div class="cdx-page-container">
+    <header class="cdx-page-header">
+        <h1 class="cdx-page-title">
+            <span class="cdx-icon cdx-icon--settings"></span>
+            @AppConfig.GetLocalized("Settings:Header", "Settings")
+        </h1>
+        <p class="cdx-page-subtitle">@AppConfig.GetLocalized("Settings:Subtitle", "Customize your experience")</p>
+    </header>
 
     <form method="post" asp-page-handler="SaveLanguage" id="settingsForm">
-        <div class="oojs-form-group">
-            <label for="languageSelect" class="oojs-label">@AppConfig.GetLocalized("Settings:SelectLanguageLabel", "Language")</label>
-            <select id="languageSelect" name="language" class="oojs-select">
-                @foreach (var loc in locales)
-                {
-                    var fileName = loc.FileName;
-                    <option value="@fileName" selected="@(fileName == selected ? "selected" : null)">@loc.FriendlyName</option>
-                }
-            </select>
-        </div>
-        
-        <div class="oojs-form-group">
-            <label class="oojs-label">@AppConfig.GetLocalized("Settings:DateTimeLabel", "Date & Time Display")</label>
-            <br />
-            <div class="oojs-checkbox-container">
-                <input type="checkbox" id="showSeconds" name="showSeconds" @(Model.ShowSeconds ? "checked" : "") onchange="saveDateTimeSettings()" />
-                <label for="showSeconds" class="oojs-checkbox-label">@AppConfig.GetLocalized("Settings:ShowSeconds", "Show seconds in time display")</label>
-            </div>
-            <br />
-            <div class="oojs-checkbox-container" style="margin-top: var(--spacing-sm);">
-                <input type="checkbox" id="use12Hour" name="use12Hour" @(Model.Use12Hour ? "checked" : "") onchange="saveDateTimeSettings()" />
-                <label for="use12Hour" class="oojs-checkbox-label">@AppConfig.GetLocalized("Settings:Use12Hour", "Use 12-hour time format (AM/PM)")</label>
-            </div>
-            <div class="oojs-form-group" style="margin-top: var(--spacing-md);">
-                <label for="dateFormat" class="oojs-label">@AppConfig.GetLocalized("Settings:DateFormatLabel", "Date Format")</label>
-                <select id="dateFormat" name="dateFormat" class="oojs-select" onchange="saveDateTimeSettings()">
-                    <option value="yyyy-mm-dd" selected="@(Model.DateFormat == "yyyy-mm-dd")">@AppConfig.GetLocalized("Settings:DateFormatYMD", "YYYY-MM-DD")</option>
-                    <option value="dd-mm-yyyy" selected="@(Model.DateFormat == "dd-mm-yyyy")">@AppConfig.GetLocalized("Settings:DateFormatDMY", "DD-MM-YYYY")</option>
-                    <option value="mm-dd-yyyy" selected="@(Model.DateFormat == "mm-dd-yyyy")">@AppConfig.GetLocalized("Settings:DateFormatMDY", "MM-DD-YYYY")</option>
-                    <option value="month-dd" selected="@(Model.DateFormat == "month-dd")">@AppConfig.GetLocalized("Settings:DateFormatMonthD", "Mon DD")</option>
-                    <option value="dd-month" selected="@(Model.DateFormat == "dd-month")">@AppConfig.GetLocalized("Settings:DateFormatDM", "DD Mon")</option>
-                </select>
-            </div>
-            <div class="oojs-form-group" style="margin-top: var(--spacing-md);">
-                <label for="dateSeparator" class="oojs-label">@AppConfig.GetLocalized("Settings:DateSeparatorLabel", "Date Separator")</label>
-                <select id="dateSeparator" name="dateSeparator" class="oojs-select" onchange="saveDateTimeSettings()">
-                    <option value="-" selected="@(Model.DateSeparator == "-")">@AppConfig.GetLocalized("Settings:DateSeparatorDash", "- (Dash)")</option>
-                    <option value="/" selected="@(Model.DateSeparator == "/")">@AppConfig.GetLocalized("Settings:DateSeparatorSlash", "/ (Slash)")</option>
-                </select>
-            </div>
-        </div>
-        
-        <!--
-        <div class="mb-3 form-group-animated">
-            <label for="statusSelect" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:GameStatusLabel", "Game Purchase Status")</label>
-            <br />
-            <select id="statusSelect" name="status" class="form-select">
-                <option value="owned">@AppConfig.GetLocalized("Settings:Owned", "Owned")</option>
-                <option value="not_owned">@AppConfig.GetLocalized("Settings:NotOwned", "Not Owned")</option>
-            </select>
-        </div>
-        -->
-        <div class="oojs-form-group">
-            <label for="cursorType" class="oojs-label">@AppConfig.GetLocalized("Settings:CursorLabel", "Cursor")</label>
-            <select id="cursorType" name="cursorType" class="oojs-select">
-                <option value="default" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "default")>@AppConfig.GetLocalized("Settings:CursorDefault", "Default Cursor")</option>
-                <option value="mystia" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "mystia")>@AppConfig.GetLocalized("Settings:CursorMystia", "Mystia Cursor (CSS)")</option>
-                <option value="osu" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "osu")>@AppConfig.GetLocalized("Settings:CursorOsu", "osu Cursor (JS)")</option>
-            </select>
-        </div>
-
-        @*
-        <div class="mb-3 form-group-animated">
-            <label for="modsPath" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:ModsPathLabel", "Mods Folder")</label>
-            <div class="input-group">
-                <input type="text" id="modsPath" name="modsPath" class="form-control" value="@AppConfig.Get("[App]ModsPath", AppContext.BaseDirectory)" readonly />
-                <button type="button" class="btn btn-primary" id="browseModsPath" data-title="@AppConfig.GetLocalized("FileBrowser:SelectModsFolder", "Select Mods Folder")" disabled>@AppConfig.GetLocalized("Common:Browse", "Browse")</button>
-            </div>
-        </div>
-
-        <div class="mb-3 form-group-animated">
-            <label for="gamePath" class="form-label clickable-label">@AppConfig.GetLocalized("Settings:GamePathLabel", "Game Folder")</label>
-            <div class="input-group">
-                <input type="text" id="gamePath" name="gamePath" class="form-control" value="@AppConfig.Get("[App]GamePath", "")" readonly />
-                <button type="button" class="btn btn-primary" id="browseGamePath" data-title="@AppConfig.GetLocalized("FileBrowser:SelectGameFolder", "Select Game Folder")" disabled>@AppConfig.GetLocalized("Common:Browse", "Browse")</button>
-            </div>
-        </div>
-        *@
-
-        <div class="oojs-form-group" style="display: none;">
-            <label for="themeColor" class="oojs-label">@AppConfig.GetLocalized("Settings:ThemeColorLabel", "Theme Color")</label>
-            <div class="oojs-field-row" style="border: var(--border-width) solid var(--color-border); padding: var(--spacing-sm); border-radius: var(--border-radius);">
-                <input type="color" id="themeColor" name="themeColor" class="oojs-color-input" value="@themeColor" title="Choose your theme color" />
-                <input type="text" id="themeColorText" name="themeColorText" class="oojs-text-input oojs-input" value="@themeColor" />
-            </div>
-        </div>
-
-        <!--
-        <div class="mb-3 form-group-animated">
-            <label class="form-label clickable-label">@AppConfig.GetLocalized("Settings:SteamStatusLabel", "Steam Status")</label>
-            <div class="checkbox-container">
-                <input type="checkbox" id="isSteam" name="isSteam" @(bool.Parse(AppConfig.Get("[App]IsSteam", "true") ?? "true") ? "checked" : "") />
-                <label for="isSteam" class="checkbox-label">@AppConfig.GetLocalized("Settings:IsSteam", "Steam Version")</label>
-            </div>
-        </div>
-        -->
-        <div class="oojs-form-group">
-            <label class="oojs-label">@AppConfig.GetLocalized("Settings:LaunchModeLabel", "Launch Mode")</label>
-            <div class="oojs-radio-group">
-                <div class="oojs-radio-container">
-                    <input type="radio" id="launchModeSteam" name="launchMode" value="steam_launch" @(Model.LaunchMode == "steam_launch" ? "checked" : "") onclick="toggleLauncherPath(this)" />
-                    <label for="launchModeSteam" class="oojs-radio-label">@AppConfig.GetLocalized("Settings:LaunchModeSteam", "Steam Launch")</label>
-                </div>
-                <div class="oojs-radio-container">
-                    <input type="radio" id="launchModeExternal" name="launchMode" value="external_program" @(Model.LaunchMode == "external_program" ? "checked" : "") onclick="toggleLauncherPath(this)" />
-                    <label for="launchModeExternal" class="oojs-radio-label">@AppConfig.GetLocalized("Settings:LaunchModeExternal", "User-Specified External Program")</label>
-                </div>
-            </div>
-            <div class="oojs-launcher-path-section" id="launcherPathSection">
-                <div class="oojs-form-group" style="margin-top: var(--spacing-md);">
-                    <label for="launcherPath" class="oojs-label">@AppConfig.GetLocalized("Settings:LauncherPathLabel", "External Program Path")</label>
-                    <div class="oojs-input-group">
-                        <input type="text" id="launcherPath" name="launcherPath" class="oojs-input" value="@Model.LauncherPath" />
-                        <button type="button" class="oojs-button oojs-button-primary" id="browseLauncherPath" data-title="@AppConfig.GetLocalized("FileBrowser:SelectExecutable", "Select Executable File")">@AppConfig.GetLocalized("Common:Browse", "Browse")</button>
-                    </div>
-                    <div id="launcherPathError" class="oojs-text-danger"></div>
-                    <span id="launcherPathNote" class="oojs-help-text">@AppConfig.GetLocalized("Settings:LauncherPathNote", "Select the executable file to launch the game. The Mod Manager's own executable is not allowed.")</span>
-                    <div style="margin-top: var(--spacing-sm);">
-                        <a href="https://store.steampowered.com/app/1584090/" target="_blank" rel="noopener noreferrer" class="oojs-link">
-                            @AppConfig.GetLocalized("Settings:PurchaseLegitimateGame", "Purchase the authorized game for a better experience.")
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Hidden fields to pass values to JavaScript -->
-        <input type="hidden" id="launchModeHidden" value="@Model.LaunchMode" />
-        <input type="hidden" id="localizedProhibitionText" value="@AppConfig.GetLocalized("Settings:ProhibitionText", "Cannot select the Mod Manager's own executable file.")" />
-        <!-- Hidden fields for update check localization -->
-        <input type="hidden" id="localizedUpdateAvailable" value="@AppConfig.GetLocalized("Updates:UpdateAvailable", "Update available: Version {0}")" />
-        <input type="hidden" id="localizedNoReleaseNotes" value="@AppConfig.GetLocalized("Updates:NoReleaseNotes", "No release notes available")" />
-        <input type="hidden" id="localizedDownloadUpdate" value="@AppConfig.GetLocalized("Updates:DownloadUpdate", "Download Update")" />
-        <input type="hidden" id="localizedNoUpdatesAvailable" value="@AppConfig.GetLocalized("Updates:NoUpdatesAvailable", "No updates available. You are using the latest version.")" />
-        <input type="hidden" id="localizedUpdateCheckingDisabled" value="@AppConfig.GetLocalized("Updates:UpdateCheckingDisabled", "Update checking is disabled")" />
-        <input type="hidden" id="localizedUpdateCheckFailed" value="@AppConfig.GetLocalized("Updates:UpdateCheckFailed", "Update check failed")" />
-        
-        <!-- Hidden fields for notification localization -->
-        <input type="hidden" id="localizedNotificationNotSupported" value="@AppConfig.GetLocalized("Notifications:NotSupported", "Notifications are not supported in this browser")" />
-        <input type="hidden" id="localizedNotificationPermissionGranted" value="@AppConfig.GetLocalized("Notifications:PermissionGranted", "Permission granted")" />
-        <input type="hidden" id="localizedNotificationPermissionDenied" value="@AppConfig.GetLocalized("Notifications:PermissionDenied", "Permission denied")" />
-        <input type="hidden" id="localizedNotificationPermissionDefault" value="@AppConfig.GetLocalized("Notifications:PermissionDefault", "Permission not granted")" />
-        <input type="hidden" id="localizedNotificationRequestSuccess" value="@AppConfig.GetLocalized("Notifications:PermissionRequestSuccess", "Notification permission granted successfully")" />
-        <input type="hidden" id="localizedNotificationRequestDenied" value="@AppConfig.GetLocalized("Notifications:PermissionRequestDenied", "Notification permission denied")" />
-        <input type="hidden" id="localizedNotificationRequestFailed" value="@AppConfig.GetLocalized("Notifications:PermissionRequestFailed", "Failed to request notification permission")" />
-        
-        <div class="oojs-form-group">
-            <label class="oojs-label">@AppConfig.GetLocalized("Settings:ModifyTitleLabel", "Modify Application Title")</label>
-            <br />
-            <div class="oojs-checkbox-container">
-                <input type="checkbox" id="modifyTitle" name="modifyTitle" @(Model.ModifyTitle ? "checked" : "") />
-                <label for="modifyTitle" class="oojs-checkbox-label">@AppConfig.GetLocalized("Settings:ModifyTitleDescription", "Add 'Modded' prefix to game window title")</label>
-            </div>
-        </div>
-
-        <div class="oojs-form-group">
-            <label class="oojs-label">@AppConfig.GetLocalized("Updates:Title", "Updates")</label>
-            <div class="oojs-update-section">
-                <div class="oojs-checkbox-container">
-                    <input type="checkbox" id="autoCheckUpdates" name="autoCheckUpdates" @(Model.AutoCheckUpdates ? "checked" : "") onclick="toggleUpdateFrequency(this)" />
-                    <label for="autoCheckUpdates" class="oojs-checkbox-label">@AppConfig.GetLocalized("Updates:AutoCheckUpdates", "Automatically check for updates")</label>
-                </div>
-                <div class="oojs-form-group" id="updateFrequencySection" style="margin-top: var(--spacing-md);">
-                    <label for="updateFrequency" class="oojs-label">@AppConfig.GetLocalized("Updates:UpdateFrequencyLabel", "Update Frequency")</label>
-                    <select id="updateFrequency" name="updateFrequency" class="oojs-select">
-                        <option value="startup" selected="@(Model.UpdateFrequency == "startup")">@AppConfig.GetLocalized("Updates:FrequencyStartup", "On Startup")</option>
-                        <option value="weekly" selected="@(Model.UpdateFrequency == "weekly")">@AppConfig.GetLocalized("Updates:FrequencyWeekly", "Every Monday")</option>
-                        <option value="monthly" selected="@(Model.UpdateFrequency == "monthly")">@AppConfig.GetLocalized("Updates:FrequencyMonthly", "First Day of Month")</option>
+        <section class="cdx-card">
+            <header class="cdx-card-header">
+                <h2 class="cdx-card-title">
+                    <span class="cdx-icon cdx-icon--language"></span>
+                    @AppConfig.GetLocalized("Settings:SectionLanguage", "Language & Region")
+                </h2>
+            </header>
+            <div class="cdx-card-body">
+                <div class="cdx-field">
+                    <label for="languageSelect" class="cdx-label">@AppConfig.GetLocalized("Settings:SelectLanguageLabel", "Language")</label>
+                    <select id="languageSelect" name="language" class="cdx-select">
+                        @foreach (var loc in locales)
+                        {
+                            var fileName = loc.FileName;
+                            <option value="@fileName" selected="@(fileName == selected ? "selected" : null)">@loc.FriendlyName</option>
+                        }
                     </select>
                 </div>
-                <div class="oojs-update-info" style="margin-top: var(--spacing-sm);">
-                    <div class="oojs-current-version">
-                        <span class="oojs-text-muted">
-                            @string.Format(AppConfig.GetLocalized("Updates:CurrentVersionInfo", "Current version: {0} {1}"), Model.ModName, Model.ModVersion)
-                        </span>
-                    </div>
-                    <div class="oojs-status-row" id="updateStatus" style="display: none;">
-                        <div class="oojs-indicator oojs-indicator-small" role="status">
-                            <span class="visually-hidden">@AppConfig.GetLocalized("Common:Loading", "Loading...")</span>
-                        </div>
-                        <span style="margin-left: var(--spacing-sm);">@AppConfig.GetLocalized("Updates:CheckForUpdates", "Checking for updates...")</span>
-                    </div>
-                    <div class="oojs-update-result" id="updateResult" style="display: none; margin-top: var(--spacing-sm);">
-                    </div>
-                    <div class="oojs-update-progress" id="updateProgress" style="display: none; margin-top: var(--spacing-sm);">
-                        <div class="oojs-progress-container">
-                            <div class="oojs-progress-bar" id="updateProgressBar" role="progressbar" style="width: 0%"></div>
-                        </div>
-                        <span class="oojs-progress-text" id="updateProgressText">0%</span>
+            </div>
+        </section>
+
+        <section class="cdx-card">
+            <header class="cdx-card-header">
+                <h2 class="cdx-card-title">
+                    <span class="cdx-icon cdx-icon--time"></span>
+                    @AppConfig.GetLocalized("Settings:SectionDateTime", "Date & Time")
+                </h2>
+            </header>
+            <div class="cdx-card-body">
+                <div class="cdx-field">
+                    <div class="cdx-checkbox">
+                        <input type="checkbox" id="showSeconds" name="showSeconds" @(Model.ShowSeconds ? "checked" : "") onchange="saveDateTimeSettings()" />
+                        <label for="showSeconds" class="cdx-label">@AppConfig.GetLocalized("Settings:ShowSeconds", "Show seconds in time display")</label>
                     </div>
                 </div>
-                <div class="oojs-actions-row">
-                    <button type="button" class="oojs-button oojs-button-primary oojs-button-small" id="checkNowButton">
-                        @AppConfig.GetLocalized("Updates:CheckNowButton", "Check Now")
-                    </button>
-                    <button type="button" class="oojs-button oojs-button-safe oojs-button-small" id="downloadUpdateButton" style="display: none;">
-                        @AppConfig.GetLocalized("Updates:DownloadButton", "Download Update")
-                    </button>
-                    <button type="button" class="oojs-button oojs-button-progressive oojs-button-small" id="applyUpdateButton" style="display: none;">
-                        @AppConfig.GetLocalized("Updates:ApplyUpdateButton", "Apply Update & Restart")
-                    </button>
+                <div class="cdx-field">
+                    <div class="cdx-checkbox">
+                        <input type="checkbox" id="use12Hour" name="use12Hour" @(Model.Use12Hour ? "checked" : "") onchange="saveDateTimeSettings()" />
+                        <label for="use12Hour" class="cdx-label">@AppConfig.GetLocalized("Settings:Use12Hour", "Use 12-hour time format (AM/PM)")</label>
+                    </div>
+                </div>
+                <div class="cdx-field">
+                    <label for="dateFormat" class="cdx-label">@AppConfig.GetLocalized("Settings:DateFormatLabel", "Date Format")</label>
+                    <select id="dateFormat" name="dateFormat" class="cdx-select" onchange="saveDateTimeSettings()">
+                        <option value="yyyy-mm-dd" selected="@(Model.DateFormat == "yyyy-mm-dd")">@AppConfig.GetLocalized("Settings:DateFormatYMD", "YYYY-MM-DD")</option>
+                        <option value="dd-mm-yyyy" selected="@(Model.DateFormat == "dd-mm-yyyy")">@AppConfig.GetLocalized("Settings:DateFormatDMY", "DD-MM-YYYY")</option>
+                        <option value="mm-dd-yyyy" selected="@(Model.DateFormat == "mm-dd-yyyy")">@AppConfig.GetLocalized("Settings:DateFormatMDY", "MM-DD-YYYY")</option>
+                        <option value="month-dd" selected="@(Model.DateFormat == "month-dd")">@AppConfig.GetLocalized("Settings:DateFormatMonthD", "Mon DD")</option>
+                        <option value="dd-month" selected="@(Model.DateFormat == "dd-month")">@AppConfig.GetLocalized("Settings:DateFormatDM", "DD Mon")</option>
+                    </select>
+                </div>
+                <div class="cdx-field">
+                    <label for="dateSeparator" class="cdx-label">@AppConfig.GetLocalized("Settings:DateSeparatorLabel", "Date Separator")</label>
+                    <select id="dateSeparator" name="dateSeparator" class="cdx-select" onchange="saveDateTimeSettings()">
+                        <option value="-" selected="@(Model.DateSeparator == "-")">@AppConfig.GetLocalized("Settings:DateSeparatorDash", "- (Dash)")</option>
+                        <option value="/" selected="@(Model.DateSeparator == "/")">@AppConfig.GetLocalized("Settings:DateSeparatorSlash", "/ (Slash)")</option>
+                    </select>
                 </div>
             </div>
-        </div>
-        
-        
-        <div class="oojs-form-group">
-            <label class="oojs-label">@AppConfig.GetLocalized("Notifications:Title", "Notifications")</label>
-            <div class="oojs-notification-section">
-                <div class="oojs-checkbox-container">
-                    <input type="checkbox" id="enableNotifications" name="enableNotifications" @(Model.EnableNotifications ? "checked" : "") onclick="toggleNotificationPermission(this)" />
-                    <label for="enableNotifications" class="oojs-checkbox-label">@AppConfig.GetLocalized("Notifications:EnableNotifications", "Enable browser notifications")</label>
+        </section>
+
+        <section class="cdx-card">
+            <header class="cdx-card-header">
+                <h2 class="cdx-card-title">
+                    <span class="cdx-icon cdx-icon--cursor"></span>
+                    @AppConfig.GetLocalized("Settings:SectionAppearance", "Appearance")
+                </h2>
+            </header>
+            <div class="cdx-card-body">
+                <div class="cdx-field">
+                    <label for="cursorType" class="cdx-label">@AppConfig.GetLocalized("Settings:CursorLabel", "Cursor")</label>
+                    <select id="cursorType" name="cursorType" class="cdx-select">
+                        <option value="default" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "default")>@AppConfig.GetLocalized("Settings:CursorDefault", "Default Cursor")</option>
+                        <option value="mystia" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "mystia")>@AppConfig.GetLocalized("Settings:CursorMystia", "Mystia Cursor (CSS)")</option>
+                        <option value="osu" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "osu")>@AppConfig.GetLocalized("Settings:CursorOsu", "osu Cursor (JS)")</option>
+                    </select>
                 </div>
-                <div class="oojs-notification-info" style="margin-top: var(--spacing-sm);">
-                    <span class="oojs-text-muted">
-                        @AppConfig.GetLocalized("Notifications:Description", "Receive notifications for updates and important events")
-                    </span>
-                </div>
-                <div class="oojs-notification-permission" id="notificationPermissionSection" style="margin-top: var(--spacing-sm);">
-                    <div class="oojs-permission-status" id="permissionStatus">
-                        <span class="oojs-text-muted" id="permissionStatusText">@AppConfig.GetLocalized("Notifications:CheckingPermission", "Checking permission status...")</span>
+            </div>
+        </section>
+
+        <section class="cdx-card">
+            <header class="cdx-card-header">
+                <h2 class="cdx-card-title">
+                    <span class="cdx-icon cdx-icon--launch"></span>
+                    @AppConfig.GetLocalized("Settings:SectionLaunch", "Launch Settings")
+                </h2>
+            </header>
+            <div class="cdx-card-body">
+                <div class="cdx-field">
+                    <label class="cdx-label">@AppConfig.GetLocalized("Settings:LaunchModeLabel", "Launch Mode")</label>
+                    <div class="cdx-radio-group">
+                        <div class="cdx-radio">
+                            <input type="radio" id="launchModeSteam" name="launchMode" value="steam_launch" @(Model.LaunchMode == "steam_launch" ? "checked" : "") onclick="toggleLauncherPath(this)" />
+                            <label for="launchModeSteam">@AppConfig.GetLocalized("Settings:LaunchModeSteam", "Steam Launch")</label>
+                        </div>
+                        <div class="cdx-radio">
+                            <input type="radio" id="launchModeExternal" name="launchMode" value="external_program" @(Model.LaunchMode == "external_program" ? "checked" : "") onclick="toggleLauncherPath(this)" />
+                            <label for="launchModeExternal">@AppConfig.GetLocalized("Settings:LaunchModeExternal", "External Program")</label>
+                        </div>
                     </div>
-                    <button type="button" class="oojs-button oojs-button-primary oojs-button-small" style="margin-top: var(--spacing-sm);" id="requestPermissionButton">
+                </div>
+                <div class="cdx-field cdx-field--indented" id="launcherPathSection" style="display: @(Model.LaunchMode == "external_program" ? "block" : "none")">
+                    <label for="launcherPath" class="cdx-label">@AppConfig.GetLocalized("Settings:LauncherPathLabel", "Program Path")</label>
+                    <div class="cdx-input-button">
+                        <input type="text" id="launcherPath" name="launcherPath" class="cdx-text-input" value="@Model.LauncherPath" />
+                        <button type="button" class="cdx-button cdx-button--primary" id="browseLauncherPath" data-title="@AppConfig.GetLocalized("FileBrowser:SelectExecutable", "Select Executable")">@AppConfig.GetLocalized("Common:Browse", "Browse")</button>
+                    </div>
+                    <p class="cdx-help-text" id="launcherPathNote">@AppConfig.GetLocalized("Settings:LauncherPathNote", "Select the executable file to launch the game.")</p>
+                    <p class="cdx-help-text cdx-help-text--error" id="launcherPathError"></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="cdx-card">
+            <header class="cdx-card-header">
+                <h2 class="cdx-card-title">
+                    <span class="cdx-icon cdx-icon--updates"></span>
+                    @AppConfig.GetLocalized("Settings:SectionUpdates", "Updates")
+                </h2>
+            </header>
+            <div class="cdx-card-body">
+                <div class="cdx-field">
+                    <div class="cdx-checkbox">
+                        <input type="checkbox" id="autoCheckUpdates" name="autoCheckUpdates" @(Model.AutoCheckUpdates ? "checked" : "") onclick="toggleUpdateFrequency(this)" />
+                        <label for="autoCheckUpdates" class="cdx-label">@AppConfig.GetLocalized("Updates:AutoCheckUpdates", "Automatically check for updates")</label>
+                    </div>
+                </div>
+                <div class="cdx-field cdx-field--indented" id="updateFrequencySection">
+                    <label for="updateFrequency" class="cdx-label">@AppConfig.GetLocalized("Updates:UpdateFrequencyLabel", "Check Frequency")</label>
+                    <select id="updateFrequency" name="updateFrequency" class="cdx-select">
+                        <option value="startup" selected="@(Model.UpdateFrequency == "startup")">@AppConfig.GetLocalized("Updates:FrequencyStartup", "On Startup")</option>
+                        <option value="weekly" selected="@(Model.UpdateFrequency == "weekly")">@AppConfig.GetLocalized("Updates:FrequencyWeekly", "Weekly")</option>
+                        <option value="monthly" selected="@(Model.UpdateFrequency == "monthly")">@AppConfig.GetLocalized("Updates:FrequencyMonthly", "Monthly")</option>
+                    </select>
+                </div>
+                <div class="cdx-info-box">
+                    <span class="cdx-info-box__text">@string.Format(AppConfig.GetLocalized("Updates:CurrentVersionInfo", "Current version: {0} {1}"), Model.ModName, Model.ModVersion)</span>
+                </div>
+                <div class="cdx-field cdx-field--indented">
+                    <div class="cdx-button-group">
+                        <button type="button" class="cdx-button cdx-button--primary cdx-button--small" id="checkNowButton">
+                            @AppConfig.GetLocalized("Updates:CheckNowButton", "Check Now")
+                        </button>
+                        <button type="button" class="cdx-button cdx-button--safe cdx-button--small" id="downloadUpdateButton" style="display: none;">
+                            @AppConfig.GetLocalized("Updates:DownloadButton", "Download")
+                        </button>
+                        <button type="button" class="cdx-button cdx-button--progressive cdx-button--small" id="applyUpdateButton" style="display: none;">
+                            @AppConfig.GetLocalized("Updates:ApplyUpdateButton", "Apply")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cdx-card">
+            <header class="cdx-card-header">
+                <h2 class="cdx-card-title">
+                    <span class="cdx-icon cdx-icon--notifications"></span>
+                    @AppConfig.GetLocalized("Settings:SectionNotifications", "Notifications")
+                </h2>
+            </header>
+            <div class="cdx-card-body">
+                <div class="cdx-field">
+                    <div class="cdx-checkbox">
+                        <input type="checkbox" id="enableNotifications" name="enableNotifications" @(Model.EnableNotifications ? "checked" : "") onclick="toggleNotificationPermission(this)" />
+                        <label for="enableNotifications" class="cdx-label">@AppConfig.GetLocalized("Notifications:EnableNotifications", "Enable browser notifications")</label>
+                    </div>
+                </div>
+                <div class="cdx-field cdx-field--indented">
+                    <div class="cdx-info-box cdx-info-box--muted">
+                        <span class="cdx-info-box__text">@AppConfig.GetLocalized("Notifications:Description", "Receive notifications for updates and events")</span>
+                    </div>
+                    <div class="cdx-status-indicator" id="permissionStatus">
+                        <span class="cdx-status-indicator__text" id="permissionStatusText">@AppConfig.GetLocalized("Notifications:CheckingPermission", "Checking...")</span>
+                    </div>
+                    <button type="button" class="cdx-button cdx-button--primary cdx-button--small" id="requestPermissionButton">
                         @AppConfig.GetLocalized("Notifications:RequestPermission", "Request Permission")
                     </button>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <input type="hidden" id="showSecondsHidden" name="showSeconds" value="@Model.ShowSeconds.ToString().ToLower()" />
-        <input type="hidden" id="use12HourHidden" name="use12Hour" value="@Model.Use12Hour.ToString().ToLower()" />
-        <input type="hidden" id="dateFormatHidden" name="dateFormat" value="@Model.DateFormat" />
-
-        <button type="submit" class="oojs-button oojs-button-primary" id="saveButton">
-            <span id="saveText">@AppConfig.GetLocalized("Common:Save", "Save")</span>
-            <div id="loadingSpinner" class="oojs-indicator oojs-indicator-small" style="display: none;" role="status">
-                <span class="visually-hidden">@AppConfig.GetLocalized("Common:Saving", "Saving...")</span>
+        <section class="cdx-card">
+            <header class="cdx-card-header">
+                <h2 class="cdx-card-title">
+                    <span class="cdx-icon cdx-icon--title"></span>
+                    @AppConfig.GetLocalized("Settings:SectionTitle", "Window Title")
+                </h2>
+            </header>
+            <div class="cdx-card-body">
+                <div class="cdx-field">
+                    <div class="cdx-checkbox">
+                        <input type="checkbox" id="modifyTitle" name="modifyTitle" @(Model.ModifyTitle ? "checked" : "") />
+                        <label for="modifyTitle" class="cdx-label">@AppConfig.GetLocalized("Settings:ModifyTitleDescription", "Add 'Modded' prefix to game window title")</label>
+                    </div>
+                </div>
             </div>
-        </button>
-    </form>
+        </section>
 
-    <div class="oojs-success-toast" id="successToast">
-        @AppConfig.GetLocalized("Settings:ChangesSaved", "Changes saved successfully!")
-    </div>
+        <footer class="cdx-page-footer">
+            <input type="hidden" id="showSecondsHidden" name="showSeconds" value="@Model.ShowSeconds.ToString().ToLower()" />
+            <input type="hidden" id="use12HourHidden" name="use12Hour" value="@Model.Use12Hour.ToString().ToLower()" />
+            <input type="hidden" id="dateFormatHidden" name="dateFormat" value="@Model.DateFormat" />
+            <input type="hidden" id="launchModeHidden" value="@Model.LaunchMode" />
+            <input type="hidden" id="localizedProhibitionText" value="@AppConfig.GetLocalized("Settings:ProhibitionText", "Cannot select the Mod Manager's own executable.")" />
+            <input type="hidden" id="localizedUpdateAvailable" value="@AppConfig.GetLocalized("Updates:UpdateAvailable", "Update available: Version {0}")" />
+            <input type="hidden" id="localizedNoReleaseNotes" value="@AppConfig.GetLocalized("Updates:NoReleaseNotes", "No release notes")" />
+            <input type="hidden" id="localizedDownloadUpdate" value="@AppConfig.GetLocalized("Updates:DownloadUpdate", "Download")" />
+            <input type="hidden" id="localizedNoUpdatesAvailable" value="@AppConfig.GetLocalized("Updates:NoUpdatesAvailable", "No updates available")" />
+            <input type="hidden" id="localizedUpdateCheckingDisabled" value="@AppConfig.GetLocalized("Updates:UpdateCheckingDisabled", "Update checking is disabled")" />
+            <input type="hidden" id="localizedUpdateCheckFailed" value="@AppConfig.GetLocalized("Updates:UpdateCheckFailed", "Update check failed")" />
+            <input type="hidden" id="localizedNotificationNotSupported" value="@AppConfig.GetLocalized("Notifications:NotSupported", "Not supported")" />
+            <input type="hidden" id="localizedNotificationPermissionGranted" value="@AppConfig.GetLocalized("Notifications:PermissionGranted", "Granted")" />
+            <input type="hidden" id="localizedNotificationPermissionDenied" value="@AppConfig.GetLocalized("Notifications:PermissionDenied", "Denied")" />
+            <input type="hidden" id="localizedNotificationPermissionDefault" value="@AppConfig.GetLocalized("Notifications:PermissionDefault", "Not granted")" />
+            <input type="hidden" id="localizedNotificationRequestSuccess" value="@AppConfig.GetLocalized("Notifications:PermissionRequestSuccess", "Permission granted")" />
+            <input type="hidden" id="localizedNotificationRequestDenied" value="@AppConfig.GetLocalized("Notifications:PermissionRequestDenied", "Permission denied")" />
+            <input type="hidden" id="localizedNotificationRequestFailed" value="@AppConfig.GetLocalized("Notifications:PermissionRequestFailed", "Request failed")" />
+            
+            <button type="submit" class="cdx-button cdx-button--primary cdx-button--large" id="saveButton">
+                <span class="cdx-button__icon cdx-button__icon--save"></span>
+                @AppConfig.GetLocalized("Common:Save", "Save Changes")
+            </button>
+        </footer>
+    </form>
 </div>
 
 <script src="~/js/settings.js"></script>

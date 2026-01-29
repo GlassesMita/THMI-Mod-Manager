@@ -1,14 +1,14 @@
 @model THMI_Mod_Manager.ViewComponents.LaunchButtonViewModel
 
 <div style="display: block; width: 100%;">
-    <button type="button" class="oojs-button oojs-button-primary oojs-launch-button" id="launchButton" onclick="handleLauncherClick()" style="width: 100% !important">
+    <button type="button" class="cdx-button cdx-button--primary cdx-launch-button" id="launchButton" onclick="handleLauncherClick()" style="width: 100% !important">
         <i class="bi @Model.ButtonIcon" style="margin-right: 0.5rem;"></i> 
-        <span id="buttonText" class="oojs-launch-button-text">@Model.ButtonText</span>
+        <span id="buttonText" class="cdx-launch-button-text">@Model.ButtonText</span>
     </button>
 </div>
 
 <style>
-.oojs-launch-button {
+.cdx-launch-button {
     width: 100%;
     max-width: 100%;
     min-width: 120px;
@@ -27,7 +27,7 @@
     flex-shrink: 0;
 }
 
-.oojs-launch-button-text {
+.cdx-launch-button-text {
     white-space: nowrap;
     overflow: visible;
     text-overflow: clip;
@@ -35,55 +35,51 @@
     max-width: none;
 }
 
-/* 默认状态 - 使用主题色 */
-.oojs-launch-button {
+.cdx-launch-button {
     background-color: var(--theme-color, #c670ff);
     border-color: var(--theme-color, #c670ff);
 }
 
-/* 安全状态（启动） - 绿色 */
-.oojs-launch-button.oojs-button-safe {
+.cdx-launch-button.cdx-button--safe {
     background-color: var(--color-success, #14866d) !important;
     border-color: var(--color-success, #14866d) !important;
 }
 
-/* 危险状态（停止） - 红色 */
-.oojs-launch-button.oojs-button-destructive {
+.cdx-launch-button.cdx-button--destructive {
     background-color: var(--color-destructive, #d73333) !important;
     border-color: var(--color-destructive, #d73333) !important;
 }
 
-.oojs-launch-button:hover,
-.oojs-launch-button:focus {
+.cdx-launch-button:hover,
+.cdx-launch-button:focus {
     background-color: var(--theme-color--hover, #d18aff);
     border-color: var(--theme-color--hover, #d18aff);
     color: #ffffff !important;
 }
 
-.oojs-launch-button.oojs-button-safe:hover,
-.oojs-launch-button.oojs-button-safe:focus {
+.cdx-launch-button.cdx-button--safe:hover,
+.cdx-launch-button.cdx-button--safe:focus {
     background-color: var(--color-success--hover, #179c82) !important;
     border-color: var(--color-success--hover, #179c82) !important;
     color: #ffffff !important;
 }
 
-.oojs-launch-button.oojs-button-destructive:hover,
-.oojs-launch-button.oojs-button-destructive:focus {
+.cdx-launch-button.cdx-button--destructive:hover,
+.cdx-launch-button.cdx-button--destructive:focus {
     background-color: var(--color-destructive--hover, #e03535) !important;
     border-color: var(--color-destructive--hover, #e03535) !important;
     color: #ffffff !important;
 }
 
-/* 小屏幕适配 */
 @@media (max-width: 768px) {
-    .oojs-launch-button {
+    .cdx-launch-button {
         padding: 0.4rem 0.8rem !important;
         font-size: 0.9rem;
         min-height: 40px;
         min-width: 100px;
     }
     
-    .oojs-launch-button i {
+    .cdx-launch-button i {
         margin-right: 0.3rem !important;
     }
 }
@@ -183,11 +179,11 @@
         const buttonIcon = button.querySelector('i');
         
         if (isRunning) {
-            button.className = 'oojs-button oojs-button-destructive oojs-launch-button';
+            button.className = 'cdx-button cdx-button--destructive cdx-launch-button';
             buttonIcon.className = 'bi bi-stop-fill';
             buttonText.textContent = localizedStrings.stopText;
         } else {
-            button.className = 'oojs-button oojs-button-safe oojs-launch-button';
+            button.className = 'cdx-button cdx-button--safe cdx-launch-button';
             buttonIcon.className = 'bi bi-play-fill';
             buttonText.textContent = localizedStrings.launchText;
         }

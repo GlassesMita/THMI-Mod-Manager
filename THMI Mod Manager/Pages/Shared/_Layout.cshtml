@@ -31,12 +31,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/cursor-selector.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/settings.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settings-codex.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/file-browser.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/oojs-ui/oojs-ui-wikimediaui.min.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/sidebar-oojs-ui.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/oojs-ui-theme.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/oojs-ui-dialog.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sidebar-codex.css" asp-append-version="true" />
     <style>
         h1 {
             color: @@themeColor !important;
@@ -127,7 +124,7 @@
         }
         
         /* 时间显示样式 */
-        .oojs-ui-sidebar-time {
+        .cdx-sidebar-time {
             font-size: 0.85rem;
             color: var(--color-text-muted, #72777d);
             margin-top: 4px;
@@ -183,7 +180,7 @@
             color: #72777d;
         }
         
-        .oojs-button-danger {
+        .cdx-button--destructive {
             background-color: #d73333;
             color: #ffffff;
             border: 1px solid #d73333;
@@ -194,20 +191,20 @@
             transition: background-color 0.2s;
         }
         
-        .oojs-button-danger:hover {
+        .cdx-button--destructive:hover {
             background-color: #b32424;
         }
         
-        .oojs-button-danger:active {
+        .cdx-button--destructive:active {
             background-color: #a61721;
         }
         
-        .oojs-button-danger i {
+        .cdx-button--destructive i {
             margin-right: 4px;
         }
         
         /* 侧边栏调整 */
-        .oojs-ui-sidebar {
+        .cdx-sidebar {
             z-index: 1040;
         }
         
@@ -231,37 +228,37 @@
 
     <div class="d-flex">
         <!-- Sidebar for md and up -->
-        <nav id="sidebar" class="oojs-ui-sidebar d-none d-md-block" style="width:260px; height:100vh; position:fixed; top:0; left:0; overflow:hidden;">
-            <div class="oojs-ui-sidebar-header">
-                <a id="navbarBrandSidebar" class="oojs-ui-sidebar-title" asp-area="" asp-page="/Index" style="cursor: pointer; text-decoration: none;">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
+        <nav id="sidebar" class="cdx-sidebar d-none d-md-block" style="width:260px; height:100vh; position:fixed; top:0; left:0; overflow:hidden;">
+            <div class="cdx-sidebar-header">
+                <a id="navbarBrandSidebar" class="cdx-sidebar-title" asp-area="" asp-page="/Index" style="cursor: pointer; text-decoration: none;">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</a>
             </div>
-            <ul class="oojs-ui-menu">
-                <li class="oojs-ui-menu-item">
-                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Index"><span class="oojs-ui-menu-icon"><i class="bi bi-house"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
+            <ul class="cdx-menu">
+                <li class="cdx-menu-item">
+                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Index"><span class="cdx-menu-icon"><i class="bi bi-house"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
                 </li>
-                <li class="oojs-ui-menu-item">
-                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Mods"><span class="oojs-ui-menu-icon"><i class="bi bi-box-seam"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
+                <li class="cdx-menu-item">
+                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Mods"><span class="cdx-menu-icon"><i class="bi bi-box-seam"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
                 </li>
-                <li class="oojs-ui-menu-item">
-                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Explore"><span class="oojs-ui-menu-icon"><i class="bi bi-globe"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
+                <li class="cdx-menu-item">
+                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Explore"><span class="cdx-menu-icon"><i class="bi bi-globe"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
                 </li>
-                <li class="oojs-ui-menu-item">
-                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Settings">
-                        <span class="oojs-ui-menu-icon"><i class="bi bi-gear"></i></span>
-                        <span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
-                        <span id="settingsUpdateBadge" class="oojs-ui-pill oojs-ui-pill-warning" style="display: none;">!</span>
+                <li class="cdx-menu-item">
+                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Settings">
+                        <span class="cdx-menu-icon"><i class="bi bi-gear"></i></span>
+                        <span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
+                        <span id="settingsUpdateBadge" class="cdx-pill cdx-pill--warning" style="display: none;">!</span>
                     </a>
                 </li>
-                <li class="oojs-ui-menu-item">
-                    <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/About"><span class="oojs-ui-menu-icon"><i class="bi bi-info-circle"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
+                <li class="cdx-menu-item">
+                    <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/About"><span class="cdx-menu-icon"><i class="bi bi-info-circle"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
                 </li>
             </ul>
 
             <!-- Steam Status Indicator -->
-            <div class="oojs-ui-sidebar-footer">
-                <div class="oojs-ui-status" id="steamStatusIndicator">
-                    <span class="oojs-ui-status-icon" id="steamStatusIcon"></span>
-                    <span class="oojs-ui-status-text" id="steamStatusText">@AppConfig.GetLocalized("Steam:Checking", "Checking...")</span>
+            <div class="cdx-sidebar-footer">
+                <div class="cdx-status" id="steamStatusIndicator">
+                    <span class="cdx-status-icon" id="steamStatusIcon"></span>
+                    <span class="cdx-status-text" id="steamStatusText">@AppConfig.GetLocalized("Steam:Checking", "Checking...")</span>
                 </div>
 
                 <!-- Fixed button at the bottom of the sidebar (md+) -->
@@ -277,34 +274,34 @@
                 <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">@AppConfig.GetLocalized("App:Name", "THMI Mod Manager")</h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
-            <div class="offcanvas-body oojs-ui-sidebar" style="display:flex; flex-direction:column; overflow:hidden;">
-                <ul class="oojs-ui-menu">
-                    <li class="oojs-ui-menu-item">
-                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Index"><span class="oojs-ui-menu-icon"><i class="bi bi-house"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
+            <div class="offcanvas-body cdx-sidebar" style="display:flex; flex-direction:column; overflow:hidden;">
+                <ul class="cdx-menu">
+                    <li class="cdx-menu-item">
+                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Index"><span class="cdx-menu-icon"><i class="bi bi-house"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Home", "Home")</span></a>
                     </li>
-                    <li class="oojs-ui-menu-item">
-                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Mods"><span class="oojs-ui-menu-icon"><i class="bi bi-box-seam"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
+                    <li class="cdx-menu-item">
+                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Mods"><span class="cdx-menu-icon"><i class="bi bi-box-seam"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Mods", "Mods")</span></a>
                     </li>
-                    <li class="oojs-ui-menu-item">
-                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Explore"><span class="oojs-ui-menu-icon"><i class="bi bi-globe"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
+                    <li class="cdx-menu-item">
+                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Explore"><span class="cdx-menu-icon"><i class="bi bi-globe"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Explore", "Explore")</span></a>
                     </li>
-                    <li class="oojs-ui-menu-item">
-                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/Settings">
-                            <span class="oojs-ui-menu-icon"><i class="bi bi-gear"></i></span>
-                            <span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
-                            <span id="settingsUpdateBadgeOffcanvas" class="oojs-ui-pill oojs-ui-pill-warning" style="display: none;">!</span>
+                    <li class="cdx-menu-item">
+                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/Settings">
+                            <span class="cdx-menu-icon"><i class="bi bi-gear"></i></span>
+                            <span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:Settings", "Settings")</span>
+                            <span id="settingsUpdateBadgeOffcanvas" class="cdx-pill cdx-pill--warning" style="display: none;">!</span>
                         </a>
                     </li>
-                    <li class="oojs-ui-menu-item">
-                        <a class="nav-link text-dark oojs-ui-menu-link" asp-area="" asp-page="/About"><span class="oojs-ui-menu-icon"><i class="bi bi-info-circle"></i></span><span class="oojs-ui-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
+                    <li class="cdx-menu-item">
+                        <a class="nav-link text-dark cdx-menu-link" asp-area="" asp-page="/About"><span class="cdx-menu-icon"><i class="bi bi-info-circle"></i></span><span class="cdx-menu-text">@AppConfig.GetLocalized("Sidebar:About", "About")</span></a>
                     </li>
                 </ul>
 
                 <!-- Steam Status Indicator -->
-                <div class="oojs-ui-sidebar-footer">
-                    <div class="oojs-ui-status" id="steamStatusIndicatorOffcanvas" style="cursor: pointer;">
-                        <span class="oojs-ui-status-icon" id="steamStatusIconOffcanvas"></span>
-                        <span class="oojs-ui-status-text" id="steamStatusTextOffcanvas">@AppConfig.GetLocalized("Steam:Checking", "Checking...")</span>
+                <div class="cdx-sidebar-footer">
+                    <div class="cdx-status" id="steamStatusIndicatorOffcanvas" style="cursor: pointer;">
+                        <span class="cdx-status-icon" id="steamStatusIconOffcanvas"></span>
+                        <span class="cdx-status-text" id="steamStatusTextOffcanvas">@AppConfig.GetLocalized("Steam:Checking", "Checking...")</span>
                     </div>
                 </div>
 
@@ -329,7 +326,7 @@
                     <span id="sessionTimeValue" class="time-value">00:00:00</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px;">
-                    <button id="exitButton" class="oojs-button oojs-button-danger" onclick="showExitConfirmation()">
+                    <button id="exitButton" class="cdx-button cdx-button--destructive" onclick="showExitConfirmation()" style="padding: 10px 20px !important; font-size: 14px !important; min-height: 44px !important;">
                         <i class="bi bi-box-arrow-right"></i>
                         <span>@AppConfig.GetLocalized("Common:Exit", "Exit")</span>
                     </button>
