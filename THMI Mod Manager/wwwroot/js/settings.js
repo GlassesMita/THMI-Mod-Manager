@@ -10,6 +10,34 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Update icon font function
+    window.updateIconFont = function(fontValue) {
+        const root = document.documentElement;
+        if (fontValue === 'fluent') {
+            root.style.setProperty('--icon-font-family', "'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif");
+        } else {
+            root.style.setProperty('--icon-font-family', "'Segoe MDL2 Assets', 'Segoe Fluent Icons', sans-serif");
+        }
+        // Update hidden input for form submission
+        const hiddenInput = document.getElementById('iconFontHidden');
+        if (hiddenInput) {
+            hiddenInput.value = fontValue;
+        }
+        // Save to localStorage for persistence
+        localStorage.setItem('iconFont', fontValue);
+        console.log('Icon font changed to:', fontValue);
+    };
+
+    // Load saved icon font on page load
+    const savedIconFont = localStorage.getItem('iconFont');
+    if (savedIconFont) {
+        const iconFontSelect = document.getElementById('iconFont');
+        if (iconFontSelect) {
+            iconFontSelect.value = savedIconFont;
+        }
+        updateIconFont(savedIconFont);
+    }
+
     const simpleMarkdownParser = (text) => {
         if (!text) return '';
         let html = text

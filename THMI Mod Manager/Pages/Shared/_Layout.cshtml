@@ -35,10 +35,17 @@
     <link rel="stylesheet" href="~/css/file-browser.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/sidebar-codex.css" asp-append-version="true" />
     <style>
-        /* Local Segoe MDL2 Font */
+        /* Local Segoe Fonts */
         @@font-face {
             font-family: 'Segoe MDL2 Assets';
-            src: url('~/fonts/SegMDL2.ttf') format('truetype');
+            src: url('/fonts/SegMDL2.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Segoe Fluent Icons';
+            src: url('/fonts/SegoeFluentIcons.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
@@ -118,8 +125,12 @@
         }
         
         /* Segoe MDL2 Assets Icons */
+        :root {
+            --icon-font-family: 'Segoe MDL2 Assets', 'Segoe Fluent Icons', sans-serif;
+        }
+        
         .segoe-icon {
-            font-family: 'Segoe MDL2 Assets', 'Segoe Fluent Icons', sans-serif;
+            font-family: var(--icon-font-family);
             font-weight: normal;
             font-style: normal;
             font-size: 1rem;

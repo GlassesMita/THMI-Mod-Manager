@@ -71,6 +71,9 @@ namespace THMI_Mod_Manager.Pages
         // 新的光标类型属性
         public string CursorType { get; set; } = "default";
         
+        // 图标字体设置属性
+        public string IconFont { get; set; } = "mdl2"; // mdl2 或 fluent
+        
         // 主题色属性
         public string ThemeColor { get; set; } = "#c670ff";
         
@@ -125,6 +128,9 @@ namespace THMI_Mod_Manager.Pages
                 
                 var cursorTypeValue = _appConfig.Get("[Cursor]CursorType", "default");
                 CursorType = cursorTypeValue ?? "default";
+                
+                var iconFontValue = _appConfig.Get("[Icon]Font", "mdl2");
+                IconFont = iconFontValue ?? "mdl2";
                 
                 if (UseOsuCursor && CursorType == "default")
                 {
@@ -181,7 +187,7 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications, bool showSeconds, bool use12Hour, string dateFormat, string dateSeparator)
+        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string iconFont, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications, bool showSeconds, bool use12Hour, string dateFormat, string dateSeparator)
         {
             if (string.IsNullOrEmpty(language))
             {
@@ -203,6 +209,12 @@ namespace THMI_Mod_Manager.Pages
                 if (!string.IsNullOrEmpty(cursorType))
                 {
                     _appConfig.Set("[Cursor]CursorType", cursorType);
+                }
+                
+                // Save icon font setting
+                if (!string.IsNullOrEmpty(iconFont))
+                {
+                    _appConfig.Set("[Icon]Font", iconFont);
                 }
                 
                 // Save theme color setting

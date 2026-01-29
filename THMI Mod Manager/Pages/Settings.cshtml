@@ -22,6 +22,7 @@
     </header>
 
     <form method="post" asp-page-handler="SaveLanguage" id="settingsForm">
+        <input type="hidden" name="iconFont" id="iconFontHidden" value="@Model.IconFont" />
         <section class="cdx-card">
             <header class="cdx-card-header">
                 <h2 class="cdx-card-title">
@@ -98,6 +99,14 @@
                         <option value="mystia" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "mystia")>@AppConfig.GetLocalized("Settings:CursorMystia", "Mystia Cursor (CSS)")</option>
                         <option value="osu" selected=@(AppConfig.Get("[Cursor]CursorType", "default") == "osu")>@AppConfig.GetLocalized("Settings:CursorOsu", "osu Cursor (JS)")</option>
                     </select>
+                </div>
+                <div class="cdx-field">
+                    <label for="iconFont" class="cdx-label">@AppConfig.GetLocalized("Settings:IconFontLabel", "Icon Font")</label>
+                    <select id="iconFont" name="iconFont" class="cdx-select" onchange="updateIconFont(this.value)">
+                        <option value="mdl2" selected=@(AppConfig.Get("[Icon]Font", "mdl2") == "mdl2")>@AppConfig.GetLocalized("Settings:IconFontMDL2", "Segoe MDL2 Assets")</option>
+                        <option value="fluent" selected=@(AppConfig.Get("[Icon]Font", "mdl2") == "fluent")>@AppConfig.GetLocalized("Settings:IconFontFluent", "Segoe Fluent Icons")</option>
+                    </select>
+                    <p class="cdx-help-text">@AppConfig.GetLocalized("Settings:IconFontHelp", "Select the icon font to use for UI icons.")</p>
                 </div>
             </div>
         </section>
