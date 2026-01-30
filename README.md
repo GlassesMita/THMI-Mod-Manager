@@ -21,7 +21,7 @@ A mod manager for Touhou Mystia Izakaya game.
 ## Requirements
 
 - .NET 10.0 SDK
-- Windows 10 22H2 or later (may not work well on Windows 10 or earlier Windows)
+- Windows 10 x64 22H2 or later (may not work well on Windows 10 or earlier Windows)
 - A legal game installation copy
 - Web browser that supports modern web standards (Google Chrome, Microsoft Edge, Mozilla Firefox, etc.)
 - Stable Internet connection for downloading mods (optional) *(Note: Some high school may block Github via school firewall, you can try to use proxy to download mods.)*
@@ -104,45 +104,9 @@ Using Command Prompt or PowerShell:
 dotnet publish --configuration Release
 ```
 
-*Note: You can use `--runtime win-x64` to build the program for 64-bit Windows. If you want to build the program for 32-bit Windows, you can use `--runtime win-x86`. If you want to build into other directories, you can use `--output <path>` to specify the output directory.*
+*Note: You can use `--output <path>` to specify the output directory.*
 
 The build process automatically copies localization files, web assets, and configuration files to the output directory.
-
-### Build All Platforms (Recommended)
-
-For convenience, a PowerShell script is provided to build all platforms at once (requires the `THMI Mod Manager.csproj` file to be in the same directory as the script).
-
-```bash
-.\BuildAllPlatforms.ps1 -BuildPath <TargetPath>
-```
-
-This script will build and package the application for the following platforms:
-
-**Windows:**
-
-- `win-x86` - Windows 32-bit
-- `win-x64` - Windows 64-bit
-- `win-arm64` - Windows ARM64
-
-**Linux:**
-
-- `linux-x64` - Linux 64-bit
-- `linux-arm` - Linux ARM 32-bit
-- `linux-arm64` - Linux ARM 64-bit
-
-**macOS:**
-
-- `osx-x64` - macOS Intel 64-bit
-- `osx-arm64` - macOS Apple Silicon
-
-The script will:
-
-1. Read the version number from the `THMI Mod Manager.csproj` file automatically.
-2. Build each platform and output to the specified directory
-3. Remove unnecessary files (appsettings.Development.json, package.json, web.config)
-4. Create ZIP packages for each platform
-
-All ZIP packages will be named as `THMI.Mod.Manager_<platform>_<version>.zip` and placed in the specified output directory.
 
 ## Usage
 

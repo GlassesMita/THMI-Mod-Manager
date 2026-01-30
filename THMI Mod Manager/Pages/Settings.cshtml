@@ -14,10 +14,11 @@
 
 <div class="cdx-page-container">
     <header class="cdx-page-header">
-        <h1 class="cdx-page-title">
+        <h1 class="cdx-page-title" id="settingsTitle" style="cursor: pointer;">
             <i data-icon="icon-settings" class="cdx-icon cdx-icon--settings" style="font-size: 1.25em;"></i>
             @AppConfig.GetLocalized("Settings:Header", "Settings")
         </h1>
+        <div id="clickCounter" class="click-counter"></div>
         <p class="cdx-page-subtitle">@AppConfig.GetLocalized("Settings:Subtitle", "Customize your experience")</p>
     </header>
 
@@ -181,6 +182,15 @@
                             @AppConfig.GetLocalized("Updates:ApplyUpdateButton", "Apply")
                         </button>
                     </div>
+                </div>
+                <div class="cdx-field cdx-field--indented">
+                    <div id="updateStatus" style="display: none;">
+                        <span class="cdx-progress-bar cdx-progress-bar--inline" style="width: 200px;">
+                            <span class="cdx-progress-bar__bar" style="width: 100%;"></span>
+                        </span>
+                        <span style="margin-left: 8px;">@AppConfig.GetLocalized("Updates:CheckingForUpdates", "Checking for updates...")</span>
+                    </div>
+                    <div id="updateResult" style="display: none; margin-top: 12px;"></div>
                 </div>
             </div>
         </section>

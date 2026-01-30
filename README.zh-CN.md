@@ -20,7 +20,7 @@
 ## 系统要求
 
 - .NET 10.0 SDK
-- Windows 10 22H2 及以上版本（Windows 10 以下可能兼容性不佳）
+- Windows 10 x64 22H2 及以上版本（Windows 10 以下可能兼容性不佳）
 - 正版游戏《东方夜雀食堂》本体
 - 支持现代网页标准的浏览器（Chrome、Edge、Firefox 等）
 - 稳定的网络连接用于下载Mod（可选）*（注：<ruby>部分学校<rt><small><del>https://www.gfxy.com</del></small></rt></ruby>的校园网可能阻断 Github，可尝试使用代理下载）*
@@ -103,45 +103,9 @@ dotnet build --configuration Release --no-incremental
 dotnet publish --configuration Release
 ```
 
-*注意：可以使用 `--runtime win-x64` 编译 64 位 Windows 程序。如果需要编译 32 位 Windows 程序，可使用 `--runtime win-x86`。如果需要编译到其他目录，可使用 `--output <path>` 指定输出目录。*
+*注意：如果需要编译到其他目录，可使用 `--output <path>` 指定输出目录。*
 
 编译过程会自动将本地化文件、网页资源和配置文件复制到输出目录。
-
-### 全平台构建（推荐）
-
-为方便起见，提供了 PowerShell 脚本可一次性构建所有平台（需确保工作目录和 `THMI Mod Manager.csproj` 文件在同一目录）：
-
-```bash
-.\BuildAllPlatforms.ps1 -BuildPath <TargetPath>
-```
-
-此脚本将为以下平台构建并打包应用程序：
-
-**Windows:**
-
-- `win-x86` - Windows 32位
-- `win-x64` - Windows 64位
-- `win-arm64` - Windows ARM64
-
-**Linux:**
-
-- `linux-x64` - Linux 64位
-- `linux-arm` - Linux ARM 32位
-- `linux-arm64` - Linux ARM 64位
-
-**macOS:**
-
-- `osx-x64` - macOS Intel 64位
-- `osx-arm64` - macOS Apple Silicon
-
-脚本将自动：
-
-1. 从 `THMI Mod Manager.csproj` 文件读取版本号
-2. 构建每个平台并输出到指定目录
-3. 移除不需要的文件（appsettings.Development.json、package.json、web.config）
-4. 为每个平台创建 ZIP 压缩包
-
-所有 ZIP 包将命名为 `THMI.Mod.Manager_<平台>_<版本>.zip` 并放置在指定的输出目录中。
 
 ## 使用说明
 

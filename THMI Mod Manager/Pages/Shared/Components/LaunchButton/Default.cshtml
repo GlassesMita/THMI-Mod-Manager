@@ -192,6 +192,9 @@
             buttonIcon.innerHTML = '&#xE768;';
             buttonText.textContent = localizedStrings.launchText;
         }
+        
+        const event = new CustomEvent('gameStatusChanged', { detail: { isRunning: isRunning } });
+        document.dispatchEvent(event);
     }
     
     function checkProcessStatus() {

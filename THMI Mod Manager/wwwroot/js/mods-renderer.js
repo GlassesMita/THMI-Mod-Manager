@@ -10,6 +10,7 @@
             this.apiEndpoint = window.location.origin + '/api/mods';
             console.log('[ModRenderer] Initializing with endpoint:', this.apiEndpoint);
             this.setupObserver();
+            this.setupGameStatusListener();
             
             // Delay mod loading to allow page to render first
             // This improves perceived performance and reduces conflicts with browser extensions
@@ -22,6 +23,37 @@
             } else {
                 setTimeout(doLoadMods, 500);
             }
+        },
+        
+        setupGameStatusListener: function() {
+            document.addEventListener('gameStatusChanged', (event) => {
+                const isRunning = event.detail?.isRunning || false;
+                this.setModActionsDisabled(isRunning);
+            });
+        },
+        
+        setModActionsDisabled: function(disabled) {
+            const buttons = document.querySelectorAll('.mod-action-btn, .mod-detail-btn');
+            buttons.forEach(btn => {
+                btn.disabled = disabled;
+                if (disabled) {
+                    btn.classList.add('disabled');
+                    btn.setAttribute('data-bs-toggle', 'disabled');
+                } else {
+                    btn.classList.remove('disabled');
+                    btn.removeAttribute('data-bs-toggle');
+                }
+            });
+            
+            const toggleButtons = document.querySelectorAll('[onclick^="ModRenderer.toggleDetails"]');
+            toggleButtons.forEach(btn => {
+                btn.disabled = disabled;
+                if (disabled) {
+                    btn.classList.add('disabled');
+                } else {
+                    btn.classList.remove('disabled');
+                }
+            });
         },
         
         setupObserver: function() {
@@ -139,6 +171,9 @@
             
             if (this.modsList.length === 0) {
                 modsListElement.innerHTML = '<div class="mods-empty"><div class="empty-icon"><i data-icon="icon-mods"></i></div><h2>暂无 Mod</h2><p>BepInEx/plugins 目录中没有找到任何 Mod 文件。</p></div>';
+                if (typeof IconSystem !== 'undefined') {
+                    IconSystem.applyIcons();
+                }
                 return;
             }
             
@@ -152,6 +187,14 @@
             console.log('[ModRenderer] Final HTML length:', html.length);
             modsListElement.innerHTML = html;
             console.log('[ModRenderer] HTML inserted, checking content:', modsListElement.innerHTML.substring(0, 200));
+            
+            if (typeof IconSystem !== 'undefined') {
+                IconSystem.applyIcons();
+            }
+            
+            if (typeof launchButtonComponentCurrentIsRunning !== 'undefined' && launchButtonComponentCurrentIsRunning) {
+                this.setModActionsDisabled(true);
+            }
         },
         
         createModItemHtml: function(mod, index) {
@@ -218,8 +261,8 @@
                 const isHidden = details.style.display === 'none' || details.style.display === '';
                 details.style.display = isHidden ? 'block' : 'none';
                 if (icon) {
-                    icon.classList.remove(isHidden ? 'bi-chevron-down' : 'bi-chevron-up');
-                    icon.classList.add(isHidden ? 'bi-chevron-up' : 'bi-chevron-down');
+                    icon.setAttribute('data-icon', isHidden ? 'icon-chevron-up' : 'icon-chevron-down');
+                    icon.innerHTML = isHidden ? '&#xE70D;' : '&#xE70E;';
                 }
             }
         },

@@ -40,35 +40,39 @@ const UpdateNotification = {
     },
     
     performUpdateCheck: function() {
-        fetch(window.location.origin + '/api/update/check', {
-            method: 'POST',
+        fetch(window.location.origin + '/api/update/check-program', {
+            method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                'Content-Type': 'application/json'
             }
         })
         .then(response => {
             if (!response.ok) {
                 throw new Error('HTTP error! status: ' + response.status);
             }
-            return response.json();
+            return response.text();
         })
-        .then(data => {
+        .then(text => {
             localStorage.setItem(this.lastCheckKey, Date.now().toString());
-            
-            if (data.updateAvailable) {
-                localStorage.setItem(this.updateAvailableKey, 'true');
-                localStorage.setItem(this.updateDataKey, JSON.stringify(data));
-                this.showUpdateNotification(data);
-            } else {
+            try {
+                const data = JSON.parse(text);
+                if (data.success && data.isUpdateAvailable) {
+                    localStorage.setItem(this.updateAvailableKey, 'true');
+                    localStorage.setItem(this.updateDataKey, JSON.stringify(data));
+                    this.showUpdateNotification(data);
+                } else {
+                    localStorage.setItem(this.updateAvailableKey, 'false');
+                    localStorage.removeItem(this.updateDataKey);
+                    this.hideUpdateNotification();
+                }
+            } catch (parseError) {
+                console.warn('Failed to parse update check response:', parseError);
                 localStorage.setItem(this.updateAvailableKey, 'false');
                 localStorage.removeItem(this.updateDataKey);
-                this.hideUpdateNotification();
             }
         })
         .catch(error => {
             console.warn('Automatic update check failed:', error);
-            // Don't show error for automatic checks, just try again later
         });
     },
     

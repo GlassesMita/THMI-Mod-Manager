@@ -833,3 +833,16 @@ main[role="main"].pb-3 {
         width: 100%;
     }
 }
+
+/* Click Counter for Debug Mode - Hidden Easter Egg */
+.click-counter {
+    display: none;
+}
+
+#settingsTitle {
+    transition: color 0.2s ease;
+}
+
+#settingsTitle:hover {
+    color: var(--cdx-color-progressive);
+}
