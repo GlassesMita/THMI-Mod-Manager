@@ -269,4 +269,24 @@
 </div>
 
 <script src="~/js/settings.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const settingsTitle = document.getElementById('settingsTitle');
+        if (settingsTitle && window.contextMenu) {
+            settingsTitle.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                window.contextMenu.setMenuItems([
+                    { 
+                        type: 'url',
+                        icon: 'icon-pin',
+                        iconOnly: true,
+                        iconContent: '&#xEC7A;',
+                        url: '/DebugPage'
+                    }
+                ]);
+                window.contextMenu.show(e.clientX, e.clientY);
+            });
+        }
+    });
+</script>
 

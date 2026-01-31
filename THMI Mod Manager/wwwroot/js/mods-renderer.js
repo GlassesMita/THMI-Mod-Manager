@@ -262,7 +262,7 @@
                 details.style.display = isHidden ? 'block' : 'none';
                 if (icon) {
                     icon.setAttribute('data-icon', isHidden ? 'icon-chevron-up' : 'icon-chevron-down');
-                    icon.innerHTML = isHidden ? '&#xE70D;' : '&#xE70E;';
+                    icon.innerHTML = isHidden ? '&#xE70E;' : '&#xE70D;';
                 }
             }
         },

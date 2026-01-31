@@ -60,6 +60,44 @@
     }
 }
 
+.cdx-page-title,
+.cdx-card,
+.cdx-fieldset,
+.cdx-fieldset__title,
+.cdx-fieldset__content,
+.cdx-label,
+.cdx-select,
+.cdx-checkbox,
+.cdx-radio,
+.cdx-text-input,
+.cdx-text-input__input,
+.cdx-choice-item,
+.cdx-choice-item__label,
+.cdx-message,
+.cdx-notice,
+.cdx-button--primary,
+.cdx-button--destructive,
+.cdx-button--quiet-progressive,
+.cdx-button--quiet-destructive,
+.cdx-button--neutral {
+    cursor: default;
+}
+
+.cdx-button,
+.cdx-button button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+button {
+    cursor: pointer;
+}
+
+.cdx-text-input__input,
+.cdx-select select,
+textarea {
+    cursor: text;
+}
+
 /* Page Container */
 .cdx-page-container {
     max-width: 60em;
