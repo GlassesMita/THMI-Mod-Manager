@@ -315,7 +315,7 @@ namespace THMI_Mod_Manager.Controllers
         }
 
         [HttpGet("network-status")]
-        public IActionResult GetNetworkStatus()
+        public async Task<IActionResult> GetNetworkStatus()
         {
             try
             {
@@ -329,107 +329,38 @@ namespace THMI_Mod_Manager.Controllers
                 {
                     try
                     {
-                        // 使用 System.Net.NetworkInformation 获取网络信息
                         var networkInterfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
                         
                         foreach (var networkInterface in networkInterfaces)
                         {
-                            // 跳过回环接口和非活动接口
                             if (networkInterface.OperationalStatus != System.Net.NetworkInformation.OperationalStatus.Up)
                                 continue;
                             
                             var properties = networkInterface.GetIPProperties();
                             
-                            // 检测以太网连接
                             if (networkInterface.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Ethernet)
                             {
                                 networkType = "Ethernet";
-                                hasInternet = properties.GatewayAddresses.Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) ||
-                                             properties.DnsAddresses.Any();
                                 isConnected = true;
-                                
-                                if (hasInternet) break;
                             }
                             
-                            // 检测无线网络连接
                             if (networkInterface.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211)
                             {
                                 networkType = "Wireless";
-                                
-                                // 获取 SSID - 尝试使用 WMI 获取实际名称
                                 ssid = GetWirelessSSID();
-                                
-                                // 检测 Internet 连接
-                                hasInternet = properties.GatewayAddresses.Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) ||
-                                             properties.DnsAddresses.Any();
-                                isConnected = true;
-                                
-                                // 信号强度估算
                                 signalStrength = 75;
-                                
-                                if (hasInternet) break;
-                            }
-                        }
-                        
-                        // 如果没有检测到以太网或 WiFi，尝试其他接口
-                        if (!isConnected)
-                        {
-                            foreach (var networkInterface in networkInterfaces)
-                            {
-                                if (networkInterface.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up)
-                                {
-                                    var properties = networkInterface.GetIPProperties();
-                                    var hasGatewayOrDns = properties.GatewayAddresses.Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) ||
-                                                         properties.DnsAddresses.Any();
-                                    
-                                    if (hasGatewayOrDns)
-                                    {
-                                        networkType = networkInterface.NetworkInterfaceType.ToString();
-                                        isConnected = true;
-                                        hasInternet = true;
-                                        break;
-                                    }
-                                }
+                                isConnected = true;
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "获取网络详细信息时出错，使用备用方法");
+                        _logger.LogWarning(ex, "获取网络接口信息时出错");
                     }
                 }
-                else
-                {
-                    // 非 Windows 平台使用简化的检测方法
-                    try
-                    {
-                        var networkInterfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
-                        foreach (var networkInterface in networkInterfaces)
-                        {
-                            if (networkInterface.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up)
-                            {
-                                var properties = networkInterface.GetIPProperties();
-                                hasInternet = properties.GatewayAddresses.Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) ||
-                                             properties.DnsAddresses.Any();
-                                
-                                if (hasInternet)
-                                {
-                                    networkType = networkInterface.NetworkInterfaceType.ToString();
-                                    isConnected = true;
-                                    if (networkInterface.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211)
-                                    {
-                                        ssid = networkInterface.Name;
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "获取网络状态时出错");
-                    }
-                }
+
+                // 测试 Internet 连接
+                hasInternet = await TestInternetConnectionAsync();
 
                 return Ok(new
                 {
@@ -496,6 +427,39 @@ namespace THMI_Mod_Manager.Controllers
             }
             
             return "";
+        }
+
+        private async Task<bool> TestInternetConnectionAsync()
+        {
+            var testUrls = new[]
+            {
+                "https://www.bing.com/",
+                "https://www.baidu.com/",
+                "https://www.microsoft.com/"
+            };
+
+            using var httpClient = new System.Net.Http.HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(3);
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("THMI Mod Manager/1.0");
+
+            foreach (var url in testUrls)
+            {
+                try
+                {
+                    var response = await httpClient.GetAsync(url);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return true;
+                    }
+                }
+                catch
+                {
+                    // 继续尝试下一个 URL
+                    continue;
+                }
+            }
+
+            return false;
         }
 
         [HttpGet("session-time")]

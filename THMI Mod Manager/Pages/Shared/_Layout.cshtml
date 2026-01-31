@@ -1322,13 +1322,15 @@
             ethernet: '@Html.Raw(AppConfig.GetLocalized("Network:Ethernet", "Ethernet"))',
             internetAccess: '@Html.Raw(AppConfig.GetLocalized("Network:InternetAccess", "Internet access"))',
             noInternet: '@Html.Raw(AppConfig.GetLocalized("Network:NoInternet", "No Internet connection"))',
-            internetSettings: '@Html.Raw(AppConfig.GetLocalized("Network:InternetSettings", "Go to Internet settings"))'
+            internetSettings: '@Html.Raw(AppConfig.GetLocalized("Network:InternetSettings", "Go to Internet settings"))',
+            noInternetConnection: '@Html.Raw(AppConfig.GetLocalized("Network:NoInternetConnection", "No Internet connection"))',
+            connectionUnavailable: '@Html.Raw(AppConfig.GetLocalized("Network:ConnectionUnavailable", "Connection unavailable"))'
         };
         
         // 网络状态模块
         const NetworkStatus = {
             interval: 5000, // 5秒检查一次
-            timeout: 3000,
+            timeout: 10000, // 10秒超时
             checkEndpoint: '/api/launcher/network-status',
             currentStatus: null,
             
@@ -1345,7 +1347,13 @@
             async checkStatus() {
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+                    const timeoutId = setTimeout(() => {
+                        try {
+                            controller.abort();
+                        } catch (e) {
+                            // 忽略重复 abort 错误
+                        }
+                    }, this.timeout);
                     
                     const response = await fetch(this.checkEndpoint, {
                         method: 'GET',
@@ -1361,7 +1369,11 @@
                         this.updateUI(data);
                     }
                 } catch (error) {
-                    console.error('网络状态检查失败:', error);
+                    if (error.name === 'AbortError') {
+                        console.warn('网络状态检查超时');
+                    } else {
+                        console.error('网络状态检查失败:', error);
+                    }
                     this.showOfflineState();
                 }
             },
@@ -1406,19 +1418,18 @@
                 
                 let text = '';
                 
-                // 以太网或 WiFi 显示名称（无中括号）
+                if (!hasInternet || !isConnected) {
+                    text = networkLocalizedStrings.noInternetConnection + '\n' + networkLocalizedStrings.connectionUnavailable;
+                    return text;
+                }
+                
                 if (isEthernet) {
                     text += networkLocalizedStrings.ethernet;
                 } else if (ssid) {
                     text += ssid;
                 }
                 
-                // Internet 连接状态
-                if (hasInternet && isConnected) {
-                    text += '\n' + networkLocalizedStrings.internetAccess;
-                } else {
-                    text += '\n' + networkLocalizedStrings.noInternet;
-                }
+                text += '\n' + networkLocalizedStrings.internetAccess;
                 
                 return text;
             },
@@ -1435,7 +1446,11 @@
             
             startPolling() {
                 this.checkStatus();
-                setInterval(() => this.checkStatus(), this.interval);
+                this.pollingInterval = setInterval(() => this.checkStatus(), this.interval);
+            },
+            
+            forceUpdate() {
+                this.checkStatus();
             },
             
             init() {
@@ -1467,6 +1482,7 @@
                 
                 // 绑定事件到所有带有 data-tooltip 属性的元素
                 document.addEventListener('mouseenter', (e) => {
+                    if (!e.target || typeof e.target.closest !== 'function') return;
                     const target = e.target.closest('[data-tooltip], [data-tooltip-network]');
                     if (target) {
                         this.show(target, e);
@@ -1474,6 +1490,7 @@
                 }, true);
                 
                 document.addEventListener('mouseleave', (e) => {
+                    if (!e.target || typeof e.target.closest !== 'function') return;
                     const target = e.target.closest('[data-tooltip], [data-tooltip-network]');
                     if (target) {
                         this.hide();

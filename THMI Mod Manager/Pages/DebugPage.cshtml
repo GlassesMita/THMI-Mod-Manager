@@ -245,9 +245,25 @@
             <p><strong>@AppConfig.GetLocalized("Debug:ActiveInterfaces", "Active Interfaces"):</strong> <span id="activeInterfaces">-</span></p>
             <p><strong>@AppConfig.GetLocalized("Debug:ProxyStatus", "Proxy Status"):</strong> <span id="proxyStatus">-</span></p>
         </div>
+        
+        <div class="mb-3">
+            <label for="networkSimulation" class="form-label">@AppConfig.GetLocalized("Debug:NetworkSimulation", "Simulate Network Status")</label>
+            <select id="networkSimulation" class="form-select" onchange="simulateNetworkStatus()">
+                <option value="">@AppConfig.GetLocalized("Debug:NoSimulation", "No Simulation (Real Network)")</option>
+                <option value="ethernet">@AppConfig.GetLocalized("Debug:SimulateEthernet", "Ethernet (Connected)")</option>
+                <option value="wifi">@AppConfig.GetLocalized("Debug:SimulateWifi", "WiFi (Connected)")</option>
+                <option value="wifi-weak">@AppConfig.GetLocalized("Debug:SimulateWifiWeak", "WiFi (Weak Signal)")</option>
+                <option value="no-internet">@AppConfig.GetLocalized("Debug:SimulateNoInternet", "No Internet")</option>
+                <option value="disconnected">@AppConfig.GetLocalized("Debug:SimulateDisconnected", "Disconnected")</option>
+            </select>
+        </div>
+        
         <div class="debug-button-group">
             <button type="button" class="debug-button debug-button-primary" onclick="checkNetworkStatus()">
                 <i data-icon="icon-reload"></i> @AppConfig.GetLocalized("Debug:CheckNetwork", "Check Network")
+            </button>
+            <button type="button" class="debug-button debug-button-secondary" onclick="restoreNetworkStatus()">
+                <i data-icon="icon-back"></i> @AppConfig.GetLocalized("Debug:RestoreNetwork", "Restore Real Network")
             </button>
         </div>
         <div id="networkResults" class="debug-output" style="display: none;"></div>
@@ -1158,6 +1174,171 @@
             connectionStatus.className = 'debug-status debug-status-error';
             activeInterfaces.textContent = '-';
             proxyStatus.textContent = '-';
+        }
+    }
+
+    function simulateNetworkStatus() {
+        const simulationType = document.getElementById('networkSimulation').value;
+        const output = document.getElementById('networkResults');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const activeInterfaces = document.getElementById('activeInterfaces');
+        const proxyStatus = document.getElementById('proxyStatus');
+        
+        output.style.display = 'block';
+        
+        if (!simulationType) {
+            output.textContent = 'Simulation disabled. Using real network status.';
+            connectionStatus.textContent = localizedStrings.checking;
+            connectionStatus.className = 'debug-status debug-status-info';
+            activeInterfaces.textContent = '-';
+            proxyStatus.textContent = '-';
+            return;
+        }
+        
+        const simulatedData = getSimulatedNetworkData(simulationType);
+        
+        if (simulatedData.isConnected) {
+            connectionStatus.textContent = localizedStrings.connected;
+            connectionStatus.className = 'debug-status debug-status-success';
+        } else {
+            connectionStatus.textContent = localizedStrings.disconnected;
+            connectionStatus.className = 'debug-status debug-status-error';
+        }
+        
+        activeInterfaces.textContent = simulatedData.activeInterfaces;
+        proxyStatus.textContent = localizedStrings.proxyDisabled;
+        proxyStatus.className = 'debug-status debug-status-success';
+        
+        let resultText = 'Simulated Network Status:\n\n';
+        resultText += `Type: ${simulatedData.type}\n`;
+        resultText += `SSID: ${simulatedData.ssid || 'N/A'}\n`;
+        resultText += `Signal Strength: ${simulatedData.signalStrength}%\n`;
+        resultText += `Has Internet: ${simulatedData.hasInternet ? 'Yes' : 'No'}\n`;
+        resultText += `Is Connected: ${simulatedData.isConnected ? 'Yes' : 'No'}\n`;
+        
+        output.textContent = resultText;
+        
+        updateHeaderNetworkStatus(simulatedData);
+    }
+    
+    function getSimulatedNetworkData(type) {
+        switch (type) {
+            case 'ethernet':
+                return {
+                    type: 'Ethernet',
+                    ssid: '',
+                    signalStrength: 100,
+                    hasInternet: true,
+                    isConnected: true,
+                    activeInterfaces: '1 / 5'
+                };
+            case 'wifi':
+                return {
+                    type: 'Wireless',
+                    ssid: 'TestWiFi_Network',
+                    signalStrength: 85,
+                    hasInternet: true,
+                    isConnected: true,
+                    activeInterfaces: '2 / 5'
+                };
+            case 'wifi-weak':
+                return {
+                    type: 'Wireless',
+                    ssid: 'TestWiFi_Network',
+                    signalStrength: 25,
+                    hasInternet: true,
+                    isConnected: true,
+                    activeInterfaces: '2 / 5'
+                };
+            case 'no-internet':
+                return {
+                    type: 'Wireless',
+                    ssid: 'TestWiFi_Network',
+                    signalStrength: 75,
+                    hasInternet: false,
+                    isConnected: true,
+                    activeInterfaces: '2 / 5'
+                };
+            case 'disconnected':
+                return {
+                    type: 'Unknown',
+                    ssid: '',
+                    signalStrength: 0,
+                    hasInternet: false,
+                    isConnected: false,
+                    activeInterfaces: '0 / 5'
+                };
+            default:
+                return {
+                    type: 'Unknown',
+                    ssid: '',
+                    signalStrength: 0,
+                    hasInternet: false,
+                    isConnected: false,
+                    activeInterfaces: '0 / 5'
+                };
+        }
+    }
+    
+    function updateHeaderNetworkStatus(data) {
+        const iconElement = document.getElementById('networkStatusIcon');
+        if (!iconElement) return;
+        
+        const NetworkStatusIcons = {
+            ethernet: '&#xE839;',
+            wifiStrong: '&#xE701;',
+            wifiGood: '&#xE874;',
+            wifiFair: '&#xE873;',
+            wifiWeak: '&#xE872;',
+            noInternet: '&#xF384;'
+        };
+        
+        let iconHtml;
+        if (!data.isConnected) {
+            iconHtml = NetworkStatusIcons.noInternet;
+        } else if (!data.hasInternet) {
+            iconHtml = NetworkStatusIcons.noInternet;
+        } else if (data.type === 'Ethernet') {
+            iconHtml = NetworkStatusIcons.ethernet;
+        } else if (data.signalStrength >= 80) {
+            iconHtml = NetworkStatusIcons.wifiStrong;
+        } else if (data.signalStrength >= 60) {
+            iconHtml = NetworkStatusIcons.wifiGood;
+        } else if (data.signalStrength >= 40) {
+            iconHtml = NetworkStatusIcons.wifiFair;
+        } else {
+            iconHtml = NetworkStatusIcons.wifiWeak;
+        }
+        
+        iconElement.innerHTML = iconHtml;
+        
+        let tooltipText = '';
+        if (!data.isConnected) {
+            tooltipText = '\nNo Internet connection';
+        } else if (!data.hasInternet) {
+            tooltipText = '\nNo Internet connection';
+        } else if (data.type === 'Ethernet') {
+            tooltipText = '\nEthernet';
+        } else {
+            tooltipText = '\n' + data.ssid;
+        }
+        
+        iconElement.setAttribute('data-tooltip-text', tooltipText);
+        
+        if (typeof CustomTooltip !== 'undefined' && CustomTooltip.updateTooltip) {
+            CustomTooltip.updateTooltip(iconElement);
+        }
+    }
+    
+    function restoreNetworkStatus() {
+        document.getElementById('networkSimulation').value = '';
+        
+        simulateNetworkStatus();
+        
+        showToast('Network status restored to real network');
+        
+        if (typeof NetworkStatus !== 'undefined' && NetworkStatus.forceUpdate) {
+            NetworkStatus.forceUpdate();
         }
     }
 
