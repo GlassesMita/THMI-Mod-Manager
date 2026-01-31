@@ -369,6 +369,9 @@ const contextMenu = new ContextMenu({
                     case 'about':
                         window.location.href = '/About';
                         break;
+                    case 'internetSettings':
+                        window.location.href = 'ms-settings:network-status';
+                        break;
                 }
                 break;
         }

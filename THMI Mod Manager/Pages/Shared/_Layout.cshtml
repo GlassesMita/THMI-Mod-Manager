@@ -287,6 +287,89 @@
             margin-left: 260px;
             min-height: 100vh;
         }
+        
+        /* Windows 11 风格时间显示 */
+        .win11-time-display {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #202020;
+            user-select: none;
+        }
+        
+        .win11-time-line {
+            font-size: 0.9rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+        }
+        
+        .win11-date-line {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #606060;
+            letter-spacing: 0.01em;
+        }
+        
+        /* 自定义 Tooltip 样式 */
+        .custom-tooltip {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            max-width: 280px;
+            padding: 8px 12px;
+            background-color: rgba(32, 32, 32, 0.95);
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+        
+        .custom-tooltip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .custom-tooltip .tooltip-content {
+            white-space: pre-line;
+            line-height: 1.4;
+        }
+        
+        .custom-tooltip .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #ffffff;
+        }
+        
+        .custom-tooltip .tooltip-divider {
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.2);
+            margin: 6px 0;
+        }
+        
+        .custom-tooltip .tooltip-subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+        
+        /* 网络状态图标 */
+        .network-icon {
+            font-size: 1.1rem;
+            cursor: help;
+            color: #202020;
+            transition: color 0.2s ease;
+        }
+        
+        .network-icon:hover {
+            color: var(--theme-color, #c670ff);
+        }
+        
+        .network-status-display {
+            position: relative;
+        }
     </style>
 </head>
 <body data-show-seconds="@showSecondsBool" data-use-12hour="@use12HourBool" data-date-format="@dateFormatStr" data-date-separator="@dateSeparatorStr">
@@ -401,10 +484,18 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <button id="exitButton" class="cdx-button cdx-button--destructive" onclick="showExitConfirmation()" style="padding: 10px 20px !important; font-size: 14px !important; min-height: 44px !important;">
-                                                <i data-icon="icon-exit"></i>
+                        <i data-icon="icon-exit"></i>
                         <span>@AppConfig.GetLocalized("Common:Exit", "Exit")</span>
                     </button>
-                    <span id="topTimeDisplay" class="top-time-text"></span>
+                    <!-- 网络状态区域（时间左侧） -->
+                    <div id="networkStatusDisplay" class="network-status-display" style="display: flex; align-items: center; gap: 8px; margin-right: 8px;">
+                        <span id="networkStatusIcon" class="segoe-icon network-icon" data-tooltip="network"></span>
+                    </div>
+                    <!-- Windows 11 风格时间显示（两层） -->
+                    <div id="topTimeDisplay" class="win11-time-display" style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2;">
+                        <span class="win11-time-line" id="timeLine"></span>
+                        <span class="win11-date-line" id="dateLine"></span>
+                    </div>
                 </div>
             </div>
             
@@ -412,17 +503,22 @@
             <div id="updateNotificationBanner" class="alert alert-info alert-dismissible fade show" style="display: none; border-radius: 0; margin: 0; position: sticky; top: 0; z-index: 1050;">
                 <div class="container d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
-                                                <i data-icon="icon-bell" class="me-2"></i>
+                        <i data-icon="icon-bell" class="me-2"></i>
                         <span id="updateNotificationText"></span>
                     </div>
                     <div>
                         <a id="updateDownloadLink" href="#" class="btn btn-primary btn-sm me-2" target="_blank">
-                                                        <i data-icon="icon-download" class="me-1"></i>
+                            <i data-icon="icon-download" class="me-1"></i>
                             <span id="updateDownloadText">Download</span>
                         </a>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 </div>
+            </div>
+            
+            <!-- 自定义 Tooltip 容器 -->
+            <div id="customTooltip" class="custom-tooltip" style="display: none;">
+                <div class="tooltip-content"></div>
             </div>
             
             <div class="container py-3" style="padding-bottom:80px;">
@@ -982,12 +1078,15 @@
             const now = new Date();
             const timeStr = formatTime(now);
             const dateStr = formatDate(now, dateTimeSettings.dateFormat, dateTimeSettings.dateSeparator);
-            const fullStr = `${dateStr}  ${timeStr}`;
             
-            const topTimeDisplay = document.getElementById('topTimeDisplay');
+            const timeLine = document.getElementById('timeLine');
+            const dateLine = document.getElementById('dateLine');
             
-            if (topTimeDisplay) {
-                topTimeDisplay.textContent = fullStr;
+            if (timeLine) {
+                timeLine.textContent = timeStr;
+            }
+            if (dateLine) {
+                dateLine.textContent = dateStr;
             }
         }
         
@@ -1218,7 +1317,293 @@
             }
         };
         
+        // 网络状态本地化字符串
+        const networkLocalizedStrings = {
+            ethernet: '@Html.Raw(AppConfig.GetLocalized("Network:Ethernet", "Ethernet"))',
+            internetAccess: '@Html.Raw(AppConfig.GetLocalized("Network:InternetAccess", "Internet access"))',
+            noInternet: '@Html.Raw(AppConfig.GetLocalized("Network:NoInternet", "No Internet connection"))',
+            internetSettings: '@Html.Raw(AppConfig.GetLocalized("Network:InternetSettings", "Go to Internet settings"))'
+        };
+        
+        // 网络状态模块
+        const NetworkStatus = {
+            interval: 5000, // 5秒检查一次
+            timeout: 3000,
+            checkEndpoint: '/api/launcher/network-status',
+            currentStatus: null,
+            
+            // 图标映射
+            icons: {
+                ethernet: '&#xE839;',
+                wifiStrong: '&#xE701;',
+                wifiGood: '&#xE874;',
+                wifiFair: '&#xE873;',
+                wifiWeak: '&#xE872;',
+                noInternet: '&#xF384;'
+            },
+            
+            async checkStatus() {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+                    
+                    const response = await fetch(this.checkEndpoint, {
+                        method: 'GET',
+                        signal: controller.signal,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.currentStatus = data;
+                        this.updateUI(data);
+                    }
+                } catch (error) {
+                    console.error('网络状态检查失败:', error);
+                    this.showOfflineState();
+                }
+            },
+            
+            getIconForSignal(signalStrength, isEthernet) {
+                if (isEthernet) return this.icons.ethernet;
+                if (signalStrength >= 80) return this.icons.wifiStrong;
+                if (signalStrength >= 60) return this.icons.wifiGood;
+                if (signalStrength >= 40) return this.icons.wifiFair;
+                return this.icons.wifiWeak;
+            },
+            
+            updateUI(data) {
+                const iconElement = document.getElementById('networkStatusIcon');
+                if (!iconElement) return;
+                
+                const hasInternet = data.hasInternet !== false;
+                const isConnected = data.isConnected !== false;
+                const isEthernet = data.networkType === 'Ethernet';
+                const signalStrength = data.signalStrength || 0;
+                const ssid = data.ssid || '';
+                
+                // 设置图标 - 无连接时显示无 Internet 图标
+                const iconHtml = isConnected 
+                    ? (hasInternet ? this.getIconForSignal(signalStrength, isEthernet) : this.icons.noInternet)
+                    : this.icons.noInternet;
+                
+                iconElement.innerHTML = iconHtml;
+                iconElement.className = 'segoe-icon network-icon';
+                
+                // 设置Tooltip数据
+                const tooltipText = this.formatTooltipText(data);
+                iconElement.setAttribute('data-tooltip-text', tooltipText);
+                iconElement.setAttribute('data-tooltip-network', 'true');
+            },
+            
+            formatTooltipText(data) {
+                const hasInternet = data.hasInternet !== false;
+                const isEthernet = data.networkType === 'Ethernet';
+                const ssid = data.ssid || '';
+                const isConnected = data.isConnected !== false;
+                
+                let text = '';
+                
+                // 以太网或 WiFi 显示名称（无中括号）
+                if (isEthernet) {
+                    text += networkLocalizedStrings.ethernet;
+                } else if (ssid) {
+                    text += ssid;
+                }
+                
+                // Internet 连接状态
+                if (hasInternet && isConnected) {
+                    text += '\n' + networkLocalizedStrings.internetAccess;
+                } else {
+                    text += '\n' + networkLocalizedStrings.noInternet;
+                }
+                
+                return text;
+            },
+            
+            showOfflineState() {
+                const iconElement = document.getElementById('networkStatusIcon');
+                if (!iconElement) return;
+                
+                iconElement.innerHTML = this.icons.noInternet;
+                iconElement.className = 'segoe-icon network-icon';
+                iconElement.setAttribute('data-tooltip-text', '\n' + networkLocalizedStrings.noInternet);
+                iconElement.setAttribute('data-tooltip-network', 'true');
+            },
+            
+            startPolling() {
+                this.checkStatus();
+                setInterval(() => this.checkStatus(), this.interval);
+            },
+            
+            init() {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => this.startPolling());
+                } else {
+                    this.startPolling();
+                }
+            }
+        };
+        
+        // 自定义 Tooltip 模块
+        const CustomTooltip = {
+            tooltipElement: null,
+            contentElement: null,
+            hideTimeout: null,
+            showDelay: 300,
+            hideDelay: 200,
+            networkContextMenu: null,
+            
+            init() {
+                this.tooltipElement = document.getElementById('customTooltip');
+                this.contentElement = this.tooltipElement?.querySelector('.tooltip-content');
+                
+                if (!this.tooltipElement || !this.contentElement) {
+                    console.warn('Tooltip elements not found');
+                    return;
+                }
+                
+                // 绑定事件到所有带有 data-tooltip 属性的元素
+                document.addEventListener('mouseenter', (e) => {
+                    const target = e.target.closest('[data-tooltip], [data-tooltip-network]');
+                    if (target) {
+                        this.show(target, e);
+                    }
+                }, true);
+                
+                document.addEventListener('mouseleave', (e) => {
+                    const target = e.target.closest('[data-tooltip], [data-tooltip-network]');
+                    if (target) {
+                        this.hide();
+                    }
+                }, true);
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (this.tooltipElement.style.display !== 'none') {
+                        this.updatePosition(e);
+                    }
+                });
+                
+                // 为网络图标添加右键菜单（使用现有的全局 contextMenu 实例）
+                this.initNetworkContextMenu();
+            },
+            
+            initNetworkContextMenu() {
+                document.addEventListener('contextmenu', (e) => {
+                    const target = e.target.closest('[data-tooltip-network]');
+                    if (target && e.target) {
+                        e.preventDefault();
+                        
+                        // 使用全局 contextMenu 实例设置网络菜单项
+                        if (window.contextMenu) {
+                            window.contextMenu.setMenuItems([
+                                {
+                                    icon: 'icon-wifi',
+                                    iconContent: '&#xEC27;',
+                                    label: networkLocalizedStrings.internetSettings,
+                                    action: 'internetSettings',
+                                    type: 'action'
+                                }
+                            ]);
+                            window.contextMenu.show(e.clientX, e.clientY);
+                        }
+                    }
+                }, true);
+            },
+            
+            show(element, event) {
+                clearTimeout(this.hideTimeout);
+                
+                const showDelay = element.getAttribute('data-tooltip-delay') || this.showDelay;
+                
+                this.hideTimeout = setTimeout(() => {
+                    let content = '';
+                    
+                    // 网络状态 Tooltip
+                    if (element.getAttribute('data-tooltip-network') === 'true') {
+                        const tooltipText = element.getAttribute('data-tooltip-text');
+                        if (tooltipText) {
+                            const lines = tooltipText.split('\n');
+                            content = `<div class="tooltip-title">${lines[0] || ''}</div>`;
+                            if (lines.length > 1) {
+                                content += `<div class="tooltip-divider"></div>`;
+                                content += `<div class="tooltip-subtitle">${lines.slice(1).join('<br>')}</div>`;
+                            }
+                        }
+                    } else {
+                        // 默认 Tooltip
+                        const title = element.getAttribute('data-tooltip-title');
+                        const text = element.getAttribute('data-tooltip-text');
+                        
+                        if (title) {
+                            content += `<div class="tooltip-title">${title}</div>`;
+                        }
+                        if (text) {
+                            if (title) {
+                                content += `<div class="tooltip-divider"></div>`;
+                            }
+                            content += `<div class="tooltip-subtitle">${text}</div>`;
+                        }
+                    }
+                    
+                    if (content) {
+                        this.contentElement.innerHTML = content;
+                        this.tooltipElement.style.display = 'block';
+                        
+                        // 触发淡入动画
+                        requestAnimationFrame(() => {
+                            this.tooltipElement.classList.add('show');
+                        });
+                        
+                        this.updatePosition(event);
+                    }
+                }, parseInt(showDelay));
+            },
+            
+            hide() {
+                clearTimeout(this.hideTimeout);
+                
+                this.hideTimeout = setTimeout(() => {
+                    this.tooltipElement.classList.remove('show');
+                    
+                    // 等待淡出动画完成后隐藏
+                    setTimeout(() => {
+                        if (!this.tooltipElement.classList.contains('show')) {
+                            this.tooltipElement.style.display = 'none';
+                        }
+                    }, 200);
+                }, this.hideDelay);
+            },
+            
+            updatePosition(event) {
+                const tooltip = this.tooltipElement;
+                const padding = 12;
+                
+                let x = event.clientX + padding;
+                let y = event.clientY + padding;
+                
+                const tooltipRect = tooltip.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                
+                // 防止超出视口
+                if (x + tooltipRect.width > viewportWidth - padding) {
+                    x = event.clientX - tooltipRect.width - padding;
+                }
+                if (y + tooltipRect.height > viewportHeight - padding) {
+                    y = event.clientY - tooltipRect.height - padding;
+                }
+                
+                tooltip.style.left = x + 'px';
+                tooltip.style.top = y + 'px';
+            }
+        };
+        
         IconSystem.init();
+        NetworkStatus.init();
+        CustomTooltip.init();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
