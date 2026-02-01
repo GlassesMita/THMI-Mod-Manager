@@ -1,8 +1,16 @@
 # <ruby title="你知道的太多了">东<rt>T</rt>方<rt>H</rt>夜雀<rt>M</rt>食堂<rt>I</rt></ruby> Mod 管理器
 
+![License](https://img.shields.io/badge/license-GPLv3-red.svg?style=flat-square)
+![Language](https://img.shields.io/badge/Language-C%23-cf6fff?style=flat-square)
+![Framework](https://img.shields.io/badge/Framework-ASP.NET-9fa0db?style=flat-square)
+![Platform](https://img.shields.io/badge/Platform-Windows%20x64-00b600?style=flat-square)
+![Editor](https://img.shields.io/badge/Editor-Trae-1af000?style=flat-square)
+
 **本项目使用 GNU 通用公共许可证第三版**
 
 专为《东方夜雀食堂》游戏打造的 Mod 管理器。
+
+[DeepWiki 文档 (仅英文)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager/)
 
 ## 功能特性
 

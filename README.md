@@ -1,8 +1,17 @@
 # <ruby title="You Known So Much">Tou<rt>T</rt>hou<rt>H</rt> Mystia<rt>M</rt> Izakaya<rt>I</rt></ruby> Mod Manager
 
+![License](https://img.shields.io/badge/license-GPLv3-red.svg?style=flat-square)
+![Language](https://img.shields.io/badge/Language-C%23-cf6fff?style=flat-square)
+![Framework](https://img.shields.io/badge/Framework-ASP.NET-9fa0db?style=flat-square)
+![Platform](https://img.shields.io/badge/Platform-Windows%20x64-00b600?style=flat-square)
+![Editor](https://img.shields.io/badge/Editor-Trae-1af000?style=flat-square)
+
+
 **This project using GNU General Public License Version 3.0**
 
 A mod manager for Touhou Mystia Izakaya game.
+
+[DeepWiki Document (English Only)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager/)
 
 ## Features
 
