@@ -319,10 +319,10 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                var networkType = "Unknown";
-                var ssid = "";
-                var signalStrength = 0;
-                var hasInternet = false;
+                var hasEthernet = false;
+                var hasWifi = false;
+                var wifiSsid = "";
+                var wifiSignalStrength = 0;
                 var isConnected = false;
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -336,19 +336,31 @@ namespace THMI_Mod_Manager.Controllers
                             if (networkInterface.OperationalStatus != System.Net.NetworkInformation.OperationalStatus.Up)
                                 continue;
                             
-                            var properties = networkInterface.GetIPProperties();
+                            var networkInterfaceType = networkInterface.NetworkInterfaceType;
+                            var interfaceName = networkInterface.Name;
                             
-                            if (networkInterface.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Ethernet)
+                            if (networkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Ethernet)
                             {
-                                networkType = "Ethernet";
-                                isConnected = true;
+                                // 排除虚拟以太网适配器
+                                if (IsVirtualAdapter(interfaceName))
+                                    continue;
+                                
+                                var properties = networkInterface.GetIPProperties();
+                                bool hasValidAddress = properties.UnicastAddresses.Any(
+                                    addr => addr.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+                                
+                                if (hasValidAddress)
+                                {
+                                    hasEthernet = true;
+                                    isConnected = true;
+                                }
                             }
                             
-                            if (networkInterface.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211)
+                            if (networkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211)
                             {
-                                networkType = "Wireless";
-                                ssid = GetWirelessSSID();
-                                signalStrength = 75;
+                                hasWifi = true;
+                                wifiSsid = GetWirelessSSID();
+                                wifiSignalStrength = 75;
                                 isConnected = true;
                             }
                         }
@@ -360,13 +372,14 @@ namespace THMI_Mod_Manager.Controllers
                 }
 
                 // 测试 Internet 连接
-                hasInternet = await TestInternetConnectionAsync();
+                var hasInternet = await TestInternetConnectionAsync();
 
                 return Ok(new
                 {
-                    networkType,
-                    ssid,
-                    signalStrength,
+                    hasEthernet,
+                    hasWifi,
+                    wifiSsid,
+                    wifiSignalStrength,
                     hasInternet,
                     isConnected
                 });
@@ -376,9 +389,10 @@ namespace THMI_Mod_Manager.Controllers
                 _logger.LogError(ex, "获取网络状态时发生错误");
                 return Ok(new
                 {
-                    networkType = "Unknown",
-                    ssid = "",
-                    signalStrength = 0,
+                    hasEthernet = false,
+                    hasWifi = false,
+                    wifiSsid = "",
+                    wifiSignalStrength = 0,
                     hasInternet = false,
                     isConnected = false,
                     error = ex.Message
@@ -390,7 +404,7 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                // 尝试使用 WMI 获取 SSID
+                // 尝试使用 netsh 获取 SSID
                 var process = new System.Diagnostics.Process
                 {
                     StartInfo = new System.Diagnostics.ProcessStartInfo
@@ -400,7 +414,8 @@ namespace THMI_Mod_Manager.Controllers
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
-                        CreateNoWindow = true
+                        CreateNoWindow = true,
+                        StandardOutputEncoding = System.Text.Encoding.UTF8
                     }
                 };
                 
@@ -408,25 +423,82 @@ namespace THMI_Mod_Manager.Controllers
                 var output = process.StandardOutput.ReadToEnd();
                 process.WaitForExit();
                 
-                // 解析 SSID
+                // 解析 SSID - 查找 "SSID" 行（不包括 BSSID）
                 foreach (var line in output.Split('\n'))
                 {
-                    if (line.Contains("SSID") && !line.Contains("BSSID"))
+                    var trimmedLine = line.Trim();
+                    // 匹配 "SSID                   : NetworkName" 格式
+                    if (trimmedLine.StartsWith("SSID") && !trimmedLine.Contains("BSSID"))
                     {
-                        var parts = line.Split(':');
-                        if (parts.Length >= 2)
+                        var colonIndex = trimmedLine.IndexOf(':');
+                        if (colonIndex >= 0 && colonIndex < trimmedLine.Length - 1)
                         {
-                            return parts[1].Trim();
+                            var ssid = trimmedLine.Substring(colonIndex + 1).Trim();
+                            if (!string.IsNullOrWhiteSpace(ssid))
+                            {
+                                return ssid;
+                            }
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "无法获取无线网络 SSID");
+                _logger.LogDebug(ex, "无法使用 netsh 获取无线网络 SSID");
+            }
+            
+            // 备用：尝试使用网络接口名称
+            try
+            {
+                var networkInterfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+                foreach (var ni in networkInterfaces)
+                {
+                    if (ni.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211 &&
+                        ni.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up)
+                    {
+                        return ni.Name;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "无法使用备用方法获取无线网络 SSID");
             }
             
             return "";
+        }
+
+        private bool IsVirtualAdapter(string adapterName)
+        {
+            if (string.IsNullOrEmpty(adapterName))
+                return true;
+            
+            var lowerName = adapterName.ToLowerInvariant();
+            
+            var virtualKeywords = new[]
+            {
+                "vethernet",
+                "virtual",
+                "vpn",
+                "hyper-v",
+                "hyperv",
+                "vmware",
+                "docker",
+                "tunnel",
+                "isatap",
+                "teredo",
+                "microsoft wi-fi direct virtual",
+                "ring network",
+                "npipe"
+            };
+            
+            foreach (var keyword in virtualKeywords)
+            {
+                if (lowerName.Contains(keyword))
+                    return true;
+            }
+            
+            return false;
         }
 
         private async Task<bool> TestInternetConnectionAsync()

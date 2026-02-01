@@ -1294,17 +1294,15 @@
         };
         
         let iconHtml;
-        if (!data.isConnected) {
+        if (!data.isConnected || !data.hasInternet) {
             iconHtml = NetworkStatusIcons.noInternet;
-        } else if (!data.hasInternet) {
-            iconHtml = NetworkStatusIcons.noInternet;
-        } else if (data.type === 'Ethernet') {
+        } else if (data.hasEthernet) {
             iconHtml = NetworkStatusIcons.ethernet;
-        } else if (data.signalStrength >= 80) {
+        } else if (data.wifiSignalStrength >= 80) {
             iconHtml = NetworkStatusIcons.wifiStrong;
-        } else if (data.signalStrength >= 60) {
+        } else if (data.wifiSignalStrength >= 60) {
             iconHtml = NetworkStatusIcons.wifiGood;
-        } else if (data.signalStrength >= 40) {
+        } else if (data.wifiSignalStrength >= 40) {
             iconHtml = NetworkStatusIcons.wifiFair;
         } else {
             iconHtml = NetworkStatusIcons.wifiWeak;
@@ -1313,14 +1311,18 @@
         iconElement.innerHTML = iconHtml;
         
         let tooltipText = '';
-        if (!data.isConnected) {
+        if (!data.isConnected || !data.hasInternet) {
             tooltipText = '\nNo Internet connection';
-        } else if (!data.hasInternet) {
-            tooltipText = '\nNo Internet connection';
-        } else if (data.type === 'Ethernet') {
-            tooltipText = '\nEthernet';
         } else {
-            tooltipText = '\n' + data.ssid;
+            if (data.hasEthernet) {
+                tooltipText = 'Ethernet';
+                if (data.hasWifi && data.wifiSsid) {
+                    tooltipText += ' / ' + data.wifiSsid;
+                }
+            } else if (data.hasWifi && data.wifiSsid) {
+                tooltipText = data.wifiSsid;
+            }
+            tooltipText += '\nInternet access';
         }
         
         iconElement.setAttribute('data-tooltip-text', tooltipText);

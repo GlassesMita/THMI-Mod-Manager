@@ -1392,14 +1392,22 @@
                 
                 const hasInternet = data.hasInternet !== false;
                 const isConnected = data.isConnected !== false;
-                const isEthernet = data.networkType === 'Ethernet';
-                const signalStrength = data.signalStrength || 0;
-                const ssid = data.ssid || '';
+                const hasEthernet = data.hasEthernet === true;
+                const hasWifi = data.hasWifi === true;
+                const wifiSignalStrength = data.wifiSignalStrength || 0;
                 
-                // 设置图标 - 无连接时显示无 Internet 图标
-                const iconHtml = isConnected 
-                    ? (hasInternet ? this.getIconForSignal(signalStrength, isEthernet) : this.icons.noInternet)
-                    : this.icons.noInternet;
+                // 优先显示以太网图标
+                let iconHtml;
+                
+                if (!isConnected || !hasInternet) {
+                    iconHtml = this.icons.noInternet;
+                } else if (hasEthernet) {
+                    iconHtml = this.icons.ethernet;
+                } else if (hasWifi) {
+                    iconHtml = this.getIconForSignal(wifiSignalStrength, false);
+                } else {
+                    iconHtml = this.icons.noInternet;
+                }
                 
                 iconElement.innerHTML = iconHtml;
                 iconElement.className = 'segoe-icon network-icon';
@@ -1412,9 +1420,10 @@
             
             formatTooltipText(data) {
                 const hasInternet = data.hasInternet !== false;
-                const isEthernet = data.networkType === 'Ethernet';
-                const ssid = data.ssid || '';
                 const isConnected = data.isConnected !== false;
+                const hasEthernet = data.hasEthernet === true;
+                const hasWifi = data.hasWifi === true;
+                const wifiSsid = data.wifiSsid || '';
                 
                 let text = '';
                 
@@ -1423,10 +1432,14 @@
                     return text;
                 }
                 
-                if (isEthernet) {
+                // 当以太网和 WiFi 同时连接时，用 / 分隔显示
+                if (hasEthernet) {
                     text += networkLocalizedStrings.ethernet;
-                } else if (ssid) {
-                    text += ssid;
+                    if (hasWifi && wifiSsid) {
+                        text += ' / ' + wifiSsid;
+                    }
+                } else if (hasWifi && wifiSsid) {
+                    text += wifiSsid;
                 }
                 
                 text += '\n' + networkLocalizedStrings.internetAccess;
