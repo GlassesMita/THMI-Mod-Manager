@@ -10,13 +10,13 @@
     
     <!-- 语义化版本号配置 -->
     <!-- Version: 用于 NuGet 包和 informational 版本显示，支持预发布标签 -->
-    <Version>0.8.0</Version>
+    <Version>0.9.0</Version>
     <!-- AssemblyVersion: 必须为 4 部分数字格式，用于程序集标识 -->
-    <AssemblyVersion>0.8.0.0</AssemblyVersion>
+    <AssemblyVersion>0.9.0.0</AssemblyVersion>
     <!-- FileVersion: 必须为 4 部分数字格式，用于文件属性对话框显示 -->
-    <FileVersion>0.8.0.0</FileVersion>
+    <FileVersion>0.9.0.0</FileVersion>
     <!-- AssemblyInformationalVersion: 支持完整语义化版本，用于程序集属性显示 -->
-    <AssemblyInformationalVersion>0.8.0</AssemblyInformationalVersion>
+    <AssemblyInformationalVersion>0.9.0</AssemblyInformationalVersion>
     
     <!-- 禁用源代码控制信息生成（避免版本号后出现 Git 哈希） -->
     <Deterministic>false</Deterministic>
@@ -43,14 +43,18 @@
     <PublishZipFullPath>$(ZipOutputPath)$(PublishZipFileName)</PublishZipFullPath>
     
     <PublishSingleFile>false</PublishSingleFile>
-    <SelfContained>false</SelfContained>
+    <!-- 自包含部署配置：当传入 SelfContained=true 参数时启用 -->
+    <SelfContained Condition="$(SelfContained) == '' Or $(SelfContained) == 'false'">false</SelfContained>
+    <SelfContained Condition="$(SelfContained) == 'true'">true</SelfContained>
+    
+    <!-- 静态资源优化配置：减小 staticwebassets.endpoints.json 文件大小 -->
+    <StaticWebAssetsBuildMediaFile>false</StaticWebAssetsBuildMediaFile>
   </PropertyGroup>
 
-  <!-- 原Windows Release配置（保留） -->
-  <PropertyGroup Condition="'$(Configuration)'=='Release' And '$(RuntimeIdentifier)'=='win-x64'">
-    <OutDir>F:\SteamLibrary\steamapps\common\Touhou Mystia Izakaya\</OutDir>
-    <UseCommonOutputDirectory>false</UseCommonOutputDirectory>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  <!-- 动态路径配置（用于 publish 时指定输出路径） -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <!-- 发布到指定路径，不使用硬编码的 OutDir -->
+    <PublishDir Condition=" '$(PublishDir)' == '' ">$(BaseOutputPath)</PublishDir>
   </PropertyGroup>
 
   <!-- 全局文件排除规则 -->
@@ -77,32 +81,8 @@
     </None>
   </ItemGroup>
 
-  <!-- 核心：BuildAll=true时，批量发布所有平台 -->
-  <Target Name="BuildAllPlatforms" BeforeTargets="Publish" Condition=" '$(BuildAll)' == 'true' ">
-    <Message Text="开始一键构建所有平台：$(TargetRuntimes)" Importance="High" />
-    
-    <!-- 遍历所有目标平台，逐个发布 -->
-    <MSBuild
-      Projects="$(MSBuildProjectFile)"
-      Targets="Publish"
-      Properties="Configuration=Release;TargetFramework=net10.0;RuntimeIdentifier=%(RuntimeIdentifier.Identity);PublishDir=$(BaseOutputPath);SelfContained=$(SelfContained)"
-      Condition=" '%(RuntimeIdentifier.Identity)' != '' "
-    >
-      <Output TaskParameter="TargetOutputs" ItemName="AllPublishOutputs" />
-    </MSBuild>
-    
-    <!-- 输出构建完成日志 -->
-    <Message Text="全平台构建完成！输出目录：$(BaseOutputPath)" Importance="High" />
-  </Target>
-
-  <!-- 单平台发布后打包ZIP -->
-  <Target Name="PublishZipAfterBuild" AfterTargets="Publish" Condition=" '$(BuildAll)' != 'true' ">
-    <Error Condition="!Exists('$(PublishOutputPath)')" Text="发布目录不存在：$(PublishOutputPath)" />
-    <ZipDirectory
-      SourceDirectory="$(PublishOutputPath)"
-      DestinationFile="$(PublishZipFullPath)"
-      Overwrite="true"
-    />
-    <Message Text="已生成 ZIP 包：$(PublishZipFullPath)" Importance="High" />
+  <!-- 发布后删除 staticwebassets.endpoints.json 以减小包体积 -->
+  <Target Name="RemoveStaticWebAssetsEndpoints" AfterTargets="Publish">
+    <Delete Files="$(PublishOutputPath)*.staticwebassets.endpoints.json" />
   </Target>
 </Project>

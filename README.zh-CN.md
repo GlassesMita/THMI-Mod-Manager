@@ -103,7 +103,7 @@ Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
 dotnet build --configuration Release --no-incremental
 ```
 
-- 使用此方法，程序不依赖于 .NET 10 SDK 或 Runtime 运行。
+- 使用此方法，程序将被最大程度优化代码。
 
 命令提示符或 PowerShell：
 
@@ -111,7 +111,7 @@ dotnet build --configuration Release --no-incremental
 dotnet publish --configuration Release
 ```
 
-*注意：如果需要编译到其他目录，可使用 `--output <path>` 指定输出目录。*
+*注意：如果需要编译到其他目录，可使用 `--output <path>` 指定输出目录。如果使用 -p:SelfContained=true 选项，输出目录将包含所有依赖项，无需额外安装 .NET 运行时。*
 
 编译过程会自动将本地化文件、网页资源和配置文件复制到输出目录。
 
