@@ -278,6 +278,16 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.LocalizationManager>();
 // Register ModService
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.ModService>();
 
+// Register ModUpdateService
+builder.Services.AddHttpClient<THMI_Mod_Manager.Services.ModUpdateService>();
+builder.Services.AddSingleton<THMI_Mod_Manager.Services.ModUpdateService>(provider =>
+{
+    var logger = provider.GetRequiredService<ILogger<THMI_Mod_Manager.Services.ModUpdateService>>();
+    var appConfig = provider.GetRequiredService<THMI_Mod_Manager.Services.AppConfigManager>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    return new THMI_Mod_Manager.Services.ModUpdateService(logger, appConfig, httpClientFactory.CreateClient("ModUpdate"));
+});
+
 // Register SystemInfoLogger
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.SystemInfoLogger>(provider => 
 {
@@ -302,6 +312,13 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.UpdateCheckService>();
 // Register UpdateModule
 builder.Services.AddHttpClient<THMI_Mod_Manager.UpdateModule>();
 builder.Services.AddSingleton<THMI_Mod_Manager.UpdateModule>();
+
+// Register ModUpdate HttpClient
+builder.Services.AddHttpClient("ModUpdate", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("THMI-Mod-Manager/1.0");
+});
 
 // Register SessionTimeService
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.SessionTimeService>();

@@ -1,5 +1,155 @@
+window.saveBepInExSettings = function() {
+    const saveButton = document.getElementById('saveBepInExSettings');
+    if (!saveButton) return;
+    
+    const localizedSave = document.getElementById('localizedSave')?.value || 'Save';
+    const localizedSaving = document.getElementById('localizedSaving')?.value || 'Saving...';
+    
+    saveButton.disabled = true;
+    saveButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + localizedSaving;
+    
+    const form = document.getElementById('SettingsForm');
+    if (!form) {
+        console.error('Settings form not found');
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<span style="font-family: \'Segoe Fluent Icons\'; margin-right: 4px;">&#xE74E;</span> ' + localizedSave;
+        return;
+    }
+    
+    const formData = new FormData();
+    
+    // 添加防跨站请求伪造令牌
+    const token = document.querySelector('input[name="__RequestVerificationToken"]');
+    if (token) {
+        formData.append('__RequestVerificationToken', token.value);
+    }
+    
+    // 添加 BepInEx 配置路径
+    const bepInExConfigPath = document.getElementById('bepInExConfigPath');
+    if (bepInExConfigPath) {
+        formData.append('bepInExConfigPath', bepInExConfigPath.value);
+    }
+    
+    // 添加所有 BepInEx 设置字段
+    const bepInExFields = [
+        'enableAssemblyCache', 'detourProviderType', 'harmonyLogChannels',
+        'updateInteropAssemblies', 'unityBaseLibrariesSource', 'il2cppInteropAssembliesPath',
+        'preloadIL2CPPInteropAssemblies', 'unityLogListening', 'consoleEnabled',
+        'consolePreventClose', 'consoleShiftJisEncoding', 'consoleStandardOutType',
+        'consoleLogLevels', 'diskLogEnabled', 'diskLogAppend', 'diskLogLevels',
+        'diskLogInstantFlushing', 'diskLogConcurrentFileLimit', 'writeUnityLog',
+        'harmonyBackend', 'dumpAssemblies', 'loadDumpedAssemblies', 'breakBeforeLoadAssemblies'
+    ];
+    
+    bepInExFields.forEach(fieldName => {
+        const element = document.getElementById(fieldName);
+        if (element) {
+            if (element.type === 'checkbox') {
+                formData.append(fieldName, element.checked);
+            } else {
+                formData.append(fieldName, element.value);
+            }
+        }
+    });
+    
+    fetch('/settings?handler=SaveBepInExSettings', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'RequestVerificationToken': token?.value || ''
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<span style="font-family: \'Segoe Fluent Icons\'; margin-right: 4px;">&#xE74E;</span> ' + localizedSave;
+        
+        if (data.success) {
+            // 显示成功提示
+            const successToast = document.getElementById('successToast');
+            if (successToast) {
+                successToast.classList.add('show');
+                setTimeout(() => successToast.classList.remove('show'), 3000);
+            }
+        } else {
+            ModalUtils.alert('保存失败', data.message || '保存 BepInEx 设置失败，请重试。');
+        }
+    })
+    .catch(error => {
+        console.error('保存 BepInEx 设置失败:', error);
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<span style="font-family: \'Segoe Fluent Icons\'; margin-right: 4px;">&#xE74E;</span> ' + localizedSave;
+        ModalUtils.alert('保存失败', '保存 BepInEx 设置失败，请重试: ' + error.message);
+    });
+}
+
+// BepInEx 设置恢复默认功能 - 全局函数
+window.resetBepInExSettings = function() {
+    const localizedResetConfirm = document.getElementById('localizedResetConfirm')?.value || '确定要将所有 BepInEx 设置恢复为默认值吗？注意：恢复默认值后，请点击保存按钮来应用更改。当前配置文件的内容将被覆盖。';
+    const localizedResetComplete = document.getElementById('localizedResetComplete')?.value || '已恢复默认值，请点击保存按钮来应用更改。';
+    
+    if (!confirm(localizedResetConfirm)) {
+        return;
+    }
+    
+    // 默认值
+    const defaultValues = {
+        'enableAssemblyCache': true,
+        'detourProviderType': 'Default',
+        'harmonyLogChannels': 'Warn, Error',
+        'updateInteropAssemblies': true,
+        'unityBaseLibrariesSource': 'https://unity.bepinex.dev/libraries/{VERSION}.zip',
+        'il2cppInteropAssembliesPath': '{BepInEx}',
+        'preloadIL2CPPInteropAssemblies': true,
+        'unityLogListening': true,
+        'consoleEnabled': true,
+        'consolePreventClose': false,
+        'consoleShiftJisEncoding': false,
+        'consoleStandardOutType': 'Auto',
+        'consoleLogLevels': 'Fatal, Error, Warning, Message, Info',
+        'diskLogEnabled': true,
+        'diskLogAppend': false,
+        'diskLogLevels': 'Fatal, Error, Warning, Message, Info',
+        'diskLogInstantFlushing': false,
+        'diskLogConcurrentFileLimit': 5,
+        'writeUnityLog': false,
+        'harmonyBackend': 'auto',
+        'dumpAssemblies': false,
+        'loadDumpedAssemblies': false,
+        'breakBeforeLoadAssemblies': false
+    };
+    
+    // 更新所有字段
+    Object.entries(defaultValues).forEach(([fieldName, value]) => {
+        const element = document.getElementById(fieldName);
+        if (element) {
+            if (element.type === 'checkbox') {
+                element.checked = value;
+            } else {
+                element.value = value;
+            }
+        }
+    });
+    
+    // 显示成功提示
+    const successToast = document.getElementById('successToast');
+    if (successToast) {
+        const successToastBody = successToast.querySelector('.toast-body');
+        if (successToastBody) {
+            successToastBody.textContent = localizedResetComplete;
+        }
+        successToast.classList.add('show');
+        setTimeout(() => successToast.classList.remove('show'), 5000);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('settingsForm');
+    const form = document.getElementById('SettingsForm');
     const successToast = document.getElementById('successToast');
     const selects = document.querySelectorAll('.cdx-select');
     let isSaving = false;
@@ -10,23 +160,40 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Update icon font function
-    window.updateIconFont = function(fontValue) {
-        const root = document.documentElement;
-        if (fontValue === 'fluent') {
-            root.style.setProperty('--icon-font-family', "'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif");
-        } else {
-            root.style.setProperty('--icon-font-family', "'Segoe MDL2 Assets', 'Segoe Fluent Icons', sans-serif");
-        }
-        // Update hidden input for form submission
-        const hiddenInput = document.getElementById('iconFontHidden');
-        if (hiddenInput) {
-            hiddenInput.value = fontValue;
-        }
-        // Save to localStorage for persistence
-        localStorage.setItem('iconFont', fontValue);
-        console.log('Icon font changed to:', fontValue);
-    };
+    // BepInEx 按钮事件监听器
+    const saveBepInExBtn = document.getElementById('saveBepInExSettings');
+    const resetBepInExBtn = document.getElementById('resetBepInExSettings');
+    const saveAllBtn = document.getElementById('saveButton');
+
+    if (saveBepInExBtn) {
+        saveBepInExBtn.addEventListener('click', function() {
+            if (typeof window.saveBepInExSettings === 'function') {
+                window.saveBepInExSettings();
+            } else {
+                console.error('saveBepInExSettings function not found');
+            }
+        });
+    }
+
+    if (resetBepInExBtn) {
+        resetBepInExBtn.addEventListener('click', function() {
+            if (typeof window.resetBepInExSettings === 'function') {
+                window.resetBepInExSettings();
+            } else {
+                console.error('resetBepInExSettings function not found');
+            }
+        });
+    }
+
+    if (saveAllBtn) {
+        saveAllBtn.addEventListener('click', function() {
+            if (typeof window.saveAllSettings === 'function') {
+                window.saveAllSettings();
+            } else {
+                console.error('saveAllSettings function not found');
+            }
+        });
+    }
 
     // Load saved icon font on page load
     const savedIconFont = localStorage.getItem('iconFont');
@@ -35,7 +202,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (iconFontSelect) {
             iconFontSelect.value = savedIconFont;
         }
-        updateIconFont(savedIconFont);
+        // Call global updateIconFont function from site.js
+        if (typeof window.updateIconFont === 'function') {
+            window.updateIconFont(savedIconFont);
+        }
+    } else {
+        // Initialize with default value if no saved font
+        const iconFontSelect = document.getElementById('iconFont');
+        if (iconFontSelect && typeof window.updateIconFont === 'function') {
+            window.updateIconFont(iconFontSelect.value);
+        }
     }
 
     const simpleMarkdownParser = (text) => {
@@ -540,6 +716,122 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return defaultValue;
     }
+
+    // 通知权限按钮初始化
+    const requestPermissionButton = document.getElementById('requestPermissionButton');
+    const enableNotificationsCheckbox = document.getElementById('enableNotifications');
+    
+    if (enableNotificationsCheckbox && enableNotificationsCheckbox.checked) {
+        checkNotificationPermissionStatus();
+    } else if (requestPermissionButton) {
+        requestPermissionButton.disabled = true;
+    }
+    
+    if (requestPermissionButton) {
+        requestPermissionButton.addEventListener('click', async function() {
+            if (!('Notification' in window)) {
+                ModalUtils.alert(document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser');
+                return;
+            }
+            
+            // Check if permission was previously blocked
+            if (Notification.permission === 'denied') {
+                const localizedBlockedMessage = document.getElementById('localizedNotificationBlockedMessage')?.value || 
+                    '通知权限已被浏览器阻止。\n\n要重新启用通知权限，请按照以下步骤操作：\n\n1. 点击地址栏左侧的锁图标或信息图标\n2. 找到"通知"设置\n3. 将其设置为"允许"\n4. 刷新页面后再次尝试';
+                ModalUtils.alert(localizedBlockedMessage);
+                return;
+            }
+            
+            try {
+                const permission = await Notification.requestPermission();
+                checkNotificationPermissionStatus();
+                
+                const localizedSuccess = document.getElementById('localizedNotificationRequestSuccess')?.value || 'Notification permission granted successfully';
+                const localizedDenied = document.getElementById('localizedNotificationRequestDenied')?.value || 'Notification permission denied';
+                const localizedDefault = document.getElementById('localizedNotificationPermissionDefault')?.value || 'Permission not granted';
+                const localizedBlockedMessage = document.getElementById('localizedNotificationBlockedMessage')?.value || 
+                    '通知权限已被浏览器阻止。\n\n要重新启用通知权限，请按照以下步骤操作：\n\n1. 点击地址栏左侧的锁图标或信息图标\n2. 找到"通知"设置\n3. 将其设置为"允许"\n4. 刷新页面后再次尝试';
+                
+                if (permission === 'granted') {
+                    ModalUtils.alert(localizedSuccess);
+                } else if (permission === 'denied') {
+                    ModalUtils.alert(localizedDenied + '\n\n' + localizedBlockedMessage);
+                } else {
+                    ModalUtils.alert(localizedDefault);
+                }
+            } catch (error) {
+                console.error('Error requesting notification permission:', error);
+                
+                // Check if error indicates permission was blocked
+                if (error.message && error.message.includes('blocked')) {
+                    const localizedBlockedMessage = document.getElementById('localizedNotificationBlockedMessage')?.value || 
+                        '通知权限已被浏览器阻止。\n\n要重新启用通知权限，请按照以下步骤操作：\n\n1. 点击地址栏左侧的锁图标或信息图标\n2. 找到"通知"设置\n3. 将其设置为"允许"\n4. 刷新页面后再次尝试';
+                    ModalUtils.alert(localizedBlockedMessage);
+                } else {
+                    ModalUtils.alert((document.getElementById('localizedNotificationRequestFailed')?.value || 'Failed to request notification permission') + ': ' + error.message);
+                }
+            }
+        });
+    }
+    
+    // 日期时间设置初始化
+    const showSecondsHidden = document.getElementById('showSecondsHidden');
+    const use12HourHidden = document.getElementById('use12HourHidden');
+    const dateFormatHidden = document.getElementById('dateFormatHidden');
+    const showSecondsCheckbox = document.getElementById('showSeconds');
+    const use12HourCheckbox = document.getElementById('use12Hour');
+    const dateFormatSelect = document.getElementById('dateFormat');
+    
+    if (showSecondsHidden && showSecondsCheckbox) {
+        showSecondsCheckbox.checked = showSecondsHidden.value === 'true';
+    }
+    if (use12HourHidden && use12HourCheckbox) {
+        use12HourCheckbox.checked = use12HourHidden.value === 'true';
+    }
+    if (dateFormatHidden && dateFormatSelect) {
+        dateFormatSelect.value = dateFormatHidden.value;
+    }
+    
+    // BepInEx 重置按钮事件监听器
+    const resetBepInExButton = document.getElementById('resetBepInExSettings');
+    if (resetBepInExButton) {
+        resetBepInExButton.addEventListener('click', function() {
+            window.resetBepInExSettings();
+        });
+    }
+    
+    // 处理查询参数中的成功/错误消息
+    const urlParams = new URLSearchParams(window.location.search);
+    const successMessage = urlParams.get('success');
+    const errorMessage = urlParams.get('error');
+    
+    if (successMessage) {
+        const successToast = document.getElementById('successToast');
+        if (successToast) {
+            const successToastBody = successToast.querySelector('.toast-body');
+            if (successToastBody) {
+                successToastBody.textContent = decodeURIComponent(successMessage);
+            }
+            successToast.classList.add('show');
+            setTimeout(() => successToast.classList.remove('show'), 5000);
+        }
+        // 清除 URL 中的 success 参数
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    if (errorMessage) {
+        const errorToast = document.getElementById('errorToast');
+        if (errorToast) {
+            const errorToastBody = errorToast.querySelector('.toast-body');
+            if (errorToastBody) {
+                errorToastBody.textContent = decodeURIComponent(errorMessage);
+            }
+            errorToast.classList.add('show');
+            setTimeout(() => errorToast.classList.remove('show'), 5000);
+        }
+        // 清除 URL 中的 error 参数
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 });
 
 // 游戏启动模式选择相关功能 - 全局函数
@@ -681,6 +973,7 @@ function checkNotificationPermissionStatus() {
     const localizedGranted = document.getElementById('localizedNotificationPermissionGranted')?.value || 'Permission granted';
     const localizedDenied = document.getElementById('localizedNotificationPermissionDenied')?.value || 'Permission denied';
     const localizedDefault = document.getElementById('localizedNotificationPermissionDefault')?.value || 'Permission not granted';
+    const localizedBlocked = document.getElementById('localizedNotificationPermissionBlocked')?.value || 'Permission blocked (click for instructions)';
     
     switch (permission) {
         case 'granted':
@@ -713,63 +1006,6 @@ function checkNotificationPermissionStatus() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const requestPermissionButton = document.getElementById('requestPermissionButton');
-    const enableNotificationsCheckbox = document.getElementById('enableNotifications');
-    
-    if (enableNotificationsCheckbox && enableNotificationsCheckbox.checked) {
-        checkNotificationPermissionStatus();
-    } else if (requestPermissionButton) {
-        requestPermissionButton.disabled = true;
-    }
-    
-    if (requestPermissionButton) {
-        requestPermissionButton.addEventListener('click', async function() {
-            if (!('Notification' in window)) {
-                ModalUtils.alert(document.getElementById('localizedNotificationNotSupported')?.value || 'Notifications are not supported in this browser');
-                return;
-            }
-            
-            try {
-                const permission = await Notification.requestPermission();
-                checkNotificationPermissionStatus();
-                
-                const localizedSuccess = document.getElementById('localizedNotificationRequestSuccess')?.value || 'Notification permission granted successfully';
-                const localizedDenied = document.getElementById('localizedNotificationRequestDenied')?.value || 'Notification permission denied';
-                const localizedDefault = document.getElementById('localizedNotificationPermissionDefault')?.value || 'Permission not granted';
-                
-                if (permission === 'granted') {
-                    ModalUtils.alert(localizedSuccess);
-                } else if (permission === 'denied') {
-                    ModalUtils.alert(localizedDenied);
-                } else {
-                    ModalUtils.alert(localizedDefault);
-                }
-            } catch (error) {
-                console.error('Error requesting notification permission:', error);
-                ModalUtils.alert((document.getElementById('localizedNotificationRequestFailed')?.value || 'Failed to request notification permission') + ': ' + error.message);
-            }
-        });
-    }
-    
-    const showSecondsHidden = document.getElementById('showSecondsHidden');
-    const use12HourHidden = document.getElementById('use12HourHidden');
-    const dateFormatHidden = document.getElementById('dateFormatHidden');
-    const showSecondsCheckbox = document.getElementById('showSeconds');
-    const use12HourCheckbox = document.getElementById('use12Hour');
-    const dateFormatSelect = document.getElementById('dateFormat');
-    
-    if (showSecondsHidden && showSecondsCheckbox) {
-        showSecondsCheckbox.checked = showSecondsHidden.value === 'true';
-    }
-    if (use12HourHidden && use12HourCheckbox) {
-        use12HourCheckbox.checked = use12HourHidden.value === 'true';
-    }
-    if (dateFormatHidden && dateFormatSelect) {
-        dateFormatSelect.value = dateFormatHidden.value;
-    }
-});
-
 function saveDateTimeSettings() {
     const showSeconds = document.getElementById('showSeconds')?.checked || false;
     const use12Hour = document.getElementById('use12Hour')?.checked || false;
@@ -792,4 +1028,147 @@ function saveDateTimeSettings() {
         window.dateTimeSettings.use12Hour = use12Hour;
         window.dateTimeSettings.dateFormat = dateFormat;
     }
+}
+
+// 保存所有设置 - 全局函数
+window.saveAllSettings = function() {
+    const saveButton = document.getElementById('saveButton');
+    if (!saveButton) return;
+    
+    saveButton.disabled = true;
+    saveButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+    
+    const formData = new FormData();
+    
+    // 添加防跨站请求伪造令牌
+    const token = document.querySelector('input[name="__RequestVerificationToken"]');
+    if (token) {
+        formData.append('__RequestVerificationToken', token.value);
+    }
+    
+    // 添加语言设置
+    const languageSelect = document.getElementById('languageSelect');
+    if (languageSelect) {
+        formData.append('language', languageSelect.value);
+    }
+    
+    // 添加图标字体设置
+    const iconFontHidden = document.getElementById('iconFontHidden');
+    if (iconFontHidden) {
+        formData.append('iconFont', iconFontHidden.value);
+    }
+    
+    // 添加主题颜色
+    const themeColorInput = document.querySelector('input[name="themeColor"]');
+    if (themeColorInput) {
+        formData.append('themeColor', themeColorInput.value);
+    }
+    
+    // 添加启动模式
+    const launchModeInput = document.querySelector('input[name="launchMode"]:checked');
+    if (launchModeInput) {
+        formData.append('launchMode', launchModeInput.value);
+    }
+    
+    // 添加启动器路径
+    const launcherPathInput = document.getElementById('launcherPath');
+    if (launcherPathInput) {
+        formData.append('launcherPath', launcherPathInput.value);
+    }
+    
+    // 添加 Mods 路径
+    const modsPathInput = document.getElementById('modsPath');
+    if (modsPathInput) {
+        formData.append('modsPath', modsPathInput.value);
+    }
+    
+    // 添加游戏路径
+    const gamePathInput = document.getElementById('gamePath');
+    if (gamePathInput) {
+        formData.append('gamePath', gamePathInput.value);
+    }
+    
+    // 添加修改标题
+    const modifyTitleInput = document.getElementById('modifyTitle');
+    if (modifyTitleInput) {
+        formData.append('modifyTitle', modifyTitleInput.checked);
+    }
+    
+    // 添加自动检查更新
+    const autoCheckUpdatesInput = document.getElementById('autoCheckUpdates');
+    if (autoCheckUpdatesInput) {
+        formData.append('autoCheckUpdates', autoCheckUpdatesInput.checked);
+    }
+    
+    // 添加更新频率
+    const updateFrequencySelect = document.getElementById('updateFrequency');
+    if (updateFrequencySelect) {
+        formData.append('updateFrequency', updateFrequencySelect.value);
+    }
+    
+    // 添加启用通知
+    const enableNotificationsInput = document.getElementById('enableNotifications');
+    if (enableNotificationsInput) {
+        formData.append('enableNotifications', enableNotificationsInput.checked);
+    }
+    
+    // 添加显示秒数
+    const showSecondsHidden = document.getElementById('showSecondsHidden');
+    if (showSecondsHidden) {
+        formData.append('showSeconds', showSecondsHidden.value);
+    }
+    
+    // 添加使用12小时制
+    const use12HourHidden = document.getElementById('use12HourHidden');
+    if (use12HourHidden) {
+        formData.append('use12Hour', use12HourHidden.value);
+    }
+    
+    // 添加日期格式
+    const dateFormatHidden = document.getElementById('dateFormatHidden');
+    if (dateFormatHidden) {
+        formData.append('dateFormat', dateFormatHidden.value);
+    }
+    
+    // 添加分隔符
+    const dateSeparatorSelect = document.getElementById('dateSeparator');
+    if (dateSeparatorSelect) {
+        formData.append('dateSeparator', dateSeparatorSelect.value);
+    }
+    
+    fetch('/Settings?handler=SaveLanguage', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'RequestVerificationToken': token?.value || ''
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+    })
+    .then(html => {
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<span style="font-family: \'Segoe Fluent Icons\'; margin-right: 4px;">&#xE74E;</span> Save Changes';
+        
+        // 显示成功提示
+        const successToast = document.getElementById('successToast');
+        if (successToast) {
+            successToast.classList.add('show');
+            setTimeout(() => successToast.classList.remove('show'), 3000);
+        }
+        
+        // 刷新页面以显示新设置
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    })
+    .catch(error => {
+        console.error('保存设置失败:', error);
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<span style="font-family: \'Segoe Fluent Icons\'; margin-right: 4px;">&#xE74E;</span> Save Changes';
+        ModalUtils.alert('保存失败', '保存设置失败，请重试: ' + error.message);
+    });
 }

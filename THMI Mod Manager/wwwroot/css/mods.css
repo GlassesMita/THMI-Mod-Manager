@@ -502,3 +502,59 @@
         font-size: 0.7rem;
     }
 }
+
+/* Mod 更新相关样式 */
+.update-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background-color: #0dcaf0;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    animation: pulse-update 2s infinite;
+}
+
+@keyframes pulse-update {
+    0% {
+        box-shadow: 0 0 0 0 rgba(13, 202, 240, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(13, 202, 240, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(13, 202, 240, 0);
+    }
+}
+
+.mod-item.update-available {
+    border-color: #0dcaf0;
+    background-color: #f8fdff;
+}
+
+.mod-item.update-available:hover {
+    border-color: #0aa2c0;
+    box-shadow: 0 4px 12px rgba(13, 202, 240, 0.2);
+}
+
+.alert-info {
+    background-color: #cff4fc;
+    border: 1px solid #b6effb;
+    color: #055160;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.btn-outline-info {
+    color: #0dcaf0;
+    border-color: #0dcaf0;
+}
+
+.btn-outline-info:hover {
+    color: #fff;
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+}

@@ -57,6 +57,19 @@
     <PublishDir Condition=" '$(PublishDir)' == '' ">$(BaseOutputPath)</PublishDir>
   </PropertyGroup>
 
+  <!-- 游戏目录构建配置：使用 -p:GameDir="路径" 指定游戏目录，构建到游戏目录 -->
+  <PropertyGroup Condition="'$(GameDir)' != ''">
+    <OutputPath>$(GameDir)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BuildToGameDir)' == 'true'">
+    <OutputPath>F:\SteamLibrary\steamapps\common\Touhou Mystia Izakaya\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
   <!-- 全局文件排除规则 -->
   <ItemGroup>
     <Content Remove="appsettings.Development.json" />

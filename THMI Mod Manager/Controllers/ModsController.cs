@@ -10,13 +10,15 @@ namespace THMI_Mod_Manager.Controllers
     {
         private readonly ILogger<ModsController> _logger;
         private readonly ModService _modService;
+        private readonly ModUpdateService _modUpdateService;
         private readonly AppConfigManager _appConfig;
         private readonly SessionTimeService _sessionTimeService;
 
-        public ModsController(ILogger<ModsController> logger, ModService modService, AppConfigManager appConfig, SessionTimeService sessionTimeService)
+        public ModsController(ILogger<ModsController> logger, ModService modService, ModUpdateService modUpdateService, AppConfigManager appConfig, SessionTimeService sessionTimeService)
         {
             _logger = logger;
             _modService = modService;
+            _modUpdateService = modUpdateService;
             _appConfig = appConfig;
             _sessionTimeService = sessionTimeService;
         }
@@ -210,6 +212,90 @@ namespace THMI_Mod_Manager.Controllers
             {
                 _logger.LogError(ex, $"Error installing mod from: {request?.FilePath}");
                 return StatusCode(500, new { success = false, message = $"安装 Mod 时出错: {ex.Message}" });
+            }
+        }
+
+        [HttpPost("check-updates")]
+        public async Task<IActionResult> CheckForUpdates()
+        {
+            try
+            {
+                var mods = _modService.LoadMods();
+                var updatedMods = await _modUpdateService.CheckForModUpdatesAsync(mods);
+                
+                var modsWithUpdates = updatedMods.Where(m => m.HasUpdateAvailable).ToList();
+                _logger.LogInformation($"Found {modsWithUpdates.Count} mods with available updates out of {updatedMods.Count} total mods");
+                
+                return Ok(new { 
+                    success = true, 
+                    mods = updatedMods,
+                    updateCount = modsWithUpdates.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking for mod updates");
+                return StatusCode(500, new { success = false, message = $"检查更新时出错: {ex.Message}" });
+            }
+        }
+
+        [HttpPost("update/{id}")]
+        public async Task<IActionResult> UpdateMod(string id)
+        {
+            try
+            {
+                var mods = _modService.LoadMods();
+                var mod = mods.FirstOrDefault(m => m.UniqueId == id || m.FileName == id);
+
+                if (mod == null)
+                {
+                    return NotFound(new { success = false, message = "Mod not found" });
+                }
+
+                if (!mod.HasUpdateAvailable || string.IsNullOrEmpty(mod.DownloadUrl))
+                {
+                    return BadRequest(new { success = false, message = "No update available for this mod" });
+                }
+
+                bool updated = await _modUpdateService.UpdateModAsync(mod);
+
+                if (updated)
+                {
+                    return Ok(new { 
+                        success = true, 
+                        message = $"Mod {mod.Name} 更新成功",
+                        newVersion = mod.LatestVersion
+                    });
+                }
+                else
+                {
+                    return StatusCode(500, new { success = false, message = "Mod 更新失败" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating mod {id}");
+                return StatusCode(500, new { success = false, message = $"更新 Mod 时出错: {ex.Message}" });
+            }
+        }
+
+        [HttpGet("update-progress/{id}")]
+        public IActionResult GetUpdateProgress(string id)
+        {
+            try
+            {
+                var progress = ModUpdateService.GetUpdateProgress(id);
+                if (progress == null)
+                {
+                    return NotFound(new { success = false, message = "No update in progress" });
+                }
+
+                return Ok(new { success = true, progress });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting update progress for mod {id}");
+                return StatusCode(500, new { success = false, message = $"获取更新进度时出错: {ex.Message}" });
             }
         }
     }

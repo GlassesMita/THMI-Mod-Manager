@@ -118,6 +118,11 @@ namespace THMI_Mod_Manager.Services
                             modInfo.ModLink = linkString.Value;
                         }
                         
+                        if (modSection.TryGetNode("UpdateUrl", out var updateUrlNode) && updateUrlNode is TomlString updateUrlString)
+                        {
+                            modInfo.UpdateUrl = updateUrlString.Value;
+                        }
+                        
                         modInfo.IsValid = true;
                         _logger.LogInformation($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
                     }

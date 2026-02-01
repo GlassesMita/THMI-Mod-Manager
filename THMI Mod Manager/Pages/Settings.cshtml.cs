@@ -101,6 +101,35 @@ namespace THMI_Mod_Manager.Pages
         public string ModName { get; set; } = "THMI Mod Manager";
         public string ModVersion { get; set; } = ReadCsprojVersion();
 
+        // 游戏路径属性
+        public string GamePath { get; set; } = "";
+
+        // BepInEx配置属性
+        public string BepInExConfigPath { get; set; } = "";
+        public bool EnableAssemblyCache { get; set; } = true;
+        public string DetourProviderType { get; set; } = "Default";
+        public string HarmonyLogChannels { get; set; } = "Warn, Error";
+        public bool UpdateInteropAssemblies { get; set; } = true;
+        public string UnityBaseLibrariesSource { get; set; } = "https://unity.bepinex.dev/libraries/{VERSION}.zip";
+        public string IL2CPPInteropAssembliesPath { get; set; } = "{BepInEx}";
+        public bool PreloadIL2CPPInteropAssemblies { get; set; } = true;
+        public bool UnityLogListening { get; set; } = true;
+        public bool ConsoleEnabled { get; set; } = true;
+        public bool ConsolePreventClose { get; set; } = false;
+        public bool ConsoleShiftJisEncoding { get; set; } = false;
+        public string ConsoleStandardOutType { get; set; } = "Auto";
+        public string ConsoleLogLevels { get; set; } = "Fatal, Error, Warning, Message, Info";
+        public bool DiskLogEnabled { get; set; } = true;
+        public bool DiskLogAppend { get; set; } = false;
+        public string DiskLogLevels { get; set; } = "Fatal, Error, Warning, Message, Info";
+        public bool DiskLogInstantFlushing { get; set; } = false;
+        public int DiskLogConcurrentFileLimit { get; set; } = 5;
+        public bool WriteUnityLog { get; set; } = false;
+        public string HarmonyBackend { get; set; } = "auto";
+        public bool DumpAssemblies { get; set; } = false;
+        public bool LoadDumpedAssemblies { get; set; } = false;
+        public bool BreakBeforeLoadAssemblies { get; set; } = false;
+
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
             _logger = logger;
@@ -180,10 +209,188 @@ namespace THMI_Mod_Manager.Pages
                 {
                     // Keep default values
                 }
+                
+                // Load game path - auto-detect if not set
+                var gamePathValue = _appConfig.Get("[Game]GamePath", "");
+                GamePath = gamePathValue ?? "";
+                
+                // If game path not found, try to detect from AppContext.BaseDirectory (executable directory)
+                if (string.IsNullOrEmpty(GamePath))
+                {
+                    // BepInEx is typically at {GamePath}/BepInEx
+                    // Try executable directory + BepInEx/config first
+                    var executableDir = AppContext.BaseDirectory;
+                    var bepInExConfigFromExecutable = Path.Combine(executableDir, "BepInEx", "config", "BepInEx.cfg");
+                    
+                    if (System.IO.File.Exists(bepInExConfigFromExecutable))
+                    {
+                        GamePath = executableDir;
+                    }
+                    else
+                    {
+                        // Try parent directories
+                        var currentDir = executableDir;
+                        for (int i = 0; i < 5; i++)
+                        {
+                            var parentDir = Directory.GetParent(currentDir)?.FullName;
+                            if (string.IsNullOrEmpty(parentDir)) break;
+                            
+                            var testPath = Path.Combine(parentDir, "BepInEx", "config", "BepInEx.cfg");
+                            if (System.IO.File.Exists(testPath))
+                            {
+                                GamePath = parentDir;
+                                break;
+                            }
+                            currentDir = parentDir;
+                        }
+                    }
+                }
+                
+                // If still empty, try to detect from ModsPath
+                if (string.IsNullOrEmpty(GamePath))
+                {
+                    var modsPathValue = _appConfig.Get("[App]ModsPath", "");
+                    if (!string.IsNullOrEmpty(modsPathValue))
+                    {
+                        var modsPathDir = Directory.GetParent(modsPathValue)?.FullName;
+                        if (!string.IsNullOrEmpty(modsPathDir))
+                        {
+                            if (modsPathDir.EndsWith("Mods"))
+                            {
+                                GamePath = Directory.GetParent(modsPathDir)?.FullName ?? "";
+                            }
+                            else if (modsPathDir.EndsWith("BepInEx") || modsPathDir.Contains("BepInEx"))
+                            {
+                                var bepInExParent = Directory.GetParent(modsPathDir);
+                                if (bepInExParent != null && bepInExParent.Name == "config")
+                                {
+                                    GamePath = Directory.GetParent(bepInExParent.FullName)?.FullName ?? "";
+                                }
+                                else
+                                {
+                                    GamePath = Directory.GetParent(modsPathDir)?.FullName ?? "";
+                                }
+                            }
+                            else
+                            {
+                                GamePath = modsPathDir;
+                            }
+                        }
+                    }
+                }
+                
+                // If still empty, try common Steam paths
+                if (string.IsNullOrEmpty(GamePath))
+                {
+                    var steamPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                    var commonSteamPaths = new[]
+                    {
+                        Path.Combine(steamPath, "Steam", "steamapps", "common", "Touhou Mystia Izakaya"),
+                        @"f:\SteamLibrary\steamapps\common\Touhou Mystia Izakaya",
+                        @"d:\SteamLibrary\steamapps\common\Touhou Mystia Izakaya",
+                    };
+                    
+                    foreach (var path in commonSteamPaths)
+                    {
+                        if (Directory.Exists(path))
+                        {
+                            GamePath = path;
+                            break;
+                        }
+                    }
+                }
+                
+                // Auto-detect BepInEx config path
+                string? autoDetectedBepInExPath = null;
+                if (!string.IsNullOrEmpty(GamePath))
+                {
+                    var bepInExConfigDir = Path.Combine(GamePath, "BepInEx", "config");
+                    var bepInExConfigFile = Path.Combine(bepInExConfigDir, "BepInEx.cfg");
+                    if (System.IO.File.Exists(bepInExConfigFile))
+                    {
+                        autoDetectedBepInExPath = bepInExConfigFile;
+                    }
+                }
+                
+                // Use auto-detected path or fallback to saved path
+                if (!string.IsNullOrEmpty(autoDetectedBepInExPath))
+                {
+                    BepInExConfigPath = autoDetectedBepInExPath;
+                }
+                else
+                {
+                    var bepInExConfigPathValue = _appConfig.Get("[BepInEx]ConfigPath", "");
+                    BepInExConfigPath = bepInExConfigPathValue ?? "";
+                }
+                
+                // Load BepInEx settings from config file if path is configured
+                if (!string.IsNullOrEmpty(BepInExConfigPath) && System.IO.File.Exists(BepInExConfigPath))
+                {
+                    LoadBepInExSettings(BepInExConfigPath);
+                }
             }
             catch (Exception ex)
             {
                 throw;
+            }
+        }
+
+        private void LoadBepInExSettings(string configPath)
+        {
+            try
+            {
+                _logger.LogInformation($"Loading BepInEx settings from: {configPath}");
+                _logger.LogInformation($"File exists: {System.IO.File.Exists(configPath)}");
+                
+                var ini = IniFileHelper.LoadOrCreate(configPath);
+                
+                _logger.LogInformation($"INI data loaded, sections: {string.Join(", ", ini.GetModifiedKeys())}");
+                
+                // [Caching]
+                var enableAssemblyCache = ini.GetBool("Caching", "EnableAssemblyCache", true);
+                EnableAssemblyCache = enableAssemblyCache;
+                _logger.LogInformation($"EnableAssemblyCache: {enableAssemblyCache}");
+                
+                // [Detours]
+                DetourProviderType = ini.GetValue("Detours", "DetourProviderType", "Default");
+                
+                // [Harmony.Logger]
+                HarmonyLogChannels = ini.GetValue("Harmony.Logger", "LogChannels", "Warn, Error");
+                _logger.LogInformation("HarmonyLogChannels: {Value}", HarmonyLogChannels);
+                
+                // [IL2CPP]
+                UpdateInteropAssemblies = ini.GetBool("IL2CPP", "UpdateInteropAssemblies", true);
+                UnityBaseLibrariesSource = ini.GetValue("IL2CPP", "UnityBaseLibrariesSource", "https://unity.bepinex.dev/libraries/{VERSION}.zip");
+                IL2CPPInteropAssembliesPath = ini.GetValue("IL2CPP", "IL2CPPInteropAssembliesPath", "{BepInEx}");
+                PreloadIL2CPPInteropAssemblies = ini.GetBool("IL2CPP", "PreloadIL2CPPInteropAssemblies", true);
+                
+                // [Logging]
+                UnityLogListening = ini.GetBool("Logging", "UnityLogListening", true);
+                
+                // [Logging.Console]
+                ConsoleEnabled = ini.GetBool("Logging.Console", "Enabled", true);
+                ConsolePreventClose = ini.GetBool("Logging.Console", "PreventClose", false);
+                ConsoleShiftJisEncoding = ini.GetBool("Logging.Console", "ShiftJisEncoding", false);
+                ConsoleStandardOutType = ini.GetValue("Logging.Console", "StandardOutType", "Auto");
+                ConsoleLogLevels = ini.GetValue("Logging.Console", "LogLevels", "Fatal, Error, Warning, Message, Info");
+                
+                // [Logging.Disk]
+                DiskLogEnabled = ini.GetBool("Logging.Disk", "Enabled", true);
+                DiskLogAppend = ini.GetBool("Logging.Disk", "AppendLog", false);
+                DiskLogLevels = ini.GetValue("Logging.Disk", "LogLevels", "Fatal, Error, Warning, Message, Info");
+                DiskLogInstantFlushing = ini.GetBool("Logging.Disk", "InstantFlushing", false);
+                DiskLogConcurrentFileLimit = ini.GetInt("Logging.Disk", "ConcurrentFileLimit", 5);
+                WriteUnityLog = ini.GetBool("Logging.Disk", "WriteUnityLog", false);
+                
+                // [Preloader]
+                HarmonyBackend = ini.GetValue("Preloader", "HarmonyBackend", "auto");
+                DumpAssemblies = ini.GetBool("Preloader", "DumpAssemblies", false);
+                LoadDumpedAssemblies = ini.GetBool("Preloader", "LoadDumpedAssemblies", false);
+                BreakBeforeLoadAssemblies = ini.GetBool("Preloader", "BreakBeforeLoadAssemblies", false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error loading BepInEx settings: {ex.Message}");
             }
         }
 
@@ -334,6 +541,107 @@ namespace THMI_Mod_Manager.Pages
 
             // Return success
             return new JsonResult(new { success = true, message = "Developer settings saved successfully!" });
+        }
+
+        public IActionResult OnPostSaveBepInExSettings(
+            string bepInExConfigPath,
+            bool enableAssemblyCache,
+            string detourProviderType,
+            string harmonyLogChannels,
+            bool updateInteropAssemblies,
+            string unityBaseLibrariesSource,
+            string il2cppInteropAssembliesPath,
+            bool preloadIL2CPPInteropAssemblies,
+            bool unityLogListening,
+            bool consoleEnabled,
+            bool consolePreventClose,
+            bool consoleShiftJisEncoding,
+            string consoleStandardOutType,
+            string consoleLogLevels,
+            bool diskLogEnabled,
+            bool diskLogAppend,
+            string diskLogLevels,
+            bool diskLogInstantFlushing,
+            int diskLogConcurrentFileLimit,
+            bool writeUnityLog,
+            string harmonyBackend,
+            bool dumpAssemblies,
+            bool loadDumpedAssemblies,
+            bool breakBeforeLoadAssemblies)
+        {
+            try
+            {
+                // Save BepInEx config path
+                _appConfig.Set("[BepInEx]ConfigPath", bepInExConfigPath ?? "");
+                
+                // Save to BepInEx.cfg if path is valid
+                if (!string.IsNullOrEmpty(bepInExConfigPath) && System.IO.File.Exists(bepInExConfigPath))
+                {
+                    var ini = IniFileHelper.LoadOrCreate(bepInExConfigPath);
+                    
+                    // [Caching]
+                    ini.SetBool("Caching", "EnableAssemblyCache", enableAssemblyCache);
+                    
+                    // [Detours]
+                    ini.SetValue("Detours", "DetourProviderType", detourProviderType ?? "Default");
+                    
+                    // [Harmony.Logger]
+                    ini.SetValue("Harmony.Logger", "LogChannels", harmonyLogChannels ?? "Warn, Error");
+                    
+                    // [IL2CPP]
+                    ini.SetBool("IL2CPP", "UpdateInteropAssemblies", updateInteropAssemblies);
+                    ini.SetValue("IL2CPP", "UnityBaseLibrariesSource", unityBaseLibrariesSource ?? "");
+                    ini.SetValue("IL2CPP", "IL2CPPInteropAssembliesPath", il2cppInteropAssembliesPath ?? "{BepInEx}");
+                    ini.SetBool("IL2CPP", "PreloadIL2CPPInteropAssemblies", preloadIL2CPPInteropAssemblies);
+                    
+                    // [Logging]
+                    ini.SetBool("Logging", "UnityLogListening", unityLogListening);
+                    
+                    // [Logging.Console]
+                    ini.SetBool("Logging.Console", "Enabled", consoleEnabled);
+                    ini.SetBool("Logging.Console", "PreventClose", consolePreventClose);
+                    ini.SetBool("Logging.Console", "ShiftJisEncoding", consoleShiftJisEncoding);
+                    ini.SetValue("Logging.Console", "StandardOutType", consoleStandardOutType ?? "Auto");
+                    ini.SetValue("Logging.Console", "LogLevels", consoleLogLevels ?? "Fatal, Error, Warning, Message, Info");
+                    
+                    // [Logging.Disk]
+                    ini.SetBool("Logging.Disk", "Enabled", diskLogEnabled);
+                    ini.SetBool("Logging.Disk", "AppendLog", diskLogAppend);
+                    ini.SetValue("Logging.Disk", "LogLevels", diskLogLevels ?? "Fatal, Error, Warning, Message, Info");
+                    ini.SetBool("Logging.Disk", "InstantFlushing", diskLogInstantFlushing);
+                    ini.SetInt("Logging.Disk", "ConcurrentFileLimit", diskLogConcurrentFileLimit);
+                    ini.SetBool("Logging.Disk", "WriteUnityLog", writeUnityLog);
+                    
+                    // [Preloader]
+                    ini.SetValue("Preloader", "HarmonyBackend", harmonyBackend ?? "auto");
+                    ini.SetBool("Preloader", "DumpAssemblies", dumpAssemblies);
+                    ini.SetBool("Preloader", "LoadDumpedAssemblies", loadDumpedAssemblies);
+                    ini.SetBool("Preloader", "BreakBeforeLoadAssemblies", breakBeforeLoadAssemblies);
+                    
+                    // Write back to file only if there are changes
+                    if (ini.HasChanges())
+                    {
+                        ini.Save();
+                        _logger.LogInformation($"BepInEx settings saved to {bepInExConfigPath}");
+                        return new JsonResult(new { success = true, message = "BepInEx设置已保存，注释已保留!" });
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"No changes to save for BepInEx config {bepInExConfigPath}");
+                        return new JsonResult(new { success = true, message = "BepInEx设置无更改，配置文件保持不变!" });
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning($"BepInEx config path not found or invalid: {bepInExConfigPath}");
+                    return new JsonResult(new { success = false, message = "BepInEx配置文件路径无效或文件不存在" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error saving BepInEx settings: {ex.Message}");
+                return new JsonResult(new { success = false, message = "BepInEx设置保存失败: " + ex.Message });
+            }
         }
     }
 }

@@ -12,6 +12,10 @@
     <div class="mods-header">
         <h1 class="mods-title">@AppConfig.GetLocalized("Mods:Header", "Mod 管理")</h1>
         <div class="mods-actions">
+            <button id="checkUpdatesButton" class="btn btn-outline-info me-2">
+                                <i data-icon="icon-refresh"></i>
+                <span>@AppConfig.GetLocalized("Mods:CheckUpdatesButton", "检查更新")</span>
+            </button>
             <button id="installModsButton" class="btn btn-outline-success me-2">
                                 <i data-icon="icon-add"></i>
                 <span>@AppConfig.GetLocalized("Mods:InstallButton", "安装")</span>
@@ -66,6 +70,15 @@
                 refreshButton.addEventListener('click', function() {
                     if (window.ModRenderer) {
                         window.ModRenderer.refresh();
+                    }
+                });
+            }
+            
+            const checkUpdatesButton = document.getElementById('checkUpdatesButton');
+            if (checkUpdatesButton) {
+                checkUpdatesButton.addEventListener('click', function() {
+                    if (window.ModRenderer) {
+                        window.ModRenderer.checkForUpdates();
                     }
                 });
             }

@@ -9,6 +9,7 @@ namespace THMI_Mod_Manager.Models
         public string UniqueId { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string? ModLink { get; set; }
+        public string? UpdateUrl { get; set; }
         public string FilePath { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
         public long FileSize { get; set; }
@@ -19,5 +20,19 @@ namespace THMI_Mod_Manager.Models
         
         // Property to indicate if the mod is currently disabled
         public bool IsDisabled => FileName.EndsWith(".disabled");
+        
+        // Update-related properties
+        public bool HasUpdateAvailable { get; set; }
+        public string? LatestVersion { get; set; }
+        public string? DownloadUrl { get; set; }
+        public long? FileSizeBytes { get; set; }
+    }
+
+    public class UpdateProgress
+    {
+        public long BytesDownloaded { get; set; }
+        public long TotalBytes { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public DateTime LastUpdated { get; set; }
     }
 }

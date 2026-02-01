@@ -128,6 +128,9 @@ function getLocalizedString(key, defaultValue) {
 
 // Initialize update notifications when DOM is ready (delayed to not block page render)
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize icon font
+    initIconFont();
+    
     // Delay update check to allow page to render first
     // This reduces perceived load time and avoids conflicts with browser extensions
     if (window.requestIdleCallback) {
@@ -140,6 +143,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 });
+
+// Initialize icon font
+function initIconFont() {
+    const savedIconFont = localStorage.getItem('iconFont') || 'mdl2';
+    updateIconFont(savedIconFont);
+}
+
+// Update icon font function
+window.updateIconFont = function(fontValue) {
+    const root = document.documentElement;
+    if (fontValue === 'fluent') {
+        root.style.setProperty('--icon-font-family', "'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif");
+    } else {
+        root.style.setProperty('--icon-font-family', "'Segoe MDL2 Assets', 'Segoe Fluent Icons', sans-serif");
+    }
+    // Update hidden input for form submission (if on settings page)
+    const hiddenInput = document.getElementById('iconFontHidden');
+    if (hiddenInput) {
+        hiddenInput.value = fontValue;
+    }
+    // Save to localStorage for persistence
+    localStorage.setItem('iconFont', fontValue);
+    console.log('Icon font changed to:', fontValue);
+};
 
 // Global function to manually check for updates
 window.checkForUpdates = function() {

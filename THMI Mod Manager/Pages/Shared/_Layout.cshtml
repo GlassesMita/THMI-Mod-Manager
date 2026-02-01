@@ -549,6 +549,24 @@
                         </div>
                     </div>
                 </div>
+                <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header bg-success text-white">
+                        <i data-icon="icon-check" class="text-white me-2"></i>
+                        <strong class="me-auto">@AppConfig.GetLocalized("Common:Success", "Success")</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                    </div>
+                </div>
+                <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header bg-danger text-white">
+                        <i data-icon="icon-error" class="text-white me-2"></i>
+                        <strong class="me-auto">@AppConfig.GetLocalized("Common:Error", "Error")</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
