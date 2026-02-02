@@ -407,6 +407,27 @@
                 return;
             }
             
+            // Check if mod has update information, if not, check for updates first
+            if (!mod.hasUpdateAvailable || !mod.downloadUrl) {
+                console.log('[ModRenderer] No update info available, checking for updates...');
+                await this.checkForUpdates(true);
+                
+                // Reload mod from updated list
+                const updatedMod = this.modsList.find(m => m.fileName === fileName);
+                if (!updatedMod) {
+                    alert('找不到Mod');
+                    return;
+                }
+                
+                if (!updatedMod.hasUpdateAvailable || !updatedMod.downloadUrl) {
+                    alert('该 Mod 没有可用的更新');
+                    return;
+                }
+                
+                // Use updated mod for the rest of the process
+                Object.assign(mod, updatedMod);
+            }
+            
             if (!confirm('确定要更新 Mod "' + mod.name + '" 吗？\n当前版本: ' + mod.version + '\n新版本: ' + (mod.latestVersion || '未知'))) {
                 return;
             }
@@ -443,9 +464,10 @@
             try {
                 console.log('[ModRenderer] Updating mod:', fileName);
                 
-                const response = await fetch(this.apiEndpoint + '/update/' + encodeURIComponent(fileName), {
+                const response = await fetch(this.apiEndpoint + '/update', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName: fileName })
                 });
                 
                 if (!response.ok) throw new Error('HTTP ' + response.status);

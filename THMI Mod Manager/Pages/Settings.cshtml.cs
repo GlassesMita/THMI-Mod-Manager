@@ -5,9 +5,23 @@ using THMI_Mod_Manager.Services;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.Reflection;
 using System.Xml.Linq;
+using System.Collections.Generic;
 
 namespace THMI_Mod_Manager.Pages
 {
+    public class BepInExConfigItem
+    {
+        public string Section { get; set; } = "";
+        public string Key { get; set; } = "";
+        public string OriginalName => $"[{Section}] {Key}";
+        public string DisplaySection => $"[{Section}]";
+        public string LocalizationKey { get; set; } = "";
+        public string? Value { get; set; }
+        public string Type { get; set; } = "text"; // text, checkbox, select
+        public string? DefaultValue { get; set; }
+        public List<string>? Options { get; set; } // For select type
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     [IgnoreAntiforgeryToken]
     public class SettingsModel : PageModel
@@ -129,6 +143,9 @@ namespace THMI_Mod_Manager.Pages
         public bool DumpAssemblies { get; set; } = false;
         public bool LoadDumpedAssemblies { get; set; } = false;
         public bool BreakBeforeLoadAssemblies { get; set; } = false;
+
+        // BepInEx 配置项列表（按文件顺序）
+        public List<BepInExConfigItem> BepInExConfigItems { get; set; } = new();
 
         public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
@@ -346,47 +363,273 @@ namespace THMI_Mod_Manager.Pages
                 
                 _logger.LogInformation($"INI data loaded, sections: {string.Join(", ", ini.GetModifiedKeys())}");
                 
+                BepInExConfigItems.Clear();
+                
                 // [Caching]
-                var enableAssemblyCache = ini.GetBool("Caching", "EnableAssemblyCache", true);
-                EnableAssemblyCache = enableAssemblyCache;
-                _logger.LogInformation($"EnableAssemblyCache: {enableAssemblyCache}");
+                EnableAssemblyCache = ini.GetBool("Caching", "EnableAssemblyCache", true);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Caching",
+                    Key = "EnableAssemblyCache",
+                    LocalizationKey = "Settings:BepInExEnableAssemblyCache",
+                    Value = EnableAssemblyCache.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "true"
+                });
                 
                 // [Detours]
                 DetourProviderType = ini.GetValue("Detours", "DetourProviderType", "Default");
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Detours",
+                    Key = "DetourProviderType",
+                    LocalizationKey = "Settings:BepInExDetourProvider",
+                    Value = DetourProviderType,
+                    Type = "select",
+                    DefaultValue = "Default",
+                    Options = new List<string> { "Default", "Dobby", "Funchook" }
+                });
                 
                 // [Harmony.Logger]
                 HarmonyLogChannels = ini.GetValue("Harmony.Logger", "LogChannels", "Warn, Error");
-                _logger.LogInformation("HarmonyLogChannels: {Value}", HarmonyLogChannels);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Harmony.Logger",
+                    Key = "LogChannels",
+                    LocalizationKey = "Settings:BepInExHarmonyLogChannels",
+                    Value = HarmonyLogChannels,
+                    Type = "text",
+                    DefaultValue = "Warn, Error"
+                });
                 
                 // [IL2CPP]
                 UpdateInteropAssemblies = ini.GetBool("IL2CPP", "UpdateInteropAssemblies", true);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "IL2CPP",
+                    Key = "UpdateInteropAssemblies",
+                    LocalizationKey = "Settings:BepInExUpdateInteropAssemblies",
+                    Value = UpdateInteropAssemblies.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "true"
+                });
+                
                 UnityBaseLibrariesSource = ini.GetValue("IL2CPP", "UnityBaseLibrariesSource", "https://unity.bepinex.dev/libraries/{VERSION}.zip");
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "IL2CPP",
+                    Key = "UnityBaseLibrariesSource",
+                    LocalizationKey = "Settings:BepInExUnityBaseLibrariesSource",
+                    Value = UnityBaseLibrariesSource,
+                    Type = "text",
+                    DefaultValue = "https://unity.bepinex.dev/libraries/{VERSION}.zip"
+                });
+                
                 IL2CPPInteropAssembliesPath = ini.GetValue("IL2CPP", "IL2CPPInteropAssembliesPath", "{BepInEx}");
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "IL2CPP",
+                    Key = "IL2CPPInteropAssembliesPath",
+                    LocalizationKey = "Settings:BepInExIL2CPPInteropAssembliesPath",
+                    Value = IL2CPPInteropAssembliesPath,
+                    Type = "text",
+                    DefaultValue = "{BepInEx}"
+                });
+                
                 PreloadIL2CPPInteropAssemblies = ini.GetBool("IL2CPP", "PreloadIL2CPPInteropAssemblies", true);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "IL2CPP",
+                    Key = "PreloadIL2CPPInteropAssemblies",
+                    LocalizationKey = "Settings:BepInExPreloadIL2CPPInteropAssemblies",
+                    Value = PreloadIL2CPPInteropAssemblies.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "true"
+                });
                 
                 // [Logging]
                 UnityLogListening = ini.GetBool("Logging", "UnityLogListening", true);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging",
+                    Key = "UnityLogListening",
+                    LocalizationKey = "Settings:BepInExUnityLogListening",
+                    Value = UnityLogListening.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "true"
+                });
                 
                 // [Logging.Console]
                 ConsoleEnabled = ini.GetBool("Logging.Console", "Enabled", true);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Console",
+                    Key = "Enabled",
+                    LocalizationKey = "Settings:BepInExConsoleEnabled",
+                    Value = ConsoleEnabled.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "true"
+                });
+                
                 ConsolePreventClose = ini.GetBool("Logging.Console", "PreventClose", false);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Console",
+                    Key = "PreventClose",
+                    LocalizationKey = "Settings:BepInExConsolePreventClose",
+                    Value = ConsolePreventClose.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "false"
+                });
+                
                 ConsoleShiftJisEncoding = ini.GetBool("Logging.Console", "ShiftJisEncoding", false);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Console",
+                    Key = "ShiftJisEncoding",
+                    LocalizationKey = "Settings:BepInExConsoleShiftJisEncoding",
+                    Value = ConsoleShiftJisEncoding.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "false"
+                });
+                
                 ConsoleStandardOutType = ini.GetValue("Logging.Console", "StandardOutType", "Auto");
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Console",
+                    Key = "StandardOutType",
+                    LocalizationKey = "Settings:BepInExConsoleStandardOutType",
+                    Value = ConsoleStandardOutType,
+                    Type = "select",
+                    DefaultValue = "Auto",
+                    Options = new List<string> { "Auto", "ConsoleOut", "StandardOut" }
+                });
+                
                 ConsoleLogLevels = ini.GetValue("Logging.Console", "LogLevels", "Fatal, Error, Warning, Message, Info");
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Console",
+                    Key = "LogLevels",
+                    LocalizationKey = "Settings:BepInExConsoleLogLevels",
+                    Value = ConsoleLogLevels,
+                    Type = "text",
+                    DefaultValue = "Fatal, Error, Warning, Message, Info"
+                });
                 
                 // [Logging.Disk]
                 DiskLogEnabled = ini.GetBool("Logging.Disk", "Enabled", true);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Disk",
+                    Key = "Enabled",
+                    LocalizationKey = "Settings:BepInExDiskLogEnabled",
+                    Value = DiskLogEnabled.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "true"
+                });
+                
                 DiskLogAppend = ini.GetBool("Logging.Disk", "AppendLog", false);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Disk",
+                    Key = "AppendLog",
+                    LocalizationKey = "Settings:BepInExDiskLogAppend",
+                    Value = DiskLogAppend.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "false"
+                });
+                
                 DiskLogLevels = ini.GetValue("Logging.Disk", "LogLevels", "Fatal, Error, Warning, Message, Info");
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Disk",
+                    Key = "LogLevels",
+                    LocalizationKey = "Settings:BepInExDiskLogLevels",
+                    Value = DiskLogLevels,
+                    Type = "text",
+                    DefaultValue = "Fatal, Error, Warning, Message, Info"
+                });
+                
                 DiskLogInstantFlushing = ini.GetBool("Logging.Disk", "InstantFlushing", false);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Disk",
+                    Key = "InstantFlushing",
+                    LocalizationKey = "Settings:BepInExDiskLogInstantFlushing",
+                    Value = DiskLogInstantFlushing.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "false"
+                });
+                
                 DiskLogConcurrentFileLimit = ini.GetInt("Logging.Disk", "ConcurrentFileLimit", 5);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Disk",
+                    Key = "ConcurrentFileLimit",
+                    LocalizationKey = "Settings:BepInExDiskLogConcurrentFileLimit",
+                    Value = DiskLogConcurrentFileLimit.ToString(),
+                    Type = "number",
+                    DefaultValue = "5"
+                });
+                
                 WriteUnityLog = ini.GetBool("Logging.Disk", "WriteUnityLog", false);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Logging.Disk",
+                    Key = "WriteUnityLog",
+                    LocalizationKey = "Settings:BepInExWriteUnityLog",
+                    Value = WriteUnityLog.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "false"
+                });
                 
                 // [Preloader]
                 HarmonyBackend = ini.GetValue("Preloader", "HarmonyBackend", "auto");
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Preloader",
+                    Key = "HarmonyBackend",
+                    LocalizationKey = "Settings:BepInExHarmonyBackend",
+                    Value = HarmonyBackend,
+                    Type = "select",
+                    DefaultValue = "auto",
+                    Options = new List<string> { "auto", "dynamicmethod", "methodbuilder", "cecil" }
+                });
+                
                 DumpAssemblies = ini.GetBool("Preloader", "DumpAssemblies", false);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Preloader",
+                    Key = "DumpAssemblies",
+                    LocalizationKey = "Settings:BepInExDumpAssemblies",
+                    Value = DumpAssemblies.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "false"
+                });
+                
                 LoadDumpedAssemblies = ini.GetBool("Preloader", "LoadDumpedAssemblies", false);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Preloader",
+                    Key = "LoadDumpedAssemblies",
+                    LocalizationKey = "Settings:BepInExLoadDumpedAssemblies",
+                    Value = LoadDumpedAssemblies.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "false"
+                });
+                
                 BreakBeforeLoadAssemblies = ini.GetBool("Preloader", "BreakBeforeLoadAssemblies", false);
+                BepInExConfigItems.Add(new BepInExConfigItem
+                {
+                    Section = "Preloader",
+                    Key = "BreakBeforeLoadAssemblies",
+                    LocalizationKey = "Settings:BepInExBreakBeforeLoadAssemblies",
+                    Value = BreakBeforeLoadAssemblies.ToString().ToLower(),
+                    Type = "checkbox",
+                    DefaultValue = "false"
+                });
+                
+                _logger.LogInformation($"Loaded {BepInExConfigItems.Count} BepInEx config items");
             }
             catch (Exception ex)
             {
@@ -543,34 +786,13 @@ namespace THMI_Mod_Manager.Pages
             return new JsonResult(new { success = true, message = "Developer settings saved successfully!" });
         }
 
-        public IActionResult OnPostSaveBepInExSettings(
-            string bepInExConfigPath,
-            bool enableAssemblyCache,
-            string detourProviderType,
-            string harmonyLogChannels,
-            bool updateInteropAssemblies,
-            string unityBaseLibrariesSource,
-            string il2cppInteropAssembliesPath,
-            bool preloadIL2CPPInteropAssemblies,
-            bool unityLogListening,
-            bool consoleEnabled,
-            bool consolePreventClose,
-            bool consoleShiftJisEncoding,
-            string consoleStandardOutType,
-            string consoleLogLevels,
-            bool diskLogEnabled,
-            bool diskLogAppend,
-            string diskLogLevels,
-            bool diskLogInstantFlushing,
-            int diskLogConcurrentFileLimit,
-            bool writeUnityLog,
-            string harmonyBackend,
-            bool dumpAssemblies,
-            bool loadDumpedAssemblies,
-            bool breakBeforeLoadAssemblies)
+        public IActionResult OnPostSaveBepInExSettings(IFormCollection form)
         {
             try
             {
+                // Get the config path from the form
+                string bepInExConfigPath = form["bepInExConfigPath"];
+                
                 // Save BepInEx config path
                 _appConfig.Set("[BepInEx]ConfigPath", bepInExConfigPath ?? "");
                 
@@ -579,44 +801,70 @@ namespace THMI_Mod_Manager.Pages
                 {
                     var ini = IniFileHelper.LoadOrCreate(bepInExConfigPath);
                     
-                    // [Caching]
-                    ini.SetBool("Caching", "EnableAssemblyCache", enableAssemblyCache);
-                    
-                    // [Detours]
-                    ini.SetValue("Detours", "DetourProviderType", detourProviderType ?? "Default");
-                    
-                    // [Harmony.Logger]
-                    ini.SetValue("Harmony.Logger", "LogChannels", harmonyLogChannels ?? "Warn, Error");
-                    
-                    // [IL2CPP]
-                    ini.SetBool("IL2CPP", "UpdateInteropAssemblies", updateInteropAssemblies);
-                    ini.SetValue("IL2CPP", "UnityBaseLibrariesSource", unityBaseLibrariesSource ?? "");
-                    ini.SetValue("IL2CPP", "IL2CPPInteropAssembliesPath", il2cppInteropAssembliesPath ?? "{BepInEx}");
-                    ini.SetBool("IL2CPP", "PreloadIL2CPPInteropAssemblies", preloadIL2CPPInteropAssemblies);
-                    
-                    // [Logging]
-                    ini.SetBool("Logging", "UnityLogListening", unityLogListening);
-                    
-                    // [Logging.Console]
-                    ini.SetBool("Logging.Console", "Enabled", consoleEnabled);
-                    ini.SetBool("Logging.Console", "PreventClose", consolePreventClose);
-                    ini.SetBool("Logging.Console", "ShiftJisEncoding", consoleShiftJisEncoding);
-                    ini.SetValue("Logging.Console", "StandardOutType", consoleStandardOutType ?? "Auto");
-                    ini.SetValue("Logging.Console", "LogLevels", consoleLogLevels ?? "Fatal, Error, Warning, Message, Info");
-                    
-                    // [Logging.Disk]
-                    ini.SetBool("Logging.Disk", "Enabled", diskLogEnabled);
-                    ini.SetBool("Logging.Disk", "AppendLog", diskLogAppend);
-                    ini.SetValue("Logging.Disk", "LogLevels", diskLogLevels ?? "Fatal, Error, Warning, Message, Info");
-                    ini.SetBool("Logging.Disk", "InstantFlushing", diskLogInstantFlushing);
-                    ini.SetInt("Logging.Disk", "ConcurrentFileLimit", diskLogConcurrentFileLimit);
-                    ini.SetBool("Logging.Disk", "WriteUnityLog", writeUnityLog);
-                    
-                    // [Preloader]
-                    ini.SetValue("Preloader", "HarmonyBackend", harmonyBackend ?? "auto");
-                    ini.SetBool("Preloader", "DumpAssemblies", dumpAssemblies);
-                    ini.SetBool("Preloader", "LoadDumpedAssemblies", loadDumpedAssemblies);
-                    ini.SetBool("Preloader", "BreakBeforeLoadAssemblies", breakBeforeLoadAssemblies);
+                    // Process all form fields that match the expected pattern (Section_Key)
+                    foreach (var key in form.Keys)
+                    {
+                        // Skip the config path field and other non-setting fields
+                        if (key == "bepInExConfigPath" || key == "__RequestVerificationToken")
+                            continue;
+                            
+                        var value = form[key].ToString();
+                        
+                        // Parse the key to extract section and setting key
+                        // Expected format: Section_Key or Section_Subsection_Key (e.g., Logging_Console_Enabled)
+                        // For sections with dots like Logging.Console, the format is Logging_Console_Key
+                        var parts = key.Split('_');
+                        
+                        if (parts.Length >= 2)
+                        {
+                            string section;
+                            string settingKey;
+                            
+                            // Handle special sections with dots (Logging.Console, Logging.Disk, Harmony.Logger)
+                            if (parts[0] == "Logging" && (parts[1] == "Console" || parts[1] == "Disk"))
+                            {
+                                section = parts[0] + "." + parts[1];
+                                settingKey = string.Join("_", parts.Skip(2));
+                            }
+                            else if (parts[0] == "Harmony" && parts[1] == "Logger")
+                            {
+                                section = parts[0] + "." + parts[1];
+                                settingKey = string.Join("_", parts.Skip(2));
+                            }
+                            else if (parts[0] == "IL2CPP")
+                            {
+                                section = parts[0];
+                                settingKey = string.Join("_", parts.Skip(1));
+                            }
+                            else
+                            {
+                                // Simple section like Caching, Logging, Preloader
+                                section = parts[0];
+                                settingKey = string.Join("_", parts.Skip(1));
+                            }
+                            
+                            // Handle different value types based on the expected setting
+                            if (IsBooleanSetting(section, settingKey))
+                            {
+                                // Convert the value to boolean
+                                bool boolValue = false;
+                                if (bool.TryParse(value, out bool parsedBool))
+                                {
+                                    boolValue = parsedBool;
+                                }
+                                else if (value.ToLower() == "true")
+                                {
+                                    boolValue = true;
+                                }
+                                
+                                ini.SetBool(section, settingKey, boolValue);
+                            }
+                            else
+                            {
+                                ini.SetValue(section, settingKey, value);
+                            }
+                        }
+                    }
                     
                     // Write back to file only if there are changes
                     if (ini.HasChanges())
@@ -642,6 +890,27 @@ namespace THMI_Mod_Manager.Pages
                 _logger.LogError($"Error saving BepInEx settings: {ex.Message}");
                 return new JsonResult(new { success = false, message = "BepInEx设置保存失败: " + ex.Message });
             }
+        }
+
+        private bool IsBooleanSetting(string section, string key)
+        {
+            // Define which settings are expected to be boolean
+            var booleanSettings = new Dictionary<string, List<string>>
+            {
+                ["Caching"] = new List<string> { "EnableAssemblyCache" },
+                ["IL2CPP"] = new List<string> { "UpdateInteropAssemblies", "PreloadIL2CPPInteropAssemblies" },
+                ["Logging"] = new List<string> { "UnityLogListening" },
+                ["Logging.Console"] = new List<string> { "Enabled", "PreventClose", "ShiftJisEncoding" },
+                ["Logging.Disk"] = new List<string> { "Enabled", "AppendLog", "InstantFlushing", "WriteUnityLog" },
+                ["Preloader"] = new List<string> { "DumpAssemblies", "LoadDumpedAssemblies", "BreakBeforeLoadAssemblies" }
+            };
+
+            if (booleanSettings.ContainsKey(section))
+            {
+                return booleanSettings[section].Contains(key);
+            }
+            
+            return false;
         }
     }
 }

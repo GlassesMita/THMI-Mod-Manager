@@ -239,32 +239,45 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
-        [HttpPost("update/{id}")]
-        public async Task<IActionResult> UpdateMod(string id)
+        [HttpPost("update")]
+        public async Task<IActionResult> UpdateMod([FromBody] UpdateModRequest request)
         {
             try
             {
+                if (string.IsNullOrEmpty(request?.FileName))
+                {
+                    return BadRequest(new { success = false, message = "文件名不能为空" });
+                }
+
+                // Load all mods
                 var mods = _modService.LoadMods();
-                var mod = mods.FirstOrDefault(m => m.UniqueId == id || m.FileName == id);
+                var mod = mods.FirstOrDefault(m => m.UniqueId == request.FileName || m.FileName == request.FileName);
 
                 if (mod == null)
                 {
                     return NotFound(new { success = false, message = "Mod not found" });
                 }
 
-                if (!mod.HasUpdateAvailable || string.IsNullOrEmpty(mod.DownloadUrl))
+                // Check for updates for this specific mod to ensure we have the latest update info
+                var modList = new List<ModInfo> { mod };
+                var updatedMods = await _modUpdateService.CheckForModUpdatesAsync(modList);
+                var updatedMod = updatedMods.FirstOrDefault();
+
+                // Check if update is available using the freshly checked info
+                if (updatedMod == null || !updatedMod.HasUpdateAvailable || string.IsNullOrEmpty(updatedMod.DownloadUrl))
                 {
-                    return BadRequest(new { success = false, message = "No update available for this mod" });
+                    var message = _appConfig.GetLocalized("Mods:NoUpdateAvailable", "该 Mod 没有可用的更新");
+                    return BadRequest(new { success = false, message = message });
                 }
 
-                bool updated = await _modUpdateService.UpdateModAsync(mod);
+                bool updated = await _modUpdateService.UpdateModAsync(updatedMod);
 
                 if (updated)
                 {
                     return Ok(new { 
                         success = true, 
                         message = $"Mod {mod.Name} 更新成功",
-                        newVersion = mod.LatestVersion
+                        newVersion = updatedMod.LatestVersion
                     });
                 }
                 else
@@ -274,7 +287,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error updating mod {id}");
+                _logger.LogError(ex, $"Error updating mod {request?.FileName}");
                 return StatusCode(500, new { success = false, message = $"更新 Mod 时出错: {ex.Message}" });
             }
         }
@@ -308,5 +321,10 @@ namespace THMI_Mod_Manager.Controllers
     public class InstallModRequest
     {
         public string FilePath { get; set; } = string.Empty;
+    }
+    
+    public class UpdateModRequest
+    {
+        public string FileName { get; set; } = string.Empty;
     }
 }

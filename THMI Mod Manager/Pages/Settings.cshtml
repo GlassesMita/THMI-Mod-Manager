@@ -263,7 +263,7 @@
     <section class="cdx-card">
         <header class="cdx-card-header">
             <h2 class="cdx-card-title">
-                <span class="cdx-icon icon-plugins" style="font-family: 'Segoe Fluent Icons'; font-size: 1em;">&#xE90F;</span>
+                <span class="cdx-icon icon-plugins segoe-icon" style="font-size: 1em;">&#xE90F;</span>
                 <span class="bepinex-title" 
                       data-original-title="@AppConfig.GetLocalized("Settings:SectionBepInEx", "BepInEx Configuration")"
                       data-tooltip-title="@AppConfig.GetLocalized("Settings:SectionBepInEx", "BepInEx Configuration")"
@@ -271,7 +271,6 @@
             </h2>
         </header>
         <div class="cdx-card-body bepinex-body">
-            <!-- BepInEx Settings -->
              <div class="cdx-field">
                     <label class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExConfigPath", "Config Path")</label>
                     <div class="cdx-input-button">
@@ -280,148 +279,58 @@
                     </div>
                     <p class="cdx-help-text">@AppConfig.GetLocalized("Settings:BepInExConfigPathHelp", "Path to BepInEx.cfg configuration file")</p>
                 </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="enableAssemblyCache" name="enableAssemblyCache" @(Model.EnableAssemblyCache ? "checked" : "") />
-                        <label for="enableAssemblyCache" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExEnableAssemblyCache", "Enable assembly metadata cache")</label>
-                    </div>
-                    <p class="cdx-help-text">@AppConfig.GetLocalized("Settings:BepInExEnableAssemblyCacheHelp", "Speed up discovery of plugins by caching type metadata")</p>
+            
+            @{
+                var groupedItems = Model.BepInExConfigItems.GroupBy(item => item.Section).ToList();
+            }
+            
+            @foreach (var group in groupedItems)
+             {
+                 <div class="bepinex-group">
+                     <h3 class="bepinex-group-title">@group.First().DisplaySection</h3>
+                    @foreach (var item in group)
+                    {
+                        var inputId = $"{item.Section}_{item.Key}".Replace(".", "_");
+                        var labelText = $"{item.Key} / {AppConfig.GetLocalized(item.LocalizationKey, item.Key)}";
+                        <div class="cdx-field">
+                            @if (item.Type == "checkbox")
+                            {
+                                <div class="cdx-checkbox">
+                                    <input type="checkbox" id="@inputId" name="@inputId" @(item.Value?.ToLower() == "true" ? "checked" : "") />
+                                    <label for="@inputId" class="cdx-label">@labelText</label>
+                                </div>
+                            }
+                            else if (item.Type == "select")
+                            {
+                                <label for="@inputId" class="cdx-label">@labelText</label>
+                                <select id="@inputId" name="@inputId" class="cdx-select">
+                                    @foreach (var option in item.Options ?? new List<string>())
+                                    {
+                                        <option value="@option" selected="@(item.Value == option)">@option</option>
+                                    }
+                                </select>
+                            }
+                            else if (item.Type == "number")
+                            {
+                                <label for="@inputId" class="cdx-label">@labelText</label>
+                                <input type="number" id="@inputId" name="@inputId" class="cdx-text-input" value="@item.Value" min="1" max="20" />
+                            }
+                            else
+                            {
+                                <label for="@inputId" class="cdx-label">@labelText</label>
+                                <input type="text" id="@inputId" name="@inputId" class="cdx-text-input" value="@item.Value" />
+                            }
+                        </div>
+                    }
                 </div>
-                <div class="cdx-field">
-                    <label for="detourProviderType" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExDetourProvider", "Detour Provider")</label>
-                    <select id="detourProviderType" name="detourProviderType" class="cdx-select">
-                        <option value="Default" selected="@(Model.DetourProviderType == "Default")">@AppConfig.GetLocalized("Settings:BepInExDetourProviderDefault", "Default")</option>
-                        <option value="Dobby" selected="@(Model.DetourProviderType == "Dobby")">@AppConfig.GetLocalized("Settings:BepInExDetourProviderDobby", "Dobby")</option>
-                        <option value="Funchook" selected="@(Model.DetourProviderType == "Funchook")">@AppConfig.GetLocalized("Settings:BepInExDetourProviderFunchook", "Funchook")</option>
-                    </select>
-                </div>
-                <div class="cdx-field">
-                    <label for="harmonyLogChannels" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExHarmonyLogChannels", "Harmony Log Channels")</label>
-                    <input type="text" id="harmonyLogChannels" name="harmonyLogChannels" class="cdx-text-input" value="@Model.HarmonyLogChannels" placeholder="@AppConfig.GetLocalized("Settings:BepInExHarmonyLogChannelsPlaceholder", "e.g., Warn, Error")" />
-                    <p class="cdx-help-text">@AppConfig.GetLocalized("Settings:BepInExHarmonyLogChannelsHelp", "Available: None, Info, IL, Warn, Error, Debug, All")</p>
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="updateInteropAssemblies" name="updateInteropAssemblies" @(Model.UpdateInteropAssemblies ? "checked" : "") />
-                        <label for="updateInteropAssemblies" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExUpdateInteropAssemblies", "Update IL2CPP Interop Assemblies")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <label for="unityBaseLibrariesSource" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExUnityBaseLibrariesSource", "Unity Base Libraries URL")</label>
-                    <input type="text" id="unityBaseLibrariesSource" name="unityBaseLibrariesSource" class="cdx-text-input" value="@Model.UnityBaseLibrariesSource" />
-                </div>
-                <div class="cdx-field">
-                    <label for="il2cppInteropAssembliesPath" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExIL2CPPInteropAssembliesPath", "IL2CPP Interop Assemblies Path")</label>
-                    <input type="text" id="il2cppInteropAssembliesPath" name="il2cppInteropAssembliesPath" class="cdx-text-input" value="@Model.IL2CPPInteropAssembliesPath" />
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="preloadIL2CPPInteropAssemblies" name="preloadIL2CPPInteropAssemblies" @(Model.PreloadIL2CPPInteropAssemblies ? "checked" : "") />
-                        <label for="preloadIL2CPPInteropAssemblies" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExPreloadIL2CPPInteropAssemblies", "Preload IL2CPP Interop Assemblies")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="unityLogListening" name="unityLogListening" @(Model.UnityLogListening ? "checked" : "") />
-                        <label for="unityLogListening" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExUnityLogListening", "Enable Unity Log Listening")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="consoleEnabled" name="consoleEnabled" @(Model.ConsoleEnabled ? "checked" : "") />
-                        <label for="consoleEnabled" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExConsoleEnabled", "Enable Console")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="consolePreventClose" name="consolePreventClose" @(Model.ConsolePreventClose ? "checked" : "") />
-                        <label for="consolePreventClose" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExConsolePreventClose", "Prevent Console Close")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="consoleShiftJisEncoding" name="consoleShiftJisEncoding" @(Model.ConsoleShiftJisEncoding ? "checked" : "") />
-                        <label for="consoleShiftJisEncoding" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExConsoleShiftJisEncoding", "Use Shift-JIS Encoding")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <label for="consoleStandardOutType" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExConsoleStandardOutType", "Standard Output Type")</label>
-                    <select id="consoleStandardOutType" name="consoleStandardOutType" class="cdx-select">
-                        <option value="Auto" selected="@(Model.ConsoleStandardOutType == "Auto")">@AppConfig.GetLocalized("Settings:BepInExConsoleStandardOutTypeAuto", "Auto")</option>
-                        <option value="ConsoleOut" selected="@(Model.ConsoleStandardOutType == "ConsoleOut")">@AppConfig.GetLocalized("Settings:BepInExConsoleStandardOutTypeConsoleOut", "Console Out")</option>
-                        <option value="StandardOut" selected="@(Model.ConsoleStandardOutType == "StandardOut")">@AppConfig.GetLocalized("Settings:BepInExConsoleStandardOutTypeStandardOut", "Standard Out")</option>
-                    </select>
-                </div>
-                <div class="cdx-field">
-                    <label for="consoleLogLevels" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExConsoleLogLevels", "Console Log Levels")</label>
-                    <input type="text" id="consoleLogLevels" name="consoleLogLevels" class="cdx-text-input" value="@Model.ConsoleLogLevels" placeholder="@AppConfig.GetLocalized("Settings:BepInExLogLevelsPlaceholder", "e.g., Fatal, Error, Warning, Message, Info")" />
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="diskLogEnabled" name="diskLogEnabled" @(Model.DiskLogEnabled ? "checked" : "") />
-                        <label for="diskLogEnabled" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExDiskLogEnabled", "Enable Disk Logging")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="diskLogAppend" name="diskLogAppend" @(Model.DiskLogAppend ? "checked" : "") />
-                        <label for="diskLogAppend" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExDiskLogAppend", "Append to Log File")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <label for="diskLogLevels" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExDiskLogLevels", "Disk Log Levels")</label>
-                    <input type="text" id="diskLogLevels" name="diskLogLevels" class="cdx-text-input" value="@Model.DiskLogLevels" placeholder="@AppConfig.GetLocalized("Settings:BepInExLogLevelsPlaceholder", "e.g., Fatal, Error, Warning, Message, Info")" />
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="diskLogInstantFlushing" name="diskLogInstantFlushing" @(Model.DiskLogInstantFlushing ? "checked" : "") />
-                        <label for="diskLogInstantFlushing" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExDiskLogInstantFlushing", "Instant Log Flushing")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <label for="diskLogConcurrentFileLimit" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExDiskLogConcurrentFileLimit", "Concurrent Log File Limit")</label>
-                    <input type="number" id="diskLogConcurrentFileLimit" name="diskLogConcurrentFileLimit" class="cdx-text-input" value="@Model.DiskLogConcurrentFileLimit" min="1" max="20" />
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="writeUnityLog" name="writeUnityLog" @(Model.WriteUnityLog ? "checked" : "") />
-                        <label for="writeUnityLog" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExWriteUnityLog", "Write Unity Log to Disk")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <label for="harmonyBackend" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExHarmonyBackend", "Harmony Backend")</label>
-                    <select id="harmonyBackend" name="harmonyBackend" class="cdx-select">
-                        <option value="auto" selected="@(Model.HarmonyBackend == "auto")">@AppConfig.GetLocalized("Settings:BepInExHarmonyBackendAuto", "Auto")</option>
-                        <option value="dynamicmethod" selected="@(Model.HarmonyBackend == "dynamicmethod")">@AppConfig.GetLocalized("Settings:BepInExHarmonyBackendDynamicMethod", "Dynamic Method")</option>
-                        <option value="methodbuilder" selected="@(Model.HarmonyBackend == "methodbuilder")">@AppConfig.GetLocalized("Settings:BepInExHarmonyBackendMethodBuilder", "Method Builder")</option>
-                        <option value="cecil" selected="@(Model.HarmonyBackend == "cecil")">@AppConfig.GetLocalized("Settings:BepInExHarmonyBackendCecil", "Cecil")</option>
-                    </select>
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="dumpAssemblies" name="dumpAssemblies" @(Model.DumpAssemblies ? "checked" : "") />
-                        <label for="dumpAssemblies" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExDumpAssemblies", "Dump Patched Assemblies")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="loadDumpedAssemblies" name="loadDumpedAssemblies" @(Model.LoadDumpedAssemblies ? "checked" : "") />
-                        <label for="loadDumpedAssemblies" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExLoadDumpedAssemblies", "Load Dumped Assemblies")</label>
-                    </div>
-                </div>
-                <div class="cdx-field">
-                    <div class="cdx-checkbox">
-                        <input type="checkbox" id="breakBeforeLoadAssemblies" name="breakBeforeLoadAssemblies" @(Model.BreakBeforeLoadAssemblies ? "checked" : "") />
-                        <label for="breakBeforeLoadAssemblies" class="cdx-label">@AppConfig.GetLocalized("Settings:BepInExBreakBeforeLoadAssemblies", "Break Before Load Assemblies")</label>
-                    </div>
-                </div>
+            }
                 <div class="cdx-field" style="margin-top: 1rem;">
                     <button type="button" class="cdx-button cdx-button--primary" id="saveBepInExSettings" data-action="saveBepInEx">
-                        <span style="font-family: 'Segoe Fluent Icons'; margin-right: 4px;">&#xE74E;</span>
+                        <span class="segoe-icon" style="margin-right: 4px;">&#xE74E;</span>
                         @AppConfig.GetLocalized("Common:Save", "Save")
                     </button>
                     <button type="button" class="cdx-button cdx-button--secondary" id="resetBepInExSettings" data-action="resetBepInEx" style="margin-left: 0.5rem;">
-                        <span style="font-family: 'Segoe Fluent Icons'; margin-right: 4px;">&#xE72C;</span>
+                        <span class="segoe-icon" style="margin-right: 4px;">&#xE72C;</span>
                         @AppConfig.GetLocalized("Common:Reset", "Reset to Default")
                     </button>
                 </div>
@@ -446,6 +355,31 @@
             .cdx-page-container .cdx-input-button .cdx-text-input {
                 flex: 1;
                 min-width: 0;
+            }
+            .bepinex-group {
+                margin-top: 1.5rem;
+                padding-top: 1rem;
+                border-top: 1px solid var(--cdx-color-border, #e0e0e0);
+            }
+            .bepinex-group:first-of-type {
+                margin-top: 1rem;
+                padding-top: 0;
+                border-top: none;
+            }
+            .bepinex-group-title {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--cdx-color-text-secondary, #666);
+                margin: 0 0 0.75rem 0;
+                padding: 0;
+                font-family: var(--cdx-font-family, system-ui, sans-serif);
+                letter-spacing: 0.02em;
+            }
+            .bepinex-group .cdx-field {
+                margin-bottom: 0.5rem;
+            }
+            .bepinex-body {
+                padding-bottom: 0.5rem;
             }
         </style>
 
@@ -479,7 +413,7 @@
             <input type="hidden" id="localizedCollapse" value="@AppConfig.GetLocalized("Common:Collapse", "Collapse")" />
             
             <button type="button" class="cdx-button cdx-button--primary cdx-button--large" id="saveButton" data-action="saveAll">
-                <span style="font-family: 'Segoe Fluent Icons'; margin-right: 4px;">&#xE74E;</span>
+                <span class="segoe-icon" style="margin-right: 4px;">&#xE74E;</span>
                 @AppConfig.GetLocalized("Common:Save", "Save Changes")
             </button>
         </footer>

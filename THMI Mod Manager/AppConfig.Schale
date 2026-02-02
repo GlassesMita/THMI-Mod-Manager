@@ -1,4 +1,4 @@
-[App]
+﻿[App]
 Name=THMI Mod Manager
 Version=0.3.1
 VersionCode=1
@@ -27,6 +27,7 @@ UpdateCheckType=GitHub
 UpdateCheckInterval=24
 AutoDownloadUpdates=False
 ProgramUpdateSource=GlassesMita/THMI-Mod-Manager
+LastCheckTime=2026-02-02T12:58:59.0520386+08:00
 
 [Dev]
 IsDevBuild=False

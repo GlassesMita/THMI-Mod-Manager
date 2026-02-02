@@ -127,6 +127,33 @@ namespace THMI_Mod_Manager.Services
                       .Replace("\t", "");
         }
 
+        private bool IsZipFile(string filePath)
+        {
+            try
+            {
+                using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+                using var br = new BinaryReader(fs);
+                
+                // Check if file starts with ZIP signature
+                if (fs.Length < 4)
+                    return false;
+                
+                var signature = br.ReadUInt32();
+                // ZIP files start with 0x04034B50 (PK.. little-endian)
+                return signature == 0x04034B50 || 
+                       // Also check for other ZIP signatures: 0x06054B50 (end of central directory) or 0x02014B50 (central directory file header)
+                       signature == 0x06054B50 || 
+                       signature == 0x02014B50 ||
+                       // And PK as ASCII at start
+                       signature == 0x504B0304; // "PK" followed by 0x030x04
+            }
+            catch
+            {
+                // If we can't read the file, assume it's not a ZIP
+                return false;
+            }
+        }
+
         private async Task<ModUpdateCheckResult?> CheckThunderStoreUpdateAsync(string updateUrl)
         {
             try
@@ -275,10 +302,43 @@ namespace THMI_Mod_Manager.Services
                 SetUpdateProgress(mod.FileName, 0, 0, "准备下载...");
                 _logger.LogInformation($"Downloading: {mod.DownloadUrl}");
                 
-                using var response = await _httpClient.GetAsync(mod.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
-                if (!response.IsSuccessStatusCode)
+                // Retry mechanism for downloads
+                HttpResponseMessage response = null;
+                int retryCount = 3;
+                
+                while (retryCount > 0)
                 {
-                    _logger.LogError($"Download failed: HTTP {(int)response.StatusCode}");
+                    try
+                    {
+                        response = await _httpClient.GetAsync(mod.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            break; // Success, exit retry loop
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Download attempt failed with status: {(int)response.StatusCode}, retries left: {retryCount - 1}");
+                            retryCount--;
+                            if (retryCount > 0)
+                            {
+                                await Task.Delay(2000); // Wait 2 seconds before retry
+                            }
+                        }
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        _logger.LogWarning($"Download attempt failed with error: {ex.Message}, retries left: {retryCount - 1}");
+                        retryCount--;
+                        if (retryCount > 0)
+                        {
+                            await Task.Delay(2000); // Wait 2 seconds before retry
+                        }
+                    }
+                }
+                
+                if (response == null || !response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Download failed after retries: HTTP {(int)(response?.StatusCode ?? 0)}");
                     SetUpdateProgress(mod.FileName, 0, 0, "下载失败");
                     return false;
                 }
@@ -288,42 +348,77 @@ namespace THMI_Mod_Manager.Services
                 
                 SetUpdateProgress(mod.FileName, 0, totalBytes, "下载中...");
                 
-                using var contentStream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                
-                var buffer = new byte[8192];
-                int bytesRead;
-                
-                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                try
                 {
-                    await fileStream.WriteAsync(buffer, 0, bytesRead);
-                    bytesDownloaded += bytesRead;
+                    using var contentStream = await response.Content.ReadAsStreamAsync();
+                    using var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                     
-                    // Update progress every 100KB or when complete
-                    if (bytesDownloaded % (100 * 1024) == 0 || bytesDownloaded == totalBytes)
+                    var buffer = new byte[8192];
+                    int bytesRead;
+                    
+                    while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
-                        SetUpdateProgress(mod.FileName, bytesDownloaded, totalBytes, "下载中...");
+                        await fileStream.WriteAsync(buffer, 0, bytesRead);
+                        bytesDownloaded += bytesRead;
+                        
+                        // Update progress every 100KB or when complete
+                        if (bytesDownloaded % (100 * 1024) == 0 || bytesDownloaded == totalBytes)
+                        {
+                            SetUpdateProgress(mod.FileName, bytesDownloaded, totalBytes, "下载中...");
+                        }
                     }
+                }
+                catch (Exception streamEx)
+                {
+                    _logger.LogError(streamEx, "Error during download stream processing");
+                    SetUpdateProgress(mod.FileName, 0, 0, "下载流处理失败");
+                    return false;
                 }
                 
                 SetUpdateProgress(mod.FileName, totalBytes, totalBytes, "解压中...");
                 _logger.LogInformation($"Extracting to: {tempPath}");
-                ZipFile.ExtractToDirectory(zipPath, tempPath, true);
-
-                SetUpdateProgress(mod.FileName, totalBytes, totalBytes, "安装中...");
                 
-                var dllFiles = Directory.GetFiles(tempPath, "*.dll", SearchOption.AllDirectories);
-                if (dllFiles.Length == 0)
+                // Determine if the downloaded file is a zip archive or a direct DLL file
+                var isZipFile = IsZipFile(zipPath);
+                
+                if (isZipFile)
                 {
-                    _logger.LogError("No DLL files found in update package");
-                    CleanupTempPath(tempPath);
-                    SetUpdateProgress(mod.FileName, 0, 0, "更新失败：未找到 DLL 文件");
-                    return false;
-                }
+                    // File is a zip archive, extract it
+                    ZipFile.ExtractToDirectory(zipPath, tempPath, true);
+                    // Look for DLL files in the extracted content
+                    var dllFiles = Directory.GetFiles(tempPath, "*.dll", SearchOption.AllDirectories);
+                    if (dllFiles.Length == 0)
+                    {
+                        _logger.LogError("No DLL files found in update package");
+                        CleanupTempPath(tempPath);
+                        SetUpdateProgress(mod.FileName, 0, 0, "更新失败：未找到 DLL 文件");
+                        return false;
+                    }
 
-                foreach (var dllFile in dllFiles)
+                    foreach (var dllFile in dllFiles)
+                    {
+                        var dllFileNameOnly = Path.GetFileName(dllFile);
+                        var destDllPath = Path.Combine(pluginsPath, dllFileNameOnly);
+                        
+                        if (File.Exists(destDllPath))
+                        {
+                            var backupPath = destDllPath + ".backup";
+                            if (File.Exists(backupPath))
+                            {
+                                File.Delete(backupPath);
+                            }
+                            File.Move(destDllPath, backupPath);
+                            _logger.LogInformation($"Backed up existing DLL: {destDllPath}");
+                        }
+
+                        File.Copy(dllFile, destDllPath, true);
+                        _logger.LogInformation($"Updated DLL: {dllFileNameOnly}");
+                    }
+                }
+                else
                 {
-                    var dllFileNameOnly = Path.GetFileName(dllFile);
+                    // File is a direct DLL, copy it directly
+                    var dllFileNameOnly = Path.GetFileNameWithoutExtension(mod.FilePath) + ".dll";
                     var destDllPath = Path.Combine(pluginsPath, dllFileNameOnly);
                     
                     if (File.Exists(destDllPath))
@@ -337,8 +432,8 @@ namespace THMI_Mod_Manager.Services
                         _logger.LogInformation($"Backed up existing DLL: {destDllPath}");
                     }
 
-                    File.Copy(dllFile, destDllPath, true);
-                    _logger.LogInformation($"Updated DLL: {dllFileNameOnly}");
+                    File.Copy(zipPath, destDllPath, true);
+                    _logger.LogInformation($"Updated DLL directly: {dllFileNameOnly}");
                 }
 
                 var manifestFiles = Directory.GetFiles(tempPath, "Manifest.*", SearchOption.AllDirectories);

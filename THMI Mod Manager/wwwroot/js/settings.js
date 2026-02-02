@@ -18,39 +18,32 @@ window.saveBepInExSettings = function() {
     
     const formData = new FormData();
     
-    // 添加防跨站请求伪造令牌
     const token = document.querySelector('input[name="__RequestVerificationToken"]');
     if (token) {
         formData.append('__RequestVerificationToken', token.value);
     }
     
-    // 添加 BepInEx 配置路径
+    // Process all BepInEx setting inputs dynamically
+    const allInputs = document.querySelectorAll('#SettingsForm input, #SettingsForm select, #SettingsForm textarea');
+    allInputs.forEach(input => {
+        // Check if this is a BepInEx setting field (has an ID with underscore pattern)
+        if (input.id && input.id.includes('_') && input.name) {
+            // Special handling for checkbox inputs
+            if (input.type === 'checkbox') {
+                // Send the actual checked state as a boolean
+                formData.append(input.name, input.checked);
+            } else {
+                // For other input types, send the value
+                formData.append(input.name, input.value);
+            }
+        }
+    });
+    
+    // Handle the config path field separately (it doesn't have underscore pattern)
     const bepInExConfigPath = document.getElementById('bepInExConfigPath');
     if (bepInExConfigPath) {
         formData.append('bepInExConfigPath', bepInExConfigPath.value);
     }
-    
-    // 添加所有 BepInEx 设置字段
-    const bepInExFields = [
-        'enableAssemblyCache', 'detourProviderType', 'harmonyLogChannels',
-        'updateInteropAssemblies', 'unityBaseLibrariesSource', 'il2cppInteropAssembliesPath',
-        'preloadIL2CPPInteropAssemblies', 'unityLogListening', 'consoleEnabled',
-        'consolePreventClose', 'consoleShiftJisEncoding', 'consoleStandardOutType',
-        'consoleLogLevels', 'diskLogEnabled', 'diskLogAppend', 'diskLogLevels',
-        'diskLogInstantFlushing', 'diskLogConcurrentFileLimit', 'writeUnityLog',
-        'harmonyBackend', 'dumpAssemblies', 'loadDumpedAssemblies', 'breakBeforeLoadAssemblies'
-    ];
-    
-    bepInExFields.forEach(fieldName => {
-        const element = document.getElementById(fieldName);
-        if (element) {
-            if (element.type === 'checkbox') {
-                formData.append(fieldName, element.checked);
-            } else {
-                formData.append(fieldName, element.value);
-            }
-        }
-    });
     
     fetch('/settings?handler=SaveBepInExSettings', {
         method: 'POST',
@@ -70,7 +63,6 @@ window.saveBepInExSettings = function() {
         saveButton.innerHTML = '<span style="font-family: \'Segoe Fluent Icons\'; margin-right: 4px;">&#xE74E;</span> ' + localizedSave;
         
         if (data.success) {
-            // 显示成功提示
             const successToast = document.getElementById('successToast');
             if (successToast) {
                 successToast.classList.add('show');
@@ -88,7 +80,6 @@ window.saveBepInExSettings = function() {
     });
 }
 
-// BepInEx 设置恢复默认功能 - 全局函数
 window.resetBepInExSettings = function() {
     const localizedResetConfirm = document.getElementById('localizedResetConfirm')?.value || '确定要将所有 BepInEx 设置恢复为默认值吗？注意：恢复默认值后，请点击保存按钮来应用更改。当前配置文件的内容将被覆盖。';
     const localizedResetComplete = document.getElementById('localizedResetComplete')?.value || '已恢复默认值，请点击保存按钮来应用更改。';
@@ -97,36 +88,34 @@ window.resetBepInExSettings = function() {
         return;
     }
     
-    // 默认值
     const defaultValues = {
-        'enableAssemblyCache': true,
-        'detourProviderType': 'Default',
-        'harmonyLogChannels': 'Warn, Error',
-        'updateInteropAssemblies': true,
-        'unityBaseLibrariesSource': 'https://unity.bepinex.dev/libraries/{VERSION}.zip',
-        'il2cppInteropAssembliesPath': '{BepInEx}',
-        'preloadIL2CPPInteropAssemblies': true,
-        'unityLogListening': true,
-        'consoleEnabled': true,
-        'consolePreventClose': false,
-        'consoleShiftJisEncoding': false,
-        'consoleStandardOutType': 'Auto',
-        'consoleLogLevels': 'Fatal, Error, Warning, Message, Info',
-        'diskLogEnabled': true,
-        'diskLogAppend': false,
-        'diskLogLevels': 'Fatal, Error, Warning, Message, Info',
-        'diskLogInstantFlushing': false,
-        'diskLogConcurrentFileLimit': 5,
-        'writeUnityLog': false,
-        'harmonyBackend': 'auto',
-        'dumpAssemblies': false,
-        'loadDumpedAssemblies': false,
-        'breakBeforeLoadAssemblies': false
+        'Caching_EnableAssemblyCache': true,
+        'Detours_DetourProviderType': 'Default',
+        'Harmony.Logger_LogChannels': 'Warn, Error',
+        'IL2CPP_UpdateInteropAssemblies': true,
+        'IL2CPP_UnityBaseLibrariesSource': 'https://unity.bepinex.dev/libraries/{VERSION}.zip',
+        'IL2CPP_IL2CPPInteropAssembliesPath': '{BepInEx}',
+        'IL2CPP_PreloadIL2CPPInteropAssemblies': true,
+        'Logging_UnityLogListening': true,
+        'Logging.Console_Enabled': true,
+        'Logging.Console_PreventClose': false,
+        'Logging.Console_ShiftJisEncoding': false,
+        'Logging.Console_StandardOutType': 'Auto',
+        'Logging.Console_LogLevels': 'Fatal, Error, Warning, Message, Info',
+        'Logging.Disk_Enabled': true,
+        'Logging.Disk_AppendLog': false,
+        'Logging.Disk_LogLevels': 'Fatal, Error, Warning, Message, Info',
+        'Logging.Disk_InstantFlushing': false,
+        'Logging.Disk_ConcurrentFileLimit': 5,
+        'Logging.Disk_WriteUnityLog': false,
+        'Preloader_HarmonyBackend': 'auto',
+        'Preloader_DumpAssemblies': false,
+        'Preloader_LoadDumpedAssemblies': false,
+        'Preloader_BreakBeforeLoadAssemblies': false
     };
     
-    // 更新所有字段
-    Object.entries(defaultValues).forEach(([fieldName, value]) => {
-        const element = document.getElementById(fieldName);
+    Object.entries(defaultValues).forEach(([fieldId, value]) => {
+        const element = document.getElementById(fieldId);
         if (element) {
             if (element.type === 'checkbox') {
                 element.checked = value;
@@ -136,7 +125,6 @@ window.resetBepInExSettings = function() {
         }
     });
     
-    // 显示成功提示
     const successToast = document.getElementById('successToast');
     if (successToast) {
         const successToastBody = successToast.querySelector('.toast-body');
