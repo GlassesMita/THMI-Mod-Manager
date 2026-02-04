@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Reflection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -21,6 +22,38 @@ static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
 const int SW_HIDE = 0;
 const int SW_SHOW = 5;
+
+// ===================== 检测--version参数（优先级最高） =====================
+if (args != null && args.Contains("--version", StringComparer.OrdinalIgnoreCase))
+{
+    const string version = "0.10.0";
+    
+    Console.WriteLine($"THMI Mod Manager v{version}");
+    Console.WriteLine();
+    Console.WriteLine("Usage: THMI Mod Manager [options]");
+    Console.WriteLine("用法: THMI Mod Manager [选项]");
+    Console.WriteLine();
+    Console.WriteLine("Options (参数优先级从高到低):");
+    Console.WriteLine("选项 (参数优先级从高到低):");
+    Console.WriteLine();
+    Console.WriteLine("  --version              Display version information (Highest priority, standalone)");
+    Console.WriteLine("  --version              显示版本信息 (最高优先级，单独使用)");
+    Console.WriteLine();
+    Console.WriteLine("  --no-console          Hide console window (High priority, can be combined with other params)");
+    Console.WriteLine("  --no-console          隐藏控制台窗口 (高优先级，可与其他参数搭配)");
+    Console.WriteLine();
+    Console.WriteLine("  --no-newtab           Disable automatic browser opening (High priority, can only be combined with --no-console)");
+    Console.WriteLine("  --no-newtab           禁用自动打开浏览器 (高优先级，只能与 --no-console 搭配)");
+    Console.WriteLine();
+    Console.WriteLine("  --open=<page>          Open specific page (Medium priority, can be combined with --no-console)");
+    Console.WriteLine("  --open=<page>          打开指定页面 (中等优先级，可与 --no-console 搭配)");
+    Console.WriteLine("  --open-debug-page      Open debug page (Medium priority, can be combined with --no-console)");
+    Console.WriteLine("  --open-debug-page      打开调试页面 (中等优先级，可与 --no-console 搭配)");
+    Console.WriteLine("  --updated-version=<ver>  Open What's New page for version (Medium priority, can be combined with --no-console)");
+    Console.WriteLine("  --updated-version=<ver>  打开版本更新页面 (中等优先级，可与 --no-console 搭配)");
+    Environment.Exit(0);
+}
+// ============================================================================
 
 // 1. 优先检测--no-console参数（忽略大小写，增强健壮性）
 bool hideConsole = args != null && args.Contains("--no-console", StringComparer.OrdinalIgnoreCase);
@@ -121,11 +154,8 @@ Logger.LogInfo($"Architecture: {arch}");
 ConsoleOutput("\n");
 Logger.Log("\t");
 
-ConsoleOutput("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
-Logger.LogInfo("46 41 43 45 20 54 48 45 20 53 49 4E 2C 20");
-
-ConsoleOutput("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
-Logger.LogInfo("53 41 56 45 20 54 48 45 20 45 2E 47 2E 4F");
+ConsoleOutput("Where All Miracles Begin / あまねく奇跡の始発点 / 所有奇迹的始发点");
+Logger.LogInfo("Where All Miracles Begin / あまねく奇跡の始発点 / 所有奇迹的始发点");
 
 Console.Write('\n');
 Logger.Log("\t");

@@ -372,6 +372,54 @@ const contextMenu = new ContextMenu({
                     case 'internetSettings':
                         window.location.href = 'ms-settings:network-status';
                         break;
+                    case 'openSaveFolder':
+                        fetch('/api/folder/open-save-folder', {
+                            method: 'POST',
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('Failed to open save folder');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error opening save folder:', error);
+                        });
+                        break;
+                    case 'openBepInExLogFolder':
+                        fetch('/api/folder/open-bepinex-log-folder', {
+                            method: 'POST',
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('Failed to open BepInEx log folder');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error opening BepInEx log folder:', error);
+                        });
+                        break;
+                    case 'openAppFolder':
+                        fetch('/api/folder/open-app-folder', {
+                            method: 'POST',
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('Failed to open application folder');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error opening application folder:', error);
+                        });
+                        break;
                 }
                 break;
         }
