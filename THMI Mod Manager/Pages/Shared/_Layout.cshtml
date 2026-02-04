@@ -1592,9 +1592,13 @@
             
             initNetworkContextMenu() {
                 document.addEventListener('contextmenu', (e) => {
+                    console.log('[NetworkContextMenu] contextmenu event fired');
                     const target = e.target.closest('[data-tooltip-network]');
+                    console.log('[NetworkContextMenu] target:', target);
                     if (target && e.target) {
+                        console.log('[NetworkContextMenu] Network icon clicked, preventing default');
                         e.preventDefault();
+                        e.stopImmediatePropagation();
                         
                         // 使用全局 contextMenu 实例设置网络菜单项
                         if (window.contextMenu) {
@@ -1608,6 +1612,7 @@
                                 }
                             ]);
                             window.contextMenu.show(e.clientX, e.clientY);
+                            console.log('[NetworkContextMenu] Network menu shown');
                         }
                     }
                 }, true);

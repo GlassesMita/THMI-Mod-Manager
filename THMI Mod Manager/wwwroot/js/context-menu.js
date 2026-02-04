@@ -8,6 +8,7 @@ class ContextMenu {
         this.onItemClick = options.onItemClick || (() => {});
         this.menuId = options.menuId || 'cdx-context-menu';
         this.ignoredElements = options.ignoredElements || ['input', 'textarea', 'select'];
+        this.targetSelectors = options.targetSelectors || null;
         this.init();
     }
 
@@ -164,10 +165,27 @@ class ContextMenu {
     }
 
     onContextMenu(e) {
+        console.log('[FolderContextMenu] contextmenu event fired, target:', e.target);
         if (this.isIgnoredElement(e.target)) {
+            console.log('[FolderContextMenu] Ignored element, returning');
             return;
         }
 
+        if (e.target.closest('[data-tooltip-network]')) {
+            console.log('[FolderContextMenu] Network icon detected, returning');
+            return;
+        }
+
+        if (this.targetSelectors) {
+            const targetElement = e.target.closest(this.targetSelectors);
+            if (!targetElement) {
+                console.log('[FolderContextMenu] No target element found, preventing default');
+                e.preventDefault();
+                return;
+            }
+        }
+
+        console.log('[FolderContextMenu] Showing folder menu');
         e.preventDefault();
         this.show(e.clientX, e.clientY);
     }
@@ -306,6 +324,7 @@ class ContextMenu {
 const contextMenu = new ContextMenu({
     menuId: 'custom-context-menu',
     ignoredElements: ['input', 'textarea', 'select', '[contenteditable="true"]'],
+    targetSelectors: '#sidebar, .cdx-sidebar-header',
     onItemClick: (item) => {
         console.log('[ContextMenu] Clicked:', item.label);
 

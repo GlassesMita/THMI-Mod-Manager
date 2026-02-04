@@ -267,7 +267,11 @@
             html += '<div class="mod-footer-right">';
             
             if (mod.version) {
-                html += '<span class="mod-version-footer">' + this.escapeHtml(mod.version) + '</span>';
+                if (hasUpdate && mod.latestVersion) {
+                    html += '<span class="mod-version-footer">' + this.escapeHtml(mod.version) + ' → ' + this.escapeHtml(mod.latestVersion) + '</span>';
+                } else {
+                    html += '<span class="mod-version-footer">' + this.escapeHtml(mod.version) + '</span>';
+                }
             }
             
             if (!isValid && mod.errorMessage) {
@@ -295,7 +299,7 @@
         
         toggleMod: async function(fileName) {
             if (!fileName) {
-                alert('无法识别Mod文件');
+                ModalUtils.alert('错误', '无法识别Mod文件');
                 return;
             }
             
@@ -312,11 +316,11 @@
                 if (data.success) {
                     this.loadMods();
                 } else {
-                    alert('操作失败: ' + data.message);
+                    ModalUtils.alert('操作失败', data.message);
                 }
             } catch (error) {
                 console.error('[ModRenderer] Toggle error:', error);
-                alert('切换失败: ' + error.message);
+                ModalUtils.alert('切换失败', error.message);
             }
         },
         
@@ -324,9 +328,11 @@
             if (!fileName) return;
             
             const name = fileName.replace(/\.dll(\.disabled)?$/i, '');
-            if (confirm('确定要删除 Mod "' + name + '" 吗？此操作不可恢复。')) {
-                this.deleteMod(fileName);
-            }
+            ModalUtils.confirmStopGame(
+                '确认删除',
+                '确定要删除 Mod "' + name + '" 吗？此操作不可恢复。',
+                () => this.deleteMod(fileName)
+            );
         },
         
         deleteMod: async function(fileName) {
@@ -341,11 +347,11 @@
                 if (data.success) {
                     this.loadMods();
                 } else {
-                    alert('删除失败: ' + data.message);
+                    ModalUtils.alert('删除失败', data.message);
                 }
             } catch (error) {
                 console.error('[ModRenderer] Delete error:', error);
-                alert('删除失败: ' + error.message);
+                ModalUtils.alert('删除失败', error.message);
             }
         },
         
@@ -372,9 +378,9 @@
                     
                     if (!silent) {
                         if (data.updateCount > 0) {
-                            alert('发现 ' + data.updateCount + ' 个 Mod 有可用更新');
+                            ModalUtils.alert('更新检查', '发现 ' + data.updateCount + ' 个 Mod 有可用更新');
                         } else {
-                            alert('所有 Mod 均为最新版本');
+                            ModalUtils.alert('更新检查', '所有 Mod 均为最新版本');
                         }
                     }
                     
@@ -382,13 +388,13 @@
                     this.render();
                 } else {
                     if (!silent) {
-                        alert('检查更新失败: ' + data.message);
+                        ModalUtils.alert('检查更新失败', data.message);
                     }
                 }
             } catch (error) {
                 console.error('[ModRenderer] Update check error:', error);
                 if (!silent) {
-                    alert('检查更新失败: ' + error.message);
+                    ModalUtils.alert('检查更新失败', error.message);
                 }
             } finally {
                 this.updateCheckInProgress = false;
@@ -397,13 +403,13 @@
         
         updateMod: async function(fileName) {
             if (!fileName) {
-                alert('无法识别Mod文件');
+                ModalUtils.alert('错误', '无法识别Mod文件');
                 return;
             }
             
             const mod = this.modsList.find(m => m.fileName === fileName);
             if (!mod) {
-                alert('找不到Mod');
+                ModalUtils.alert('错误', '找不到Mod');
                 return;
             }
             
@@ -415,12 +421,12 @@
                 // Reload mod from updated list
                 const updatedMod = this.modsList.find(m => m.fileName === fileName);
                 if (!updatedMod) {
-                    alert('找不到Mod');
+                    ModalUtils.alert('错误', '找不到Mod');
                     return;
                 }
                 
                 if (!updatedMod.hasUpdateAvailable || !updatedMod.downloadUrl) {
-                    alert('该 Mod 没有可用的更新');
+                    ModalUtils.alert('无更新', '该 Mod 没有可用的更新');
                     return;
                 }
                 
@@ -428,10 +434,14 @@
                 Object.assign(mod, updatedMod);
             }
             
-            if (!confirm('确定要更新 Mod "' + mod.name + '" 吗？\n当前版本: ' + mod.version + '\n新版本: ' + (mod.latestVersion || '未知'))) {
-                return;
-            }
-            
+            ModalUtils.confirmStopGame(
+                '确认更新',
+                '确定要更新 Mod "' + mod.name + '" 吗？\n当前版本: ' + mod.version + '\n新版本: ' + (mod.latestVersion || '未知'),
+                () => this.performUpdate(fileName, mod)
+            );
+        },
+        
+        performUpdate: async function(fileName, mod) {
             // Disable launch button during update
             const launchButton = document.getElementById('launchButton');
             const originalLaunchButtonDisabled = launchButton ? launchButton.disabled : false;
@@ -479,19 +489,19 @@
                     
                     setTimeout(() => {
                         progressModal.remove();
-                        alert('Mod 更新成功!\n新版本: ' + (mod.latestVersion || '未知'));
+                        ModalUtils.alert('更新成功', 'Mod 更新成功!\n新版本: ' + (mod.latestVersion || '未知'));
                         this.loadMods();
                     }, 500);
                 } else {
                     clearInterval(progressInterval);
                     progressModal.remove();
-                    alert('更新失败: ' + data.message);
+                    ModalUtils.alert('更新失败', data.message);
                 }
             } catch (error) {
                 console.error('[ModRenderer] Update error:', error);
                 clearInterval(progressInterval);
                 progressModal.remove();
-                alert('更新失败: ' + error.message);
+                ModalUtils.alert('更新失败', error.message);
             } finally {
                 // Re-enable launch button
                 if (launchButton && !originalLaunchButtonDisabled) {
