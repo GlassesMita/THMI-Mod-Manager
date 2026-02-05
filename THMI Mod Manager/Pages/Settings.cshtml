@@ -22,6 +22,13 @@
         <p class="cdx-page-subtitle">@AppConfig.GetLocalized("Settings:Subtitle", "Customize your experience")</p>
     </header>
 
+    <div class="settings-page-action-bar">
+        <button type="button" class="cdx-button cdx-button--primary cdx-button--large" id="saveButtonTop" data-action="saveAll">
+            <span class="segoe-icon" style="margin-right: 4px;">&#xE74E;</span>
+            @AppConfig.GetLocalized("Common:Save", "Save Changes")
+        </button>
+    </div>
+
     @Html.AntiForgeryToken()
     <input type="hidden" name="iconFont" id="iconFontHidden" value="@Model.IconFont" />
     

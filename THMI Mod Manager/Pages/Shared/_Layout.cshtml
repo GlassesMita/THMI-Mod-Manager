@@ -478,6 +478,9 @@
             <input type="hidden" id="localizedOpenSaveFolder" value="@Html.Raw(AppConfig.GetLocalized("ContextMenu:OpenSaveFolder", "Open Save Folder"))" />
             <input type="hidden" id="localizedOpenBepInExLogFolder" value="@Html.Raw(AppConfig.GetLocalized("ContextMenu:OpenBepInExLogFolder", "Open BepInEx Log Folder"))" />
             <input type="hidden" id="localizedOpenAppFolder" value="@Html.Raw(AppConfig.GetLocalized("ContextMenu:OpenAppFolder", "Open Application Folder"))" />
+            <input type="hidden" id="localizedInternetSettings" value="@Html.Raw(AppConfig.GetLocalized("Network:InternetSettings", "Go to Internet settings"))" />
+            <input type="hidden" id="localizedNetworkDiagnostics" value="@Html.Raw(AppConfig.GetLocalized("Network:NetworkDiagnostics", "Diagnose Network Problems"))" />
+            <input type="hidden" id="currentLanguage" value="@Html.Raw(AppConfig.Get("[Localization]Language", "en_US"))" />
             
             <!-- Time bar at top of main content -->
             <div id="topTimeBar" class="top-time-bar" style="cursor: default;">
@@ -1394,7 +1397,8 @@
             noInternet: '@Html.Raw(AppConfig.GetLocalized("Network:NoInternet", "No Internet connection"))',
             internetSettings: '@Html.Raw(AppConfig.GetLocalized("Network:InternetSettings", "Go to Internet settings"))',
             noInternetConnection: '@Html.Raw(AppConfig.GetLocalized("Network:NoInternetConnection", "No Internet connection"))',
-            connectionUnavailable: '@Html.Raw(AppConfig.GetLocalized("Network:ConnectionUnavailable", "Connection unavailable"))'
+            connectionUnavailable: '@Html.Raw(AppConfig.GetLocalized("Network:ConnectionUnavailable", "Connection unavailable"))',
+            networkDiagnostics: '@Html.Raw(AppConfig.GetLocalized("Network:NetworkDiagnostics", "Diagnose Network Problems"))'
         };
         
         // 网络状态模块
@@ -1606,11 +1610,28 @@
                                 {
                                     icon: 'icon-wifi',
                                     iconContent: '&#xEC27;',
-                                    label: networkLocalizedStrings.internetSettings,
+                                    label: document.getElementById('localizedInternetSettings')?.value || 'Go to Internet settings',
                                     action: 'internetSettings',
                                     type: 'action'
+                                },
+                                {
+                                    icon: 'icon-network',
+                                    iconContent: '&#xE90F;',
+                                    label: document.getElementById('localizedNetworkDiagnostics')?.value || 'Diagnose Network Problems',
+                                    action: 'networkDiagnostics',
+                                    type: 'url',
+                                    target: '_self'
                                 }
                             ]);
+                            
+                            window.contextMenu.onItemClick = (item) => {
+                                if (item.action === 'networkDiagnostics') {
+                                    window.location.href = 'ms-contact-support://?ActivationType=NetworkDiagnostics';
+                                } else if (item.action === 'internetSettings') {
+                                    window.location.href = 'ms-settings:network-status';
+                                }
+                            };
+                            
                             window.contextMenu.show(e.clientX, e.clientY);
                             console.log('[NetworkContextMenu] Network menu shown');
                         }

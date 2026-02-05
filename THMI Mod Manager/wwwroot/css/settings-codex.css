@@ -176,6 +176,20 @@ textarea {
     background-color: transparent;
 }
 
+.cdx-card-header-button-wrapper {
+    padding: var(--cdx-spacing-md);
+    display: flex;
+    justify-content: flex-end;
+    border-bottom: var(--cdx-border-width) solid var(--cdx-color-border);
+    background-color: var(--cdx-color-background);
+}
+
+.settings-page-action-bar {
+    margin: var(--cdx-spacing-md) 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
 .cdx-card-title {
     font-size: var(--cdx-font-size-x-large);
     font-weight: 600;

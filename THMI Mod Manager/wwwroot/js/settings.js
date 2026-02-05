@@ -183,6 +183,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const saveAllBtnTop = document.getElementById('saveButtonTop');
+    if (saveAllBtnTop) {
+        saveAllBtnTop.addEventListener('click', function() {
+            if (typeof window.saveAllSettings === 'function') {
+                window.saveAllSettings();
+            } else {
+                console.error('saveAllSettings function not found');
+            }
+        });
+    }
+
     // Load saved icon font on page load
     const savedIconFont = localStorage.getItem('iconFont');
     if (savedIconFont) {
