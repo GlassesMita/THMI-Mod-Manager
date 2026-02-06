@@ -4,7 +4,7 @@
       "content": "THMI Mod Manager 是一款专为《东方夜雀食堂》游戏设计的 Mod 管理工具，提供直观的用户界面来管理游戏模组，支持启用、禁用、删除等操作"
     },
     {
-      "content": "项目采用 Wikimedia Codex 设计系统作为前端 UI 框架，确保界面风格与维基媒体项目保持一致，提供现代化且易用的用户体验"
+      "content": "基于最新 GitHub 仓库的代码和文档以及发行版，完整概述 THMI Mod Manager 的功能、特性和使用方法"
     },
     {
       "content": "应用基于 .NET 10.0 ASP.NET Core 构建，采用 Razor Pages 技术，支持多语言本地化（可手动进行新语言的添加），并提供完善的设置管理系统"
@@ -20,9 +20,6 @@
       "page_notes": [
         {
           "content": "重点介绍项目作为 Touhou Mystia Izakaya Mod 管理器的核心定位"
-        },
-        {
-          "content": "说明 Codex CSS 的应用和现代化 UI 特性"
         },
         {
           "content": "概述支持的操作系统环境（Windows 10/11）和 .NET 10.0 运行时要求"
