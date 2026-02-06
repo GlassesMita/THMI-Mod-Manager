@@ -103,6 +103,12 @@ Set-Location -Path './THMI-Mod-Manager/THMI Mod Manager'
 dotnet build --configuration Release --no-incremental
 ```
 
+- 使用此方法，将程序构建到游戏目录（即 `<OutDir>` 中配置的路径，确保路径为游戏安装目录，否则会报错。）
+
+```bash
+dotnet build --configuration Release --no-incremental -p:BuildToGameDir=true
+```
+
 - 使用此方法，程序将被最大程度优化代码。
 
 命令提示符或 PowerShell：
@@ -111,7 +117,7 @@ dotnet build --configuration Release --no-incremental
 dotnet publish --configuration Release
 ```
 
-*注意：如果需要编译到其他目录，可使用 `--output <path>` 指定输出目录。如果使用 -p:SelfContained=true 选项，输出目录将包含所有依赖项，无需额外安装 .NET 运行时。*
+*注意：如果需要编译到其他目录，可使用 `--output <path>` 指定输出目录。如果使用 `-p:SelfContained=true` 参数，输出目录将包含所有依赖项，无需额外安装 .NET 运行时，但这会导致编译后的文件（夹）大小增加。*
 
 编译过程会自动将本地化文件、网页资源和配置文件复制到输出目录。
 

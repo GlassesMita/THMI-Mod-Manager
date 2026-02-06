@@ -105,6 +105,12 @@ Using Command Prompt or PowerShell:
 dotnet build --configuration Release --no-incremental
 ```
 
+- Using this method, to the `<OutDir>` directory, ensure the path is the game installation directory, otherwise it will report an error.
+
+```bash
+dotnet build --configuration Release --no-incremental -p:BuildToGameDir=true
+```
+
 - Using this method, the program will be optimized for performance.
 
 Using Command Prompt or PowerShell:
@@ -113,7 +119,7 @@ Using Command Prompt or PowerShell:
 dotnet publish --configuration Release
 ```
 
-*Note: You can use `--output <path>` to specify the output directory. If you use -p:SelfContained=true option, the output directory will contain all dependencies, no need to install .NET Runtime.*
+*Note: You can use `--output <path>` to specify the output directory. If you use `-p:SelfContained=true` option, the output directory will contain all dependencies, no need to install .NET Runtime, but this will increase the size of the output directory.*
 
 The build process automatically copies localization files, web assets, and configuration files to the output directory.
 
