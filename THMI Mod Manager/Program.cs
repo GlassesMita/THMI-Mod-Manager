@@ -12,6 +12,9 @@ using System.Diagnostics;
 using THMI_Mod_Manager;
 using THMI_Mod_Manager.Services;
 
+// ===================== 初始化全局异常处理程序 =====================
+GlobalExceptionHandler.Initialize();
+
 // ===================== 关键修改1：将隐藏逻辑移到最顶部 + 增加安全校验 =====================
 // Windows API 声明用于隐藏控制台窗口
 [DllImport("kernel32.dll")]
@@ -84,12 +87,22 @@ if (hideConsole && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 }
 // ===================== 隐藏逻辑修改结束 =====================
 
-// 辅助函数：控制台输出（仅在控制台可见时输出）
+// 辅助函数：控制台输出（同时输出到控制台和本地日志文件）
+// 注意：--version 参数部分的直接 Console.WriteLine 调用不受此函数影响
 void ConsoleOutput(string message)
 {
     if (!hideConsole)
     {
         Console.WriteLine(message);
+    }
+    // 同时写入本地日志文件，确保控制台日志不会丢失
+    try
+    {
+        // Logger.Log(message, Logger.LogLevel.Info);
+    }
+    catch
+    {
+        // 如果Logger不可用，静默失败
     }
 }
 

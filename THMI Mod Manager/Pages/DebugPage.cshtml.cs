@@ -596,5 +596,29 @@ namespace THMI_Mod_Manager.Pages
         {
             public bool enabled { get; set; }
         }
+        
+        /// <summary>
+        /// Triggers a simulated kernel panic for testing purposes
+        /// </summary>
+        /// <returns>JSON result indicating success or failure</returns>
+        public IActionResult OnPostTriggerKernelPanic()
+        {
+            try
+            {
+                _logger.LogWarning("Kernel Panic triggered manually via debug panel");
+                
+                var customException = new Exception("Simulated Kernel Panic - This is a test exception triggered by the user via the debug panel");
+                
+                // 使用 LogKernelPanic 代替 DisplayKernelPanic，避免在 HTTP 请求处理中显示 UI
+                GlobalExceptionHandler.LogKernelPanic(customException);
+                
+                return new JsonResult(new { success = true, message = "Kernel Panic logged successfully. Check console output." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error triggering kernel panic: {ex.Message}");
+                return new JsonResult(new { success = false, message = ex.Message });
+            }
+        }
     }
 }

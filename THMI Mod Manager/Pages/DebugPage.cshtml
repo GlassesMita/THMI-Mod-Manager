@@ -373,6 +373,23 @@
             </button>
         </div>
     </div>
+    
+    <!-- 隐藏的内核恐慌触发器 -->
+    <div id="kernelPanicSection" style="display: none; margin-top: 20px;">
+        <div class="debug-section" style="border: 2px solid #dc3545;">
+            <h3 style="color: #dc3545;"><i data-icon="icon-danger"></i> KERNEL PANIC TRIGGER</h3>
+            <div class="debug-info" style="background: #1e1e1e; color: #ff6b6b; border-left-color: #dc3545;">
+                <p><strong style="color: #ff6b6b;">⚠️ WARNING:</strong> This will trigger a simulated kernel panic with full error display.</p>
+                <p>This is for <strong>testing purposes only</strong> and will display the Linux Kernel Panic ASCII art.</p>
+            </div>
+            <div class="debug-button-group">
+                <button type="button" class="debug-button" style="background: #dc3545; color: white;" onclick="triggerKernelPanic()">
+                    <i data-icon="icon-danger"></i> 🚀 TRIGGER KERNEL PANIC
+                </button>
+            </div>
+            <div id="kernelPanicOutput" class="debug-output" style="display: none; background: #000; color: #0f0;"></div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -951,7 +968,12 @@
     const homoSection = document.getElementById('homoSection');
     const homoInput = document.getElementById('homoInput');
     const homoOutput = document.getElementById('homoOutput');
-
+    const kernelPanicSection = document.getElementById('kernelPanicSection');
+    
+    // 内核恐慌触发器序列：上上下下左右左右BA
+    const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    let konamiIndex = 0;
+    
     if (debugHeader) {
         debugHeader.addEventListener('click', function() {
             headerClickCount++;
@@ -961,13 +983,56 @@
             }
         });
     }
-
+    
     if (homoInput && homoOutput) {
         homoInput.oninput = function() {
             const num = homoInput.value === '' ? '' : Number(homoInput.value);
             homoOutput.innerHTML = num + ' = <big>' + homo(num) + '</big>';
         };
         homoInput.oninput();
+    }
+    
+    // 科乐美秘籍检测
+    document.addEventListener('keydown', function(e) {
+        if (!kernelPanicSection) return;
+        
+        if (e.key === konamiCode[konamiIndex]) {
+            konamiIndex++;
+            if (konamiIndex === konamiCode.length) {
+                kernelPanicSection.style.display = 'block';
+                konamiIndex = 0;
+                showToast('👀 You found the hidden Kernel Panic trigger!', 'warning');
+            }
+        } else {
+            konamiIndex = 0;
+        }
+    });
+    
+    // 触发内核恐慌
+    async function triggerKernelPanic() {
+        const output = document.getElementById('kernelPanicOutput');
+        output.style.display = 'block';
+        output.innerHTML = 'Triggering Kernel Panic...\n\n';
+        
+        try {
+            const response = await fetch('/Debug?handler=TriggerKernelPanic', {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                output.innerHTML += data.message + '\n\n';
+                output.innerHTML += 'Kernel Panic has been triggered on the server.\n';
+                output.innerHTML += 'Check the console window for the full ASCII art display.';
+                showToast('Kernel Panic triggered! Check console.', 'error');
+            } else {
+                output.innerHTML += 'Failed to trigger kernel panic.\n';
+                showToast('Failed to trigger kernel panic', 'error');
+            }
+        } catch (error) {
+            output.innerHTML += 'Error: ' + error.message + '\n';
+            showToast('Error triggering kernel panic: ' + error.message, 'error');
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
