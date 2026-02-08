@@ -19,20 +19,17 @@ namespace THMI_Mod_Manager.Controllers
         private readonly UpdateCheckService _updateCheckService;
         private readonly UpdateModule _updateModule;
         private readonly AppConfigManager _appConfigManager;
-        private readonly ILogger<UpdateController> _logger;
         private readonly IStringLocalizer<UpdateController> _localizer;
 
         public UpdateController(
             UpdateCheckService updateCheckService,
             UpdateModule updateModule,
             AppConfigManager appConfigManager,
-            ILogger<UpdateController> logger,
             IStringLocalizer<UpdateController> localizer)
         {
             _updateCheckService = updateCheckService;
             _updateModule = updateModule;
             _appConfigManager = appConfigManager;
-            _logger = logger;
             _localizer = localizer;
         }
 
@@ -55,7 +52,7 @@ namespace THMI_Mod_Manager.Controllers
                 
                 if (!autoCheckUpdates)
                 {
-                    _logger.LogInformation("Update checking is disabled in settings");
+                    Logger.LogInfo("Update checking is disabled in settings");
                     return Ok(new
                     {
                         success = false,
@@ -96,7 +93,7 @@ namespace THMI_Mod_Manager.Controllers
 
                 if (!shouldCheck)
                 {
-                    _logger.LogInformation($"Update check skipped due to frequency setting: {updateFrequency}");
+                    Logger.LogInfo($"Update check skipped due to frequency setting: {updateFrequency}");
                     return Ok(new
                     {
                         success = true,
@@ -107,7 +104,7 @@ namespace THMI_Mod_Manager.Controllers
                     });
                 }
 
-                _logger.LogInformation($"Checking for program updates. Current version: {currentVersion}, Frequency: {updateFrequency}");
+                Logger.LogInfo($"Checking for program updates. Current version: {currentVersion}, Frequency: {updateFrequency}");
 
                 var result = await _updateModule.CheckForUpdatesAsync(currentVersion);
 
@@ -141,7 +138,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during program update check");
+                Logger.LogException(ex, "Error during program update check");
                 return StatusCode(500, new
                     {
                         success = false,
@@ -176,7 +173,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting program version information");
+                Logger.LogException(ex, "Error getting program version information");
                 return StatusCode(500, new
                     {
                         success = false,
@@ -203,13 +200,13 @@ namespace THMI_Mod_Manager.Controllers
                     });
                 }
 
-                _logger.LogInformation($"Starting download update: {request.DownloadUrl}");
+                Logger.LogInfo($"Starting download update: {request.DownloadUrl}");
 
                 var result = await _updateModule.DownloadUpdateAsync(request.DownloadUrl);
 
                 if (result.Success)
                 {
-                    _logger.LogInformation($"Download successful: {result.TempPath}");
+                    Logger.LogInfo($"Download successful: {result.TempPath}");
 
                     return Ok(new
                     {
@@ -222,7 +219,7 @@ namespace THMI_Mod_Manager.Controllers
                 }
                 else
                 {
-                    _logger.LogWarning($"Download failed: {result.Message}");
+                    Logger.LogWarning($"Download failed: {result.Message}");
                     return Ok(new
                     {
                         success = false,
@@ -232,7 +229,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error downloading update");
+                Logger.LogException(ex, "Error downloading update");
                 return StatusCode(500, new
                     {
                         success = false,
@@ -259,7 +256,7 @@ namespace THMI_Mod_Manager.Controllers
                     });
                 }
 
-                _logger.LogInformation($"Preparing update: {request.DownloadUrl}");
+                Logger.LogInfo($"Preparing update: {request.DownloadUrl}");
 
                 var downloadResult = await _updateModule.DownloadUpdateAsync(request.DownloadUrl);
                 if (!downloadResult.Success)
@@ -299,7 +296,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error preparing update");
+                Logger.LogException(ex, "Error preparing update");
                 return StatusCode(500, new
                     {
                         success = false,
@@ -320,7 +317,7 @@ namespace THMI_Mod_Manager.Controllers
                 var exePath = UpdateModule.GetExecutablePath();
                 var exeDir = Path.GetDirectoryName(exePath) ?? Directory.GetCurrentDirectory();
 
-                _logger.LogInformation($"Preparing to restart application: {exePath}");
+                Logger.LogInfo($"Preparing to restart application: {exePath}");
 
                 var vbsContent = "Set WshShell = CreateObject(\"WScript.Shell\")" + Environment.NewLine +
                                   "WshShell.Run \"cmd /c ping -n 3 127.0.0.1 && \"\"" + exePath + "\"\"\", 0, False" + Environment.NewLine +
@@ -348,7 +345,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error restarting application");
+                Logger.LogException(ex, "Error restarting application");
                 return StatusCode(500, new
                     {
                         success = false,
@@ -377,7 +374,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting architecture information");
+                Logger.LogException(ex, "Error getting architecture information");
                 return StatusCode(500, new
                     {
                         success = false,

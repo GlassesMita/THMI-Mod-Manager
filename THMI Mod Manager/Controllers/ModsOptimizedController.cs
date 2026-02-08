@@ -8,16 +8,13 @@ namespace THMI_Mod_Manager.Controllers
     [ApiController]
     public class ModsOptimizedController : ControllerBase
     {
-        private readonly ILogger<ModsOptimizedController> _logger;
         private readonly ModServiceOptimized _modService;
         private readonly AppConfigManager _appConfig;
 
         public ModsOptimizedController(
-            ILogger<ModsOptimizedController> logger, 
             ModServiceOptimized modService, 
             AppConfigManager appConfig)
         {
-            _logger = logger;
             _modService = modService;
             _appConfig = appConfig;
         }
@@ -27,7 +24,7 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                _logger.LogInformation("Getting mods list using optimized service");
+                Logger.LogInfo("Getting mods list using optimized service");
                 var mods = _modService.LoadMods();
                 
                 // Add localization strings
@@ -44,7 +41,7 @@ namespace THMI_Mod_Manager.Controllers
                     deleteConfirm = _appConfig.GetLocalized("Mods:DeleteConfirm", "确定要删除 Mod 吗？")
                 };
 
-                _logger.LogInformation($"Successfully returned {mods.Count} mods");
+                Logger.LogInfo($"Successfully returned {mods.Count} mods");
                 return Ok(new 
                 {
                     success = true, 
@@ -54,7 +51,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting mods list");
+                Logger.LogException(ex, "Error getting mods list");
                 return StatusCode(500, new { success = false, message = "Internal server error" });
             }
         }
@@ -69,15 +66,15 @@ namespace THMI_Mod_Manager.Controllers
                     return BadRequest(new { success = false, message = "File name is required" });
                 }
 
-                _logger.LogInformation($"Toggling mod: {request.FileName}");
+                Logger.LogInfo($"Toggling mod: {request.FileName}");
                 var success = _modService.ToggleMod(request.FileName);
-                _logger.LogInformation($"Mod toggle {(success ? "succeeded" : "failed")} for {request.FileName}");
+                Logger.LogInfo($"Mod toggle {(success ? "succeeded" : "failed")} for {request.FileName}");
                 
                 return Ok(new { success = success });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error toggling mod");
+                Logger.LogException(ex, "Error toggling mod");
                 return StatusCode(500, new { success = false, message = "Internal server error" });
             }
         }
@@ -101,15 +98,15 @@ namespace THMI_Mod_Manager.Controllers
                     return NotFound(new { success = false, message = "Mod not found" });
                 }
 
-                _logger.LogInformation($"Deleting mod: {mod.FilePath}");
+                Logger.LogInfo($"Deleting mod: {mod.FilePath}");
                 var success = _modService.DeleteMod(mod.FilePath);
-                _logger.LogInformation($"Mod deletion {(success ? "succeeded" : "failed")} for {mod.FileName}");
+                Logger.LogInfo($"Mod deletion {(success ? "succeeded" : "failed")} for {mod.FileName}");
                 
                 return Ok(new { success = success });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting mod");
+                Logger.LogException(ex, "Error deleting mod");
                 return StatusCode(500, new { success = false, message = "Internal server error" });
             }
         }

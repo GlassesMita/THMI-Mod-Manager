@@ -2,7 +2,6 @@ using System;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using System.Text.Json.Serialization;
 
 namespace THMI_Mod_Manager.Services
@@ -13,16 +12,14 @@ namespace THMI_Mod_Manager.Services
     public class UpdateCheckService
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<UpdateCheckService> _logger;
         private readonly AppConfigManager _appConfig;
 
         private const string GITHUB_API_BASE = "https://api.github.com";
         private const string GITHUB_RELEASES_ENDPOINT = "/repos/{0}/releases/latest";
 
-        public UpdateCheckService(HttpClient httpClient, ILogger<UpdateCheckService> logger, AppConfigManager appConfig)
+        public UpdateCheckService(HttpClient httpClient, AppConfigManager appConfig)
         {
             _httpClient = httpClient;
-            _logger = logger;
             _appConfig = appConfig;
             
             // Set up HTTP client with proper headers for GitHub API
@@ -40,12 +37,12 @@ namespace THMI_Mod_Manager.Services
         {
             try
             {
-                _logger.LogInformation($"Checking for updates. Current version: {currentVersion}, Repository: {githubRepo}");
+                Logger.LogInfo($"Checking for updates. Current version: {currentVersion}, Repository: {githubRepo}");
 
                 // Parse current version
                 if (!SemanticVersion.TryParse(currentVersion, out var currentSemVer))
                 {
-                    _logger.LogError($"Failed to parse current version: {currentVersion}");
+                    Logger.LogError($"Failed to parse current version: {currentVersion}");
                     return new UpdateCheckResult
                     {
                         Success = false,
@@ -68,7 +65,7 @@ namespace THMI_Mod_Manager.Services
                 var latestVersionTag = latestRelease.TagName.TrimStart('v'); // Remove 'v' prefix if present
                 if (!SemanticVersion.TryParse(latestVersionTag, out var latestSemVer))
                 {
-                    _logger.LogError($"Failed to parse latest version: {latestVersionTag}");
+                    Logger.LogError($"Failed to parse latest version: {latestVersionTag}");
                     return new UpdateCheckResult
                     {
                         Success = false,
@@ -92,18 +89,18 @@ namespace THMI_Mod_Manager.Services
 
                 if (isUpdateAvailable)
                 {
-                    _logger.LogInformation($"Update available: {currentSemVer} → {latestSemVer}");
+                    Logger.LogInfo($"Update available: {currentSemVer} → {latestSemVer}");
                 }
                 else
                 {
-                    _logger.LogInformation($"No update available. Current version {currentSemVer} is up to date.");
+                    Logger.LogInfo($"No update available. Current version {currentSemVer} is up to date.");
                 }
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during update check");
+                Logger.LogException(ex, "Error during update check");
                 return new UpdateCheckResult
                 {
                     Success = false,
@@ -122,13 +119,13 @@ namespace THMI_Mod_Manager.Services
                 var endpoint = string.Format(GITHUB_RELEASES_ENDPOINT, githubRepo);
                 var url = GITHUB_API_BASE + endpoint;
 
-                _logger.LogInformation($"Fetching latest release from: {url}");
+                Logger.LogInfo($"Fetching latest release from: {url}");
 
                 var response = await _httpClient.GetAsync(url);
                 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError($"GitHub API request failed with status: {response.StatusCode}");
+                    Logger.LogError($"GitHub API request failed with status: {response.StatusCode}");
                     return null;
                 }
 
@@ -142,7 +139,7 @@ namespace THMI_Mod_Manager.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching GitHub release information");
+                Logger.LogException(ex, "Error fetching GitHub release information");
                 return null;
             }
         }

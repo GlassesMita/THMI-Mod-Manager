@@ -311,9 +311,8 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.AppConfigManager>(provid
 {
     var env = provider.GetRequiredService<IWebHostEnvironment>();
     var configuration = provider.GetRequiredService<IConfiguration>();
-    var logger = provider.GetRequiredService<ILogger<THMI_Mod_Manager.Services.AppConfigManager>>();
     var serviceProvider = provider;
-    return new THMI_Mod_Manager.Services.AppConfigManager(env, configuration, logger, serviceProvider);
+    return new THMI_Mod_Manager.Services.AppConfigManager(env, configuration, serviceProvider);
 });
 // Register LocalizationManager
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.LocalizationManager>();
@@ -325,16 +324,14 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.ModService>();
 builder.Services.AddHttpClient<THMI_Mod_Manager.Services.ModUpdateService>();
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.ModUpdateService>(provider =>
 {
-    var logger = provider.GetRequiredService<ILogger<THMI_Mod_Manager.Services.ModUpdateService>>();
     var appConfig = provider.GetRequiredService<THMI_Mod_Manager.Services.AppConfigManager>();
     var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-    return new THMI_Mod_Manager.Services.ModUpdateService(logger, appConfig, httpClientFactory.CreateClient("ModUpdate"));
+    return new THMI_Mod_Manager.Services.ModUpdateService(appConfig, httpClientFactory.CreateClient("ModUpdate"));
 });
 
 // Register SystemInfoLogger
 builder.Services.AddSingleton<THMI_Mod_Manager.Services.SystemInfoLogger>(provider => 
 {
-    var logger = provider.GetRequiredService<ILogger<THMI_Mod_Manager.Services.SystemInfoLogger>>();
     var env = provider.GetRequiredService<IWebHostEnvironment>();
     THMI_Mod_Manager.Services.AppConfigManager? appConfigManager = null;
     try
@@ -345,7 +342,7 @@ builder.Services.AddSingleton<THMI_Mod_Manager.Services.SystemInfoLogger>(provid
     {
         // AppConfigManager might not be available yet, will handle gracefully in the logger
     }
-    return new THMI_Mod_Manager.Services.SystemInfoLogger(logger, appConfigManager, env.ContentRootPath);
+    return new THMI_Mod_Manager.Services.SystemInfoLogger(appConfigManager, env.ContentRootPath);
 });
 
 // Register UpdateCheckService

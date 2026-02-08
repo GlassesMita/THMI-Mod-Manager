@@ -16,13 +16,11 @@ namespace THMI_Mod_Manager.Services
         private readonly Dictionary<string, Dictionary<string, string>> _data = new(StringComparer.OrdinalIgnoreCase);
 
         private readonly IConfiguration _config;
-    private readonly ILogger<AppConfigManager> _logger;
     private readonly IServiceProvider _serviceProvider;
 
-    public AppConfigManager(IWebHostEnvironment env, IConfiguration configuration, ILogger<AppConfigManager> logger, IServiceProvider serviceProvider)
+    public AppConfigManager(IWebHostEnvironment env, IConfiguration configuration, IServiceProvider serviceProvider)
     {
         _config = configuration;
-        _logger = logger;
         _serviceProvider = serviceProvider;
         _filePath = Path.Combine(env.ContentRootPath, "AppConfig.Schale");
         Load();
@@ -42,12 +40,7 @@ namespace THMI_Mod_Manager.Services
                     // Log that new config file was created
                     var logMessage = $"AppConfig.Schale created at: {_filePath}";
                     Logger.Log(Logger.LogLevel.Info, logMessage);
-                    
-                    // Also log to Microsoft logger if available
-                    if (_logger != null)
-                    {
-                        _logger.LogInformation(logMessage);
-                    }
+                    Logger.LogInfo(logMessage);
                     
                     return;
                 }
@@ -83,12 +76,7 @@ namespace THMI_Mod_Manager.Services
                 // Log successful config load
                 var loadLogMessage = $"AppConfig.Schale loaded from: {_filePath} ({_data.Count} sections)";
                 Logger.Log(Logger.LogLevel.Info, loadLogMessage);
-                
-                // Also log to Microsoft logger if available
-                if (_logger != null)
-                {
-                    _logger.LogInformation(loadLogMessage);
-                }
+                Logger.LogInfo(loadLogMessage);
             }
             finally
             {
@@ -213,12 +201,7 @@ namespace THMI_Mod_Manager.Services
                         logMessage += $" (was: {oldValue})";
                     
                     Logger.Log(Logger.LogLevel.Info, logMessage);
-                    
-                    // Also log to Microsoft logger if available
-                    if (_logger != null)
-                    {
-                        _logger.LogInformation(logMessage);
-                    }
+                    Logger.LogInfo(logMessage);
                 }
 
                 if (autoSave) Save();
@@ -259,12 +242,7 @@ namespace THMI_Mod_Manager.Services
                     // Log the configuration removal
                     var logMessage = $"Config removed: [{section}]{key}";
                     Logger.Log(Logger.LogLevel.Info, logMessage);
-                    
-                    // Also log to Microsoft logger if available
-                    if (_logger != null)
-                    {
-                        _logger.LogInformation(logMessage);
-                    }
+                    Logger.LogInfo(logMessage);
                 }
                 
                 if (autoSave && removed) Save();
@@ -287,14 +265,9 @@ namespace THMI_Mod_Manager.Services
                 if (removed)
                 {
                     // Log the section removal
-                    var logMessage = $"Config section removed: [{section}]";
+                    var logMessage = $"All config removed from section: [{section}]";
                     Logger.Log(Logger.LogLevel.Info, logMessage);
-                    
-                    // Also log to Microsoft logger if available
-                    if (_logger != null)
-                    {
-                        _logger.LogInformation(logMessage);
-                    }
+                    Logger.LogInfo(logMessage);
                 }
                 
                 if (autoSave && removed) Save();
@@ -357,12 +330,7 @@ namespace THMI_Mod_Manager.Services
             // Log that AppConfig.Schale was written
             var logMessage = $"AppConfig.Schale written to: {_filePath}";
             Logger.Log(Logger.LogLevel.Info, logMessage);
-            
-            // Also log to Microsoft logger if available
-            if (_logger != null)
-            {
-                _logger?.LogInformation(logMessage);
-            }
+            Logger.LogInfo(logMessage);
         }
 
         public void Reload()

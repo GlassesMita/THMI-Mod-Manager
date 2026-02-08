@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using THMI_Mod_Manager.Services;
 
 namespace THMI_Mod_Manager.Controllers
 {
@@ -8,7 +9,6 @@ namespace THMI_Mod_Manager.Controllers
     [Route("api/[controller]")]
     public class FolderController : ControllerBase
     {
-        private readonly ILogger<FolderController> _logger;
         private readonly IConfiguration _configuration;
 
         [DllImport("user32.dll")]
@@ -22,9 +22,8 @@ namespace THMI_Mod_Manager.Controllers
 
         private const int SW_SHOW = 5;
 
-        public FolderController(ILogger<FolderController> logger, IConfiguration configuration)
+        public FolderController(IConfiguration configuration)
         {
-            _logger = logger;
             _configuration = configuration;
         }
 
@@ -41,11 +40,11 @@ namespace THMI_Mod_Manager.Controllers
                     "Save",
                     "BetaV9"
                 );
-                _logger.LogInformation("Save folder path: {SaveFolderPath}", saveFolderPath);
+                Logger.LogInfo($"Save folder path: {saveFolderPath}");
 
                 if (!Directory.Exists(saveFolderPath))
                 {
-                    _logger.LogWarning("Save folder does not exist: {SaveFolderPath}", saveFolderPath);
+                    Logger.LogWarning($"Save folder does not exist: {saveFolderPath}");
                     return NotFound(new { message = "Save folder not found", path = saveFolderPath });
                 }
 
@@ -61,7 +60,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error opening save folder");
+                Logger.LogException(ex, "Error opening save folder");
                 return StatusCode(500, new { message = "Error opening save folder", error = ex.Message });
             }
         }
@@ -72,14 +71,14 @@ namespace THMI_Mod_Manager.Controllers
             try
             {
                 var gamePath = AppContext.BaseDirectory;
-                _logger.LogInformation("BepInEx log folder using application running directory: {GamePath}", gamePath);
+                Logger.LogInfo($"BepInEx log folder using application running directory: {gamePath}");
 
                 var logFolderPath = Path.Combine(gamePath, "BepInEx");
-                _logger.LogInformation("BepInEx log folder path: {LogFolderPath}", logFolderPath);
+                Logger.LogInfo($"BepInEx log folder path: {logFolderPath}");
 
                 if (!Directory.Exists(logFolderPath))
                 {
-                    _logger.LogWarning("BepInEx log folder does not exist: {LogFolderPath}", logFolderPath);
+                    Logger.LogWarning($"BepInEx log folder does not exist: {logFolderPath}");
                     return NotFound(new { message = "BepInEx log folder not found. Expected path: " + logFolderPath, path = logFolderPath });
                 }
 
@@ -95,7 +94,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error opening BepInEx log folder");
+                Logger.LogException(ex, "Error opening BepInEx log folder");
                 return StatusCode(500, new { message = "Error opening BepInEx log folder", error = ex.Message });
             }
         }
@@ -109,7 +108,7 @@ namespace THMI_Mod_Manager.Controllers
 
                 if (!Directory.Exists(appPath))
                 {
-                    _logger.LogWarning($"Application folder does not exist: {appPath}");
+                    Logger.LogWarning($"Application folder does not exist: {appPath}");
                     return NotFound(new { message = "Application folder not found", path = appPath });
                 }
 
@@ -125,7 +124,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error opening application folder");
+                Logger.LogException(ex, "Error opening application folder");
                 return StatusCode(500, new { message = "Error opening application folder", error = ex.Message });
             }
         }
@@ -141,16 +140,16 @@ namespace THMI_Mod_Manager.Controllers
                 {
                     SetForegroundWindow(explorerHandle);
                     ShowWindow(explorerHandle, SW_SHOW);
-                    _logger.LogInformation("Brought explorer window to foreground");
+                    Logger.LogInfo("Brought explorer window to foreground");
                 }
                 else
                 {
-                    _logger.LogWarning("Could not find explorer window to bring to foreground");
+                    Logger.LogWarning("Could not find explorer window to bring to foreground");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to bring window to foreground");
+                Logger.LogWarning(ex, "Failed to bring window to foreground");
             }
         }
     }

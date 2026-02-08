@@ -8,13 +8,11 @@ namespace THMI_Mod_Manager.Controllers
     public class ConfigController : ControllerBase
     {
         private readonly AppConfigManager _appConfig;
-        private readonly ILogger<ConfigController> _logger;
         private readonly IHostApplicationLifetime _lifetime;
 
-        public ConfigController(AppConfigManager appConfig, ILogger<ConfigController> logger, IHostApplicationLifetime lifetime)
+        public ConfigController(AppConfigManager appConfig, IHostApplicationLifetime lifetime)
         {
             _appConfig = appConfig;
-            _logger = logger;
             _lifetime = lifetime;
         }
 
@@ -23,13 +21,13 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                _logger.LogInformation("Application exit requested from web interface");
+                Logger.LogInfo("Application exit requested from web interface");
                 _lifetime.StopApplication();
                 return Ok(new { success = true, message = "Application is shutting down" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to stop application");
+                Logger.LogException(ex, "Failed to stop application");
                 return StatusCode(500, new { success = false, message = "Failed to stop application" });
             }
         }
@@ -49,7 +47,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to get configuration: {key}");
+                Logger.LogException(ex, $"Failed to get configuration: {key}");
                 return StatusCode(500, new { success = false, message = "Failed to get configuration" });
             }
         }
@@ -69,7 +67,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to set configuration: {request.Key}");
+                Logger.LogException(ex, $"Failed to set configuration: {request.Key}");
                 return StatusCode(500, new { success = false, message = "Failed to set configuration" });
             }
         }

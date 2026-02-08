@@ -9,7 +9,6 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using THMI_Mod_Manager.Services;
 
 namespace THMI_Mod_Manager
@@ -258,16 +257,14 @@ namespace THMI_Mod_Manager
     public class UpdateModule
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<UpdateModule> _logger;
         private readonly AppConfigManager _appConfig;
         private const string GitHubApiUrl = "https://api.github.com/repos/GlassesMita/THMI-Mod-Manager/releases/latest";
         private const string Owner = "GlassesMita";
         private const string Repo = "THMI-Mod-Manager";
 
-        public UpdateModule(HttpClient httpClient, ILogger<UpdateModule> logger, AppConfigManager appConfig)
+        public UpdateModule(HttpClient httpClient, AppConfigManager appConfig)
         {
             _httpClient = httpClient;
-            _logger = logger;
             _appConfig = appConfig;
         }
 
@@ -275,7 +272,7 @@ namespace THMI_Mod_Manager
         {
             try
             {
-                _logger.LogInformation("Checking for updates...");
+                Logger.LogInfo("Checking for updates...");
                 
                 using var request = new HttpRequestMessage(HttpMethod.Get, GitHubApiUrl);
                 request.Headers.UserAgent.ParseAdd("THMI-Mod-Manager");
@@ -283,7 +280,7 @@ namespace THMI_Mod_Manager
                 var response = await _httpClient.SendAsync(request);
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning($"GitHub API returned status code: {(int)response.StatusCode}");
+                    Logger.LogWarning($"GitHub API returned status code: {(int)response.StatusCode}");
                     return new UpdateCheckResult
                     {
                         Success = false,
@@ -326,7 +323,7 @@ namespace THMI_Mod_Manager
 
                 if (downloadUrl == null)
                 {
-                    _logger.LogWarning($"No matching {packageSuffix} package found");
+                    Logger.LogWarning($"No matching {packageSuffix} package found");
                     return new UpdateCheckResult
                     {
                         Success = false,
@@ -336,7 +333,7 @@ namespace THMI_Mod_Manager
 
                 var isUpdateAvailable = latestSemVer != null && currentSemVer != null && latestSemVer.IsNewerThan(currentSemVer);
 
-                _logger.LogInformation($"Current version: {currentVersion}, Latest version: {latestVersion}, Update available: {isUpdateAvailable}");
+                Logger.LogInfo($"Current version: {currentVersion}, Latest version: {latestVersion}, Update available: {isUpdateAvailable}");
 
                 return new UpdateCheckResult
                 {
@@ -353,7 +350,29 @@ namespace THMI_Mod_Manager
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking for updates");
+                Logger.LogException(ex, "Error checking for updates");
+                
+                var innerEx = ex.InnerException;
+                string fullStackTrace = $"Error checking for updates: {ex.Message}";
+                while (innerEx != null)
+                {
+                    fullStackTrace += $"\n  ---> {innerEx.GetType().Name}: {innerEx.Message}";
+                    if (!string.IsNullOrEmpty(innerEx.StackTrace))
+                    {
+                        foreach (var line in innerEx.StackTrace.Split('\n').Take(3))
+                        {
+                            var trimmed = line.Trim();
+                            if (!string.IsNullOrEmpty(trimmed))
+                            {
+                                fullStackTrace += $"\n    {trimmed}";
+                            }
+                        }
+                    }
+                    innerEx = innerEx.InnerException;
+                }
+                
+                Logger.LogError(fullStackTrace);
+                
                 return new UpdateCheckResult
                 {
                     Success = false,
@@ -366,7 +385,7 @@ namespace THMI_Mod_Manager
         {
             try
             {
-                _logger.LogInformation($"Starting download update: {downloadUrl}");
+                Logger.LogInfo($"Starting download update: {downloadUrl}");
 
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff");
                 var uniqueId = Guid.NewGuid().ToString("N")[..8];
@@ -387,7 +406,7 @@ namespace THMI_Mod_Manager
                 }
 
                 var totalBytes = response.Content.Headers.ContentLength ?? 0;
-                _logger.LogInformation($"File size: {totalBytes:N0} bytes");
+                Logger.LogInfo($"File size: {totalBytes:N0} bytes");
 
                 using var contentStream = await response.Content.ReadAsStreamAsync();
                 using var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.Read, bufferSize: 131072);
@@ -403,11 +422,11 @@ namespace THMI_Mod_Manager
                     if (totalBytes > 0)
                     {
                         var progress = (double)downloadedBytes / totalBytes * 100;
-                        _logger.LogDebug($"Download progress: {progress:F1}% ({downloadedBytes:N0}/{totalBytes:N0})");
+                        Logger.LogDebug($"Download progress: {progress:F1}% ({downloadedBytes:N0}/{totalBytes:N0})");
                     }
                 }
 
-                _logger.LogInformation($"Download complete: {zipPath}");
+                Logger.LogInfo($"Download complete: {zipPath}");
                 return new UpdateDownloadResult
                 {
                     Success = true,
@@ -419,7 +438,7 @@ namespace THMI_Mod_Manager
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error downloading update");
+                Logger.LogException(ex, "Error downloading update");
                 return new UpdateDownloadResult
                 {
                     Success = false,
@@ -432,7 +451,7 @@ namespace THMI_Mod_Manager
         {
             try
             {
-                _logger.LogInformation($"Preparing update, temp directory: {tempPath}, new version: {newVersion}");
+                Logger.LogInfo($"Preparing update, temp directory: {tempPath}, new version: {newVersion}");
 
                 var exeDir = Path.GetDirectoryName(currentExePath) ?? Directory.GetCurrentDirectory();
                 var exeName = Path.GetFileName(currentExePath);
@@ -460,7 +479,7 @@ namespace THMI_Mod_Manager
                 }
 
                 var zipPath = zipFiles[0];
-                _logger.LogInformation($"Extracting update package: {zipPath}");
+                Logger.LogInfo($"Extracting update package: {zipPath}");
 
                 var extractPath = Path.Combine(tempPath, "extracted");
                 Directory.CreateDirectory(extractPath);
@@ -497,7 +516,7 @@ exit
                     WorkingDirectory = tempPath
                 };
 
-                _logger.LogInformation($"Created update script: {updateScriptPath}");
+                Logger.LogInfo($"Created update script: {updateScriptPath}");
                 return new UpdateApplyResult
                 {
                     Success = true,
@@ -508,7 +527,7 @@ exit
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error preparing update");
+                Logger.LogException(ex, "Error preparing update");
                 return new UpdateApplyResult
                 {
                     Success = false,
@@ -522,7 +541,7 @@ exit
         {
             try
             {
-                _logger.LogInformation($"Applying update: {zipPath} -> {appDirectory}");
+                Logger.LogInfo($"Applying update: {zipPath} -> {appDirectory}");
 
                 if (!File.Exists(zipPath))
                 {
@@ -532,7 +551,7 @@ exit
                 var tempExtractPath = Path.Combine(Path.GetTempPath(), $"THMI_Extract_{Guid.NewGuid():N}");
                 Directory.CreateDirectory(tempExtractPath);
 
-                _logger.LogInformation($"Extracting to temporary directory: {tempExtractPath}");
+                Logger.LogInfo($"Extracting to temporary directory: {tempExtractPath}");
                 ZipFile.ExtractToDirectory(zipPath, tempExtractPath);
 
                 var files = Directory.GetFiles(tempExtractPath, "*", SearchOption.AllDirectories);
@@ -552,29 +571,29 @@ exit
                     try
                     {
                         File.Copy(file, destPath, true);
-                        _logger.LogDebug($"Copied file: {relativePath}");
+                        Logger.LogDebug($"Copied file: {relativePath}");
                     }
                     catch (IOException ex)
                     {
-                        _logger.LogWarning($"Failed to copy file {relativePath}: {ex.Message}");
+                        Logger.LogWarning($"Failed to copy file {relativePath}: {ex.Message}");
                     }
                 }
 
                 try
                 {
                     Directory.Delete(tempExtractPath, true);
-                    _logger.LogInformation("Cleanup temporary directory complete");
+                    Logger.LogInfo("Cleanup temporary directory complete");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning($"Failed to cleanup temporary directory: {ex.Message}");
+                    Logger.LogWarning($"Failed to cleanup temporary directory: {ex.Message}");
                 }
 
-                _logger.LogInformation("Update application complete");
+                Logger.LogInfo("Update application complete");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error applying update");
+                Logger.LogException(ex, "Error applying update");
                 throw;
             }
         }
@@ -605,7 +624,7 @@ exit
             }
             catch
             {
-                _logger.LogWarning($"Failed to parse version: {version}");
+                Logger.LogWarning($"Failed to parse version: {version}");
                 return null;
             }
         }

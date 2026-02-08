@@ -3,20 +3,19 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text;
 using Markdig;
 using System.Reflection;
+using THMI_Mod_Manager.Services;
 
 namespace THMI_Mod_Manager.Pages
 {
     public class IndexModel : PageModel
     {
-        private readonly ILogger<IndexModel> _logger;
         private readonly THMI_Mod_Manager.Services.AppConfigManager _appConfig;
         private readonly IWebHostEnvironment _env;
 
         public new string Content { get; set; } = string.Empty;
 
-        public IndexModel(ILogger<IndexModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig, IWebHostEnvironment env)
+        public IndexModel(THMI_Mod_Manager.Services.AppConfigManager appConfig, IWebHostEnvironment env)
         {
-            _logger = logger;
             _appConfig = appConfig;
             _env = env;
         }
@@ -63,7 +62,7 @@ namespace THMI_Mod_Manager.Pages
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error reading or parsing markdown file: {FileName}", markdownFile);
+                Logger.LogException(ex, $"Error reading or parsing markdown file: {markdownFile}");
                 Content = GetErrorContent(language ?? "en_US");
             }
         }

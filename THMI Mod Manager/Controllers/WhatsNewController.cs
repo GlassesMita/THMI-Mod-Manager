@@ -14,18 +14,15 @@ namespace THMI_Mod_Manager.Controllers
     public class WhatsNewController : ControllerBase
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<WhatsNewController> _logger;
         private readonly IStringLocalizer<WhatsNewController> _localizer;
         private const string GitHubReleasesUrl = "https://api.github.com/repos/GlassesMita/THMI-Mod-Manager/releases";
         private const string GitHubLatestUrl = "https://api.github.com/repos/GlassesMita/THMI-Mod-Manager/releases/latest";
 
         public WhatsNewController(
             HttpClient httpClient,
-            ILogger<WhatsNewController> logger,
             IStringLocalizer<WhatsNewController> localizer)
         {
             _httpClient = httpClient;
-            _logger = logger;
             _localizer = localizer;
         }
 
@@ -37,7 +34,7 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                _logger.LogInformation($"Fetching release notes for version: {version ?? "latest"}");
+                Logger.LogInfo($"Fetching release notes for version: {version ?? "latest"}");
 
                 string apiUrl;
                 if (!string.IsNullOrEmpty(version))
@@ -89,7 +86,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching release notes");
+                Logger.LogException(ex, "Error fetching release notes");
                 return Ok(new
                 {
                     success = false,
@@ -107,7 +104,7 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                _logger.LogInformation($"Fetching recent {count} releases");
+                Logger.LogInfo($"Fetching recent {count} releases");
 
                 var url = "https://api.github.com/repos/GlassesMita/THMI-Mod-Manager/releases?per_page=" + count;
 
@@ -153,7 +150,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching releases");
+                Logger.LogException(ex, "Error fetching releases");
                 return Ok(new
                 {
                     success = false,

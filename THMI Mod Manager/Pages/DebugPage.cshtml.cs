@@ -20,7 +20,6 @@ namespace THMI_Mod_Manager.Pages
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public class DebugModel : PageModel
     {
-        private readonly ILogger<DebugModel> _logger;
         private readonly THMI_Mod_Manager.Services.AppConfigManager _appConfig;
         private readonly IHttpClientFactory _httpClientFactory;
 
@@ -46,26 +45,25 @@ namespace THMI_Mod_Manager.Pages
         public string LogFilePath { get; set; } = "";
         public string LogFileSize { get; set; } = "";
 
-        public DebugModel(ILogger<DebugModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig, IHttpClientFactory httpClientFactory)
+        public DebugModel(THMI_Mod_Manager.Services.AppConfigManager appConfig, IHttpClientFactory httpClientFactory)
         {
-            _logger = logger;
             _appConfig = appConfig;
             _httpClientFactory = httpClientFactory;
         }
 
         public void OnGet()
         {
-            _logger.LogInformation("Debug page accessed");
+            Logger.LogInfo("Debug page accessed");
 
             try
             {
-                _logger.LogInformation("Starting to collect system information for debug page");
+                Logger.LogInfo("Starting to collect system information for debug page");
                 AppName = _appConfig.Get("[App]Name", "THMI Mod Manager") ?? "THMI Mod Manager";
                 RuntimeVersion = Environment.Version.ToString();
                 OSVersion = Environment.OSVersion.ToString();
                 OSFriendlyName = GetOSFriendlyName();
                 OSProductName = GetOSProductName();
-                _logger.LogInformation($"System Information - OS: {OSFriendlyName} ({OSProductName}), Runtime: {RuntimeVersion}");
+                Logger.LogInfo($"System Information - OS: {OSFriendlyName} ({OSProductName}), Runtime: {RuntimeVersion}");
                 BaseDirectory = AppContext.BaseDirectory;
                 CurrentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
@@ -81,7 +79,7 @@ namespace THMI_Mod_Manager.Pages
                 var disableCacheValue = _appConfig.Get("[Debug]DisableCache", "false");
                 DisableCache = disableCacheValue?.ToLower() == "true";
 
-                _logger.LogInformation("Reading configuration file information");
+                Logger.LogInfo("Reading configuration file information");
                 var configPath = Path.Combine(AppContext.BaseDirectory, "AppConfig.Schale");
                 ConfigFilePath = configPath;
                 
@@ -89,24 +87,24 @@ namespace THMI_Mod_Manager.Pages
                 {
                     var fileInfo = new FileInfo(configPath);
                     ConfigLastModified = fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
-                    _logger.LogInformation($"Configuration file found: {configPath}, Last modified: {ConfigLastModified}");
+                    Logger.LogInfo($"Configuration file found: {configPath}, Last modified: {ConfigLastModified}");
                 }
                 var logPath = Path.Combine(AppContext.BaseDirectory, "logs");
                 LogFilePath = logPath;
-                _logger.LogInformation($"Log directory: {logPath}");
+                Logger.LogInfo($"Log directory: {logPath}");
                 
                 if (Directory.Exists(logPath))
                 {
                     var logFiles = Directory.GetFiles(logPath, "*.log");
                     var totalSize = logFiles.Sum(f => new FileInfo(f).Length);
                     LogFileSize = FormatFileSize(totalSize);
-                    _logger.LogInformation($"Found {logFiles.Length} log files totaling {LogFileSize}");
+                    Logger.LogInfo($"Found {logFiles.Length} log files totaling {LogFileSize}");
                 }
-                _logger.LogInformation($"Debug page loaded - DevMode: {IsDevMode}, VerboseLogging: {EnableVerboseLogging}");
+                Logger.LogInfo($"Debug page loaded - DevMode: {IsDevMode}, VerboseLogging: {EnableVerboseLogging}");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error loading debug page: {ex.Message}");
+                Logger.LogError($"Error loading debug page: {ex.Message}");
             }
         }
 
@@ -116,12 +114,12 @@ namespace THMI_Mod_Manager.Pages
             {
                 _appConfig.Set("[Dev]IsDevBuild", request.enabled.ToString().ToLower());
                 _appConfig.Reload();
-                _logger.LogInformation($"Developer mode toggled: {request.enabled}");
+                Logger.LogInfo($"Developer mode toggled: {request.enabled}");
                 return new JsonResult(new { success = true, message = $"Developer mode {(request.enabled ? "enabled" : "disabled")}" });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error toggling developer mode: {ex.Message}");
+                Logger.LogError($"Error toggling developer mode: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
         }
@@ -134,12 +132,12 @@ namespace THMI_Mod_Manager.Pages
               {
                   _appConfig.Set("[Dev]ShowCVEWarning", request.enabled.ToString().ToLower());
                   _appConfig.Reload();
-                  _logger.LogInformation($"CVE warning toggled: {request.enabled}");
+                  Logger.LogInfo($"CVE warning toggled: {request.enabled}");
                   return new JsonResult(new { success = true, message = $"CVE warning {(request.enabled ? "enabled" : "disabled")}" });
               }
               catch (Exception ex)
               {
-                  _logger.LogError($"Error toggling CVE warning: {ex.Message}");
+                  Logger.LogError($"Error toggling CVE warning: {ex.Message}");
                   return new JsonResult(new { success = false, message = ex.Message });
               }
           }
@@ -150,12 +148,12 @@ namespace THMI_Mod_Manager.Pages
               {
                   _appConfig.Set("[Debug]VerboseLogging", request.enabled.ToString().ToLower());
                   _appConfig.Reload();
-                  _logger.LogInformation($"Verbose logging toggled: {request.enabled}");
+                  Logger.LogInfo($"Verbose logging toggled: {request.enabled}");
                   return new JsonResult(new { success = true, message = $"Verbose logging {(request.enabled ? "enabled" : "disabled")}" });
               }
               catch (Exception ex)
               {
-                  _logger.LogError($"Error toggling verbose logging: {ex.Message}");
+                  Logger.LogError($"Error toggling verbose logging: {ex.Message}");
                   return new JsonResult(new { success = false, message = ex.Message });
               }
           }
@@ -166,12 +164,12 @@ namespace THMI_Mod_Manager.Pages
             {
                 _appConfig.Set("[Debug]DisableCache", request.enabled.ToString().ToLower());
                 _appConfig.Reload();
-                _logger.LogInformation($"Cache toggled: {request.enabled}");
+                Logger.LogInfo($"Cache toggled: {request.enabled}");
                 return new JsonResult(new { success = true, message = $"Cache {(request.enabled ? "disabled" : "enabled")}" });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error toggling cache: {ex.Message}");
+                Logger.LogError($"Error toggling cache: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
         }
@@ -181,12 +179,12 @@ namespace THMI_Mod_Manager.Pages
             try
             {
                 _appConfig.Reload();
-                _logger.LogInformation("Configuration reloaded via debug panel");
+                Logger.LogInfo("Configuration reloaded via debug panel");
                 return new JsonResult(new { success = true, message = "Configuration reloaded successfully" });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error reloading configuration: {ex.Message}");
+                Logger.LogError($"Error reloading configuration: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
         }
@@ -195,12 +193,12 @@ namespace THMI_Mod_Manager.Pages
         {
             try
             {
-                _logger.LogInformation("User requested configuration file view");
+                Logger.LogInfo("User requested configuration file view");
                 var configPath = Path.Combine(AppContext.BaseDirectory, "AppConfig.Schale");
                 
                 if (!System.IO.File.Exists(configPath))
                 {
-                    _logger.LogWarning("Configuration file not found when requested");
+                    Logger.LogWarning("Configuration file not found when requested");
                 return new JsonResult(new { success = false, message = "Config file not found" });
                 }
 
@@ -225,7 +223,7 @@ namespace THMI_Mod_Manager.Pages
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error viewing configuration: {ex.Message}");
+                Logger.LogError($"Error viewing configuration: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
         }
@@ -242,12 +240,12 @@ namespace THMI_Mod_Manager.Pages
                 }
 
                 var configContent = System.IO.File.ReadAllText(configPath);
-                _logger.LogInformation("Successfully returned configuration file content");
+                Logger.LogInfo("Successfully returned configuration file content");
                 return Content(configContent, "text/plain");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error viewing raw configuration: {ex.Message}");
+                Logger.LogError($"Error viewing raw configuration: {ex.Message}");
                 return Content("Cannot display: " + ex.Message, "text/plain");
             }
         }
@@ -284,7 +282,7 @@ namespace THMI_Mod_Manager.Pages
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error viewing logs: {ex.Message}");
+                Logger.LogError($"Error viewing logs: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message, logs = "" });
             }
         }
@@ -321,7 +319,7 @@ namespace THMI_Mod_Manager.Pages
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error downloading logs: {ex.Message}");
+                Logger.LogError($"Error downloading logs: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
         }
@@ -339,14 +337,14 @@ namespace THMI_Mod_Manager.Pages
                     {
                         System.IO.File.Delete(logFile);
                     }
-                    _logger.LogInformation($"Cleared {logFiles.Length} log files");
+                    Logger.LogInfo($"Cleared {logFiles.Length} log files");
                 }
 
                 return new JsonResult(new { success = true, message = "Logs cleared successfully" });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error clearing logs: {ex.Message}");
+                Logger.LogError($"Error clearing logs: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
         }
@@ -361,7 +359,7 @@ namespace THMI_Mod_Manager.Pages
                 {
                     var backupPath = configPath + ".backup_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
                     System.IO.File.Copy(configPath, backupPath);
-                    _logger.LogInformation($"Settings backed up to: {backupPath}");
+                    Logger.LogInfo($"Settings backed up to: {backupPath}");
                 }
 
                 _appConfig.Set("[Dev]IsDevBuild", "false");
@@ -375,13 +373,13 @@ namespace THMI_Mod_Manager.Pages
                 _appConfig.Set("[Updates]CheckForUpdates", "true");
 
                 _appConfig.Reload();
-                _logger.LogInformation("All settings reset to default");
+                Logger.LogInfo("All settings reset to default");
                 
                 return new JsonResult(new { success = true, message = "All settings reset to default" });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error resetting settings: {ex.Message}");
+                Logger.LogError($"Error resetting settings: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
         }
@@ -447,12 +445,12 @@ namespace THMI_Mod_Manager.Pages
 
                 networkInfo.PingResults = pingResults;
 
-                _logger.LogInformation($"Network status checked - Connected: {networkInfo.IsConnected}, Proxy: {networkInfo.IsUsingProxy}");
+                Logger.LogInfo($"Network status checked - Connected: {networkInfo.IsConnected}, Proxy: {networkInfo.IsUsingProxy}");
                 return new JsonResult(new { success = true, data = networkInfo });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error checking network status: {ex.Message}");
+                Logger.LogError($"Error checking network status: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
         }
@@ -605,7 +603,7 @@ namespace THMI_Mod_Manager.Pages
         {
             try
             {
-                _logger.LogWarning("Kernel Panic triggered manually via debug panel");
+                Logger.LogWarning("Kernel Panic triggered manually via debug panel");
                 
                 var customException = new Exception("Simulated Kernel Panic - This is a test exception triggered by the user via the debug panel");
                 
@@ -616,7 +614,7 @@ namespace THMI_Mod_Manager.Pages
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error triggering kernel panic: {ex.Message}");
+                Logger.LogError($"Error triggering kernel panic: {ex.Message}");
                 return new JsonResult(new { success = false, message = ex.Message });
             }
         }

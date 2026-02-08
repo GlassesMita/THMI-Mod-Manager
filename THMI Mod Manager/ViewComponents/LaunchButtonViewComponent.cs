@@ -8,12 +8,10 @@ namespace THMI_Mod_Manager.ViewComponents
     public class LaunchButtonViewComponent : ViewComponent
     {
         private readonly AppConfigManager _appConfig;
-        private readonly ILogger<LaunchButtonViewComponent> _logger;
 
-        public LaunchButtonViewComponent(AppConfigManager appConfig, ILogger<LaunchButtonViewComponent> logger)
+        public LaunchButtonViewComponent(AppConfigManager appConfig)
         {
             _appConfig = appConfig;
-            _logger = logger;
         }
 
         public IViewComponentResult Invoke()
@@ -57,7 +55,7 @@ namespace THMI_Mod_Manager.ViewComponents
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "检查进程状态时出错");
+                Logger.LogException(ex, "检查进程状态时出错");
                 return false;
             }
         }

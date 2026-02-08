@@ -136,6 +136,96 @@ namespace THMI_Mod_Manager.Services
             Log(message, level);
         }
 
+        public static void LogDebug(string message)
+        {
+            Log(message, LogLevel.Info);
+        }
+
+        public static void LogDebug(string format, params object[] args)
+        {
+            string message = args != null && args.Length > 0 ? string.Format(format, args) : format;
+            LogDebug(message);
+        }
+
+        public static void LogTrace(string message)
+        {
+            Log(message, LogLevel.Info);
+        }
+
+        public static void LogTrace(string format, params object[] args)
+        {
+            string message = args != null && args.Length > 0 ? string.Format(format, args) : format;
+            LogTrace(message);
+        }
+
+        public static void LogWarning(string format, params object[] args)
+        {
+            string message = args != null && args.Length > 0 ? string.Format(format, args) : format;
+            LogWarning(message);
+        }
+
+        public static void LogWarning(Exception ex, string message)
+        {
+            string fullMessage = $"{message}\nException: {ex.GetType().Name}: {ex.Message}";
+            if (ex.StackTrace != null)
+            {
+                fullMessage += $"\nStackTrace:\n{ex.StackTrace}";
+            }
+            Log(fullMessage, LogLevel.Warning);
+        }
+
+        public static void LogError(string format, params object[] args)
+        {
+            string message = args != null && args.Length > 0 ? string.Format(format, args) : format;
+            LogError(message);
+        }
+
+        public static void LogError(Exception ex, string message)
+        {
+            string fullMessage = $"{message}\nException: {ex.GetType().Name}: {ex.Message}";
+            if (ex.StackTrace != null)
+            {
+                fullMessage += $"\nStackTrace:\n{ex.StackTrace}";
+            }
+            Log(fullMessage, LogLevel.Error);
+        }
+
+        public static void LogDebug(Exception ex, string message)
+        {
+            string fullMessage = $"{message}\nException: {ex.GetType().Name}: {ex.Message}";
+            if (ex.StackTrace != null)
+            {
+                fullMessage += $"\nStackTrace:\n{ex.StackTrace}";
+            }
+            Log(fullMessage, LogLevel.Info);
+        }
+
+        public static void LogException(string message, Exception ex)
+        {
+            string fullMessage = $"{message}\nException: {ex.GetType().Name}: {ex.Message}";
+            if (ex.StackTrace != null)
+            {
+                fullMessage += $"\nStackTrace:\n{ex.StackTrace}";
+            }
+            Log(fullMessage, LogLevel.Ex);
+        }
+
+        public static void LogException(Exception ex, string message)
+        {
+            LogException(message, ex);
+        }
+
+        public static void LogException(Exception ex)
+        {
+            LogException("Exception occurred", ex);
+        }
+
+        public static void LogException(string format, Exception ex, params object[] args)
+        {
+            string message = args != null && args.Length > 0 ? string.Format(format, args) : format;
+            LogException(message, ex);
+        }
+
         private static string GetLevelShortTag(LogLevel level)
         {
             switch (level)

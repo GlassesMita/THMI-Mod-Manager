@@ -5,19 +5,17 @@ namespace THMI_Mod_Manager.Services
     public class SessionTimeMonitor : BackgroundService
     {
         private readonly SessionTimeService _sessionTimeService;
-        private readonly ILogger<SessionTimeMonitor> _logger;
         private const string PROCESS_NAME = "Touhou Mystia Izakaya";
         private readonly TimeSpan _checkInterval = TimeSpan.FromSeconds(5);
 
-        public SessionTimeMonitor(SessionTimeService sessionTimeService, ILogger<SessionTimeMonitor> logger)
+        public SessionTimeMonitor(SessionTimeService sessionTimeService)
         {
             _sessionTimeService = sessionTimeService;
-            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Session time monitor started");
+            Logger.LogInfo("Session time monitor started");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -27,7 +25,7 @@ namespace THMI_Mod_Manager.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error checking game status");
+                    Logger.LogException(ex, "Error checking game status");
                 }
 
                 await Task.Delay(_checkInterval, stoppingToken);
@@ -42,7 +40,7 @@ namespace THMI_Mod_Manager.Services
                 
                 if (!isGameRunning)
                 {
-                    _logger.LogInformation("Game process no longer running, stopping session time tracking");
+                    Logger.LogInfo("Game process no longer running, stopping session time tracking");
                     _sessionTimeService.StopSession();
                 }
             }
@@ -57,7 +55,7 @@ namespace THMI_Mod_Manager.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking game process status");
+                Logger.LogException(ex, "Error checking game process status");
                 return false;
             }
         }

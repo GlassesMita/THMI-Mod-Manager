@@ -8,15 +8,13 @@ namespace THMI_Mod_Manager.Controllers
     [ApiController]
     public class ModsController : ControllerBase
     {
-        private readonly ILogger<ModsController> _logger;
         private readonly ModService _modService;
         private readonly ModUpdateService _modUpdateService;
         private readonly AppConfigManager _appConfig;
         private readonly SessionTimeService _sessionTimeService;
 
-        public ModsController(ILogger<ModsController> logger, ModService modService, ModUpdateService modUpdateService, AppConfigManager appConfig, SessionTimeService sessionTimeService)
+        public ModsController(ModService modService, ModUpdateService modUpdateService, AppConfigManager appConfig, SessionTimeService sessionTimeService)
         {
-            _logger = logger;
             _modService = modService;
             _modUpdateService = modUpdateService;
             _appConfig = appConfig;
@@ -29,12 +27,12 @@ namespace THMI_Mod_Manager.Controllers
             try
             {
                 var mods = _modService.LoadMods();
-                _logger.LogInformation($"Retrieved {mods.Count} mods");
+                Logger.LogInfo($"Retrieved {mods.Count} mods");
                 return Ok(new { success = true, mods });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving mods");
+                Logger.LogException(ex, "Error retrieving mods");
                 return StatusCode(500, new { success = false, message = $"Failed to retrieve mods: {ex.Message}" });
             }
         }
@@ -56,7 +54,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error retrieving mod with id: {id}");
+                Logger.LogException(ex, $"Error retrieving mod with id: {id}");
                 return StatusCode(500, new { success = false, message = $"Failed to retrieve mod: {ex.Message}" });
             }
         }
@@ -87,7 +85,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error deleting mod with id: {id}");
+                Logger.LogException(ex, $"Error deleting mod with id: {id}");
                 return StatusCode(500, new { success = false, message = $"Failed to delete mod: {ex.Message}" });
             }
         }
@@ -98,12 +96,12 @@ namespace THMI_Mod_Manager.Controllers
             try
             {
                 var mods = _modService.LoadMods();
-                _logger.LogInformation($"Refreshed mods list: {mods.Count} mods found");
+                Logger.LogInfo($"Refreshed mods list: {mods.Count} mods found");
                 return Ok(new { success = true, mods });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error refreshing mods");
+                Logger.LogException(ex, "Error refreshing mods");
                 return StatusCode(500, new { success = false, message = $"Failed to refresh mods: {ex.Message}" });
             }
         }
@@ -131,7 +129,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error toggling mod: {request?.FileName}");
+                Logger.LogException(ex, $"Error toggling mod: {request?.FileName}");
                 return StatusCode(500, new { success = false, message = $"Failed to toggle mod: {ex.Message}" });
             }
         }
@@ -141,18 +139,13 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                var launcherLogger = _logger as ILogger<LauncherController>;
-                if (launcherLogger == null)
-                {
-                    return StatusCode(500, new { success = false, message = "Failed to create launcher logger" });
-                }
-                var launcherController = new LauncherController(launcherLogger, _appConfig, _sessionTimeService);
+                var launcherController = new LauncherController(_appConfig, _sessionTimeService);
                 var gameStatus = launcherController.GetStatus();
                 return gameStatus;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting game status");
+                Logger.LogException(ex, "Error getting game status");
                 return StatusCode(500, new { success = false, message = $"Failed to get game status: {ex.Message}" });
             }
         }
@@ -177,7 +170,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting localized strings");
+                Logger.LogException(ex, "Error getting localized strings");
                 return StatusCode(500, new { success = false, message = $"Failed to get localized strings: {ex.Message}" });
             }
         }
@@ -210,7 +203,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error installing mod from: {request?.FilePath}");
+                Logger.LogException(ex, $"Error installing mod from: {request?.FilePath}");
                 return StatusCode(500, new { success = false, message = $"安装 Mod 时出错: {ex.Message}" });
             }
         }
@@ -224,7 +217,7 @@ namespace THMI_Mod_Manager.Controllers
                 var updatedMods = await _modUpdateService.CheckForModUpdatesAsync(mods);
                 
                 var modsWithUpdates = updatedMods.Where(m => m.HasUpdateAvailable).ToList();
-                _logger.LogInformation($"Found {modsWithUpdates.Count} mods with available updates out of {updatedMods.Count} total mods");
+                Logger.LogInfo($"Found {modsWithUpdates.Count} mods with available updates out of {updatedMods.Count} total mods");
                 
                 return Ok(new { 
                     success = true, 
@@ -234,7 +227,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking for mod updates");
+                Logger.LogException(ex, "Error checking for mod updates");
                 return StatusCode(500, new { success = false, message = $"检查更新时出错: {ex.Message}" });
             }
         }
@@ -287,7 +280,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error updating mod {request?.FileName}");
+                Logger.LogException(ex, $"Error updating mod {request?.FileName}");
                 return StatusCode(500, new { success = false, message = $"更新 Mod 时出错: {ex.Message}" });
             }
         }
@@ -307,7 +300,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error getting update progress for mod {id}");
+                Logger.LogException(ex, $"Error getting update progress for mod {id}");
                 return StatusCode(500, new { success = false, message = $"获取更新进度时出错: {ex.Message}" });
             }
         }

@@ -67,7 +67,6 @@ namespace THMI_Mod_Manager.Pages
 
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
-        private readonly ILogger<SettingsModel> _logger;
         private readonly THMI_Mod_Manager.Services.AppConfigManager _appConfig;
 
         [BindProperty]
@@ -147,9 +146,8 @@ namespace THMI_Mod_Manager.Pages
         // BepInEx 配置项列表（按文件顺序）
         public List<BepInExConfigItem> BepInExConfigItems { get; set; } = new();
 
-        public SettingsModel(ILogger<SettingsModel> logger, THMI_Mod_Manager.Services.AppConfigManager appConfig)
+        public SettingsModel(THMI_Mod_Manager.Services.AppConfigManager appConfig)
         {
-            _logger = logger;
             _appConfig = appConfig;
         }
 
@@ -356,12 +354,12 @@ namespace THMI_Mod_Manager.Pages
         {
             try
             {
-                _logger.LogInformation($"Loading BepInEx settings from: {configPath}");
-                _logger.LogInformation($"File exists: {System.IO.File.Exists(configPath)}");
+                Logger.LogInfo($"Loading BepInEx settings from: {configPath}");
+                Logger.LogInfo($"File exists: {System.IO.File.Exists(configPath)}");
                 
                 var ini = IniFileHelper.LoadOrCreate(configPath);
                 
-                _logger.LogInformation($"INI data loaded, sections: {string.Join(", ", ini.GetModifiedKeys())}");
+                Logger.LogInfo($"INI data loaded, sections: {string.Join(", ", ini.GetModifiedKeys())}");
                 
                 BepInExConfigItems.Clear();
                 
@@ -629,11 +627,11 @@ namespace THMI_Mod_Manager.Pages
                     DefaultValue = "false"
                 });
                 
-                _logger.LogInformation($"Loaded {BepInExConfigItems.Count} BepInEx config items");
+                Logger.LogInfo($"Loaded {BepInExConfigItems.Count} BepInEx config items");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error loading BepInEx settings: {ex.Message}");
+                Logger.LogError($"Error loading BepInEx settings: {ex.Message}");
             }
         }
 
@@ -870,24 +868,24 @@ namespace THMI_Mod_Manager.Pages
                     if (ini.HasChanges())
                     {
                         ini.Save();
-                        _logger.LogInformation($"BepInEx settings saved to {bepInExConfigPath}");
+                        Logger.LogInfo($"BepInEx settings saved to {bepInExConfigPath}");
                         return new JsonResult(new { success = true, message = "BepInEx设置已保存，注释已保留!" });
                     }
                     else
                     {
-                        _logger.LogInformation($"No changes to save for BepInEx config {bepInExConfigPath}");
+                        Logger.LogInfo($"No changes to save for BepInEx config {bepInExConfigPath}");
                         return new JsonResult(new { success = true, message = "BepInEx设置无更改，配置文件保持不变!" });
                     }
                 }
                 else
                 {
-                    _logger.LogWarning($"BepInEx config path not found or invalid: {bepInExConfigPath}");
+                    Logger.LogWarning($"BepInEx config path not found or invalid: {bepInExConfigPath}");
                     return new JsonResult(new { success = false, message = "BepInEx配置文件路径无效或文件不存在" });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error saving BepInEx settings: {ex.Message}");
+                Logger.LogError($"Error saving BepInEx settings: {ex.Message}");
                 return new JsonResult(new { success = false, message = "BepInEx设置保存失败: " + ex.Message });
             }
         }

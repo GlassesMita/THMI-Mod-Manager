@@ -6,12 +6,10 @@ namespace THMI_Mod_Manager.Services
 {
     public class ModService
     {
-        private readonly ILogger<ModService> _logger;
         private readonly AppConfigManager _appConfig;
 
-        public ModService(ILogger<ModService> logger, AppConfigManager appConfig)
+        public ModService(AppConfigManager appConfig)
         {
-            _logger = logger;
             _appConfig = appConfig;
         }
 
@@ -22,7 +20,7 @@ namespace THMI_Mod_Manager.Services
 
             if (!Directory.Exists(pluginsPath))
             {
-                _logger.LogWarning($"BepInEx/plugins directory not found: {pluginsPath}");
+                Logger.LogWarning($"BepInEx/plugins directory not found: {pluginsPath}");
                 return mods;
             }
 
@@ -35,7 +33,7 @@ namespace THMI_Mod_Manager.Services
                 // Combine both lists
                 var allFiles = dllFiles.Concat(disabledFiles).ToArray();
                 
-                _logger.LogInformation($"Found {dllFiles.Length} DLL files and {disabledFiles.Length} disabled files in {pluginsPath}");
+                Logger.LogInfo($"Found {dllFiles.Length} DLL files and {disabledFiles.Length} disabled files in {pluginsPath}");
 
                 foreach (var dllFile in allFiles)
                 {
@@ -45,7 +43,7 @@ namespace THMI_Mod_Manager.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error loading mods from {pluginsPath}");
+                Logger.LogException($"Error loading mods from {pluginsPath}", ex);
             }
 
             return mods;
@@ -76,12 +74,12 @@ namespace THMI_Mod_Manager.Services
                     using var reader = new StreamReader(manifestPath);
                     var manifestData = TOML.Parse(reader);
                     
-                    _logger.LogInformation($"Parsed Manifest.toml from {manifestPath}");
-                    _logger.LogInformation($"Manifest sections: {string.Join(", ", manifestData.Keys)}");
+                    Logger.LogInfo($"Parsed Manifest.toml from {manifestPath}");
+                    Logger.LogInfo($"Manifest sections: {string.Join(", ", manifestData.Keys)}");
                     
                     if (manifestData.TryGetNode("Mod", out var modNode) && modNode is TomlTable modSection)
                     {
-                        _logger.LogInformation($"Found Mod section with {modSection.ChildrenCount} keys: {string.Join(", ", modSection.Keys)}");
+                        Logger.LogInfo($"Found Mod section with {modSection.ChildrenCount} keys: {string.Join(", ", modSection.Keys)}");
                         
                         if (modSection.TryGetNode("Name", out var nameNode) && nameNode is TomlString nameString)
                         {
@@ -124,18 +122,18 @@ namespace THMI_Mod_Manager.Services
                         }
                         
                         modInfo.IsValid = true;
-                        _logger.LogInformation($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
+                        Logger.LogInfo($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
                     }
                     else
                     {
                         modInfo.ErrorMessage = "Mod section not found in Manifest.toml";
-                        _logger.LogWarning($"Mod section not found in {manifestPath}. Available sections: {string.Join(", ", manifestData.Keys)}");
+                        Logger.LogWarning($"Mod section not found in {manifestPath}. Available sections: {string.Join(", ", manifestData.Keys)}");
                     }
                 }
                 else
                 {
                     modInfo.ErrorMessage = "Manifest.toml not found";
-                    _logger.LogWarning($"Manifest.toml not found at {manifestPath}");
+                    Logger.LogWarning($"Manifest.toml not found at {manifestPath}");
                     
                     var fileName = Path.GetFileNameWithoutExtension(dllPath);
                     if (fileName.EndsWith(".dll"))
@@ -149,7 +147,7 @@ namespace THMI_Mod_Manager.Services
             catch (Exception ex)
             {
                 modInfo.ErrorMessage = $"Error reading Manifest.toml: {ex.Message}";
-                _logger.LogError(ex, $"Error extracting mod info from {dllPath}");
+                Logger.LogException($"Error extracting mod info from {dllPath}", ex);
                 
                 var fileName = Path.GetFileNameWithoutExtension(dllPath);
                 if (fileName.EndsWith(".dll"))
@@ -172,7 +170,7 @@ namespace THMI_Mod_Manager.Services
                 var pluginsPath = Path.Combine(gamePath, "BepInEx", "plugins");
                 if (Directory.Exists(pluginsPath))
                 {
-                    _logger.LogInformation($"Using game plugins path: {pluginsPath}");
+                    Logger.LogInfo($"Using game plugins path: {pluginsPath}");
                     return pluginsPath;
                 }
             }
@@ -192,12 +190,12 @@ namespace THMI_Mod_Manager.Services
                 var fullPath = Path.GetFullPath(path);
                 if (Directory.Exists(fullPath))
                 {
-                    _logger.LogInformation($"Using workspace plugins path: {fullPath}");
+                    Logger.LogInfo($"Using workspace plugins path: {fullPath}");
                     return fullPath;
                 }
             }
             
-            _logger.LogWarning("BepInEx/plugins directory not found in any location");
+            Logger.LogWarning("BepInEx/plugins directory not found in any location");
             return possiblePaths[0];
         }
 
@@ -208,15 +206,15 @@ namespace THMI_Mod_Manager.Services
                 if (File.Exists(filePath))
                 {
                     File.Delete(filePath);
-                    _logger.LogInformation($"Successfully deleted mod: {filePath}");
+                    Logger.LogInfo($"Successfully deleted mod: {filePath}");
                     return true;
                 }
-                _logger.LogWarning($"Mod file not found: {filePath}");
+                Logger.LogWarning($"Mod file not found: {filePath}");
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error deleting mod: {filePath}");
+                Logger.LogException($"Error deleting mod: {filePath}", ex);
                 return false;
             }
         }
@@ -225,18 +223,18 @@ namespace THMI_Mod_Manager.Services
         {
             try
             {
-                _logger.LogInformation($"Attempting to toggle mod: {fileName}");
+                Logger.LogInfo($"Attempting to toggle mod: {fileName}");
                 
                 if (string.IsNullOrEmpty(fileName))
                 {
-                    _logger.LogError("File name is null or empty");
+                    Logger.LogError("File name is null or empty");
                     return false;
                 }
 
                 string? fullPath = FindModFileByName(fileName);
                 if (string.IsNullOrEmpty(fullPath))
                 {
-                    _logger.LogError($"Mod file not found by name: {fileName}");
+                    Logger.LogError($"Mod file not found by name: {fileName}");
                     return false;
                 }
 
@@ -247,36 +245,36 @@ namespace THMI_Mod_Manager.Services
                 if (fileNameOnly.EndsWith(".disabled"))
                 {
                     newFilePath = Path.Combine(directory, fileNameOnly.Substring(0, fileNameOnly.Length - ".disabled".Length));
-                    _logger.LogInformation($"Enabling mod: {fullPath} -> {newFilePath}");
+                    Logger.LogInfo($"Enabling mod: {fullPath} -> {newFilePath}");
                 }
                 else
                 {
                     newFilePath = Path.Combine(directory, fileNameOnly + ".disabled");
-                    _logger.LogInformation($"Disabling mod: {fullPath} -> {newFilePath}");
+                    Logger.LogInfo($"Disabling mod: {fullPath} -> {newFilePath}");
                 }
 
                 File.Move(fullPath, newFilePath);
-                _logger.LogInformation($"Successfully toggled mod: {newFilePath}");
+                Logger.LogInfo($"Successfully toggled mod: {newFilePath}");
                 return true;
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogError(ex, $"Access denied when toggling mod: {fileName}");
+                Logger.LogException($"Access denied when toggling mod: {fileName}", ex);
                 return false;
             }
             catch (DirectoryNotFoundException ex)
             {
-                _logger.LogError(ex, $"Directory not found when toggling mod: {fileName}");
+                Logger.LogException($"Directory not found when toggling mod: {fileName}", ex);
                 return false;
             }
             catch (IOException ex)
             {
-                _logger.LogError(ex, $"IO error when toggling mod: {fileName}");
+                Logger.LogException($"IO error when toggling mod: {fileName}", ex);
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Unexpected error toggling mod: {fileName}");
+                Logger.LogException($"Unexpected error toggling mod: {fileName}", ex);
                 return false;
             }
         }
@@ -342,7 +340,7 @@ namespace THMI_Mod_Manager.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error searching for mod file: {fileName}");
+                Logger.LogException(ex, $"Error searching for mod file: {fileName}");
             }
 
             return null; // File not found
@@ -352,17 +350,17 @@ namespace THMI_Mod_Manager.Services
         {
             try
             {
-                _logger.LogInformation($"Attempting to install mod from: {zipFilePath}");
+                Logger.LogInfo($"Attempting to install mod from: {zipFilePath}");
 
                 if (!File.Exists(zipFilePath))
                 {
-                    _logger.LogError($"Zip file not found: {zipFilePath}");
+                    Logger.LogError($"Zip file not found: {zipFilePath}");
                     return false;
                 }
 
                 if (!zipFilePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                 {
-                    _logger.LogError($"File is not a zip file: {zipFilePath}");
+                    Logger.LogError($"File is not a zip file: {zipFilePath}");
                     return false;
                 }
 
@@ -370,7 +368,7 @@ namespace THMI_Mod_Manager.Services
                 if (!Directory.Exists(pluginsPath))
                 {
                     Directory.CreateDirectory(pluginsPath);
-                    _logger.LogInformation($"Created plugins directory: {pluginsPath}");
+                    Logger.LogInfo($"Created plugins directory: {pluginsPath}");
                 }
 
                 var tempExtractPath = Path.Combine(Path.GetTempPath(), $"THMI_Mod_Install_{Guid.NewGuid()}");
@@ -382,18 +380,18 @@ namespace THMI_Mod_Manager.Services
                     using (var archive = ZipFile.OpenRead(zipFilePath))
                     {
                         archive.ExtractToDirectory(tempExtractPath, true);
-                        _logger.LogInformation($"Extracted zip file to: {tempExtractPath}");
+                        Logger.LogInfo($"Extracted zip file to: {tempExtractPath}");
                     }
 
                     var extractedFiles = Directory.GetFiles(tempExtractPath, "*.*", SearchOption.AllDirectories);
-                    _logger.LogInformation($"Found {extractedFiles.Length} files in zip archive");
+                    Logger.LogInfo($"Found {extractedFiles.Length} files in zip archive");
 
                     var dllFiles = Directory.GetFiles(tempExtractPath, "*.dll", SearchOption.AllDirectories);
                     var manifestFiles = Directory.GetFiles(tempExtractPath, "Manifest.*", SearchOption.AllDirectories);
 
                     if (dllFiles.Length == 0)
                     {
-                        _logger.LogError("No DLL files found in zip archive");
+                        Logger.LogError("No DLL files found in zip archive");
                         return false;
                     }
 
@@ -407,7 +405,7 @@ namespace THMI_Mod_Manager.Services
                             modSection.TryGetNode("IncludePDB", out var includePDBNode) && includePDBNode is TomlBoolean includePDBBool)
                         {
                             includePDB = includePDBBool.Value;
-                            _logger.LogInformation($"IncludePDB setting: {includePDB}");
+                            Logger.LogInfo($"IncludePDB setting: {includePDB}");
                         }
                     }
 
@@ -423,7 +421,7 @@ namespace THMI_Mod_Manager.Services
                         if (!Directory.Exists(modFolderDestPath))
                         {
                             Directory.CreateDirectory(modFolderDestPath);
-                            _logger.LogInformation($"Created mod folder: {modFolderDestPath}");
+                            Logger.LogInfo($"Created mod folder: {modFolderDestPath}");
                         }
 
                         if (File.Exists(dllDestPath))
@@ -434,11 +432,11 @@ namespace THMI_Mod_Manager.Services
                                 File.Delete(backupPath);
                             }
                             File.Move(dllDestPath, backupPath);
-                            _logger.LogInformation($"Backed up existing DLL: {dllDestPath} -> {backupPath}");
+                            Logger.LogInfo($"Backed up existing DLL: {dllDestPath} -> {backupPath}");
                         }
 
                         File.Copy(dllFile, dllDestPath, true);
-                        _logger.LogInformation($"Installed DLL: {dllFile} -> {dllDestPath}");
+                        Logger.LogInfo($"Installed DLL: {dllFile} -> {dllDestPath}");
 
                         var pdbFile = Path.Combine(Path.GetDirectoryName(dllFile) ?? tempExtractPath, pdbFileName);
                         if (includePDB && File.Exists(pdbFile))
@@ -453,11 +451,11 @@ namespace THMI_Mod_Manager.Services
                                     File.Delete(backupPath);
                                 }
                                 File.Move(pdbDestPath, backupPath);
-                                _logger.LogInformation($"Backed up existing PDB: {pdbDestPath} -> {backupPath}");
+                                Logger.LogInfo($"Backed up existing PDB: {pdbDestPath} -> {backupPath}");
                             }
                             
                             File.Copy(pdbFile, pdbDestPath, true);
-                            _logger.LogInformation($"Installed PDB: {pdbFile} -> {pdbDestPath}");
+                            Logger.LogInfo($"Installed PDB: {pdbFile} -> {pdbDestPath}");
                         }
 
                         foreach (var manifestFile in manifestFiles)
@@ -465,11 +463,11 @@ namespace THMI_Mod_Manager.Services
                             var manifestFileName = Path.GetFileName(manifestFile);
                             var manifestDestPath = Path.Combine(modFolderDestPath, manifestFileName);
                             File.Copy(manifestFile, manifestDestPath, true);
-                            _logger.LogInformation($"Installed manifest: {manifestFile} -> {manifestDestPath}");
+                            Logger.LogInfo($"Installed manifest: {manifestFile} -> {manifestDestPath}");
                         }
                     }
 
-                    _logger.LogInformation($"Successfully installed mod from: {zipFilePath}");
+                    Logger.LogInfo($"Successfully installed mod from: {zipFilePath}");
                     return true;
                 }
                 finally
@@ -479,18 +477,18 @@ namespace THMI_Mod_Manager.Services
                         try
                         {
                             Directory.Delete(tempExtractPath, true);
-                            _logger.LogInformation($"Cleaned up temp directory: {tempExtractPath}");
+                            Logger.LogInfo($"Cleaned up temp directory: {tempExtractPath}");
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning($"Failed to clean up temp directory: {ex.Message}");
+                            Logger.LogWarning($"Failed to clean up temp directory: {ex.Message}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error installing mod from: {zipFilePath}");
+                Logger.LogException(ex, $"Error installing mod from: {zipFilePath}");
                 return false;
             }
         }

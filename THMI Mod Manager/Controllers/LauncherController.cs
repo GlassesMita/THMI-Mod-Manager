@@ -12,7 +12,6 @@ namespace THMI_Mod_Manager.Controllers
     [ApiController]
     public class LauncherController : ControllerBase
     {
-        private readonly ILogger<LauncherController> _logger;
         private readonly AppConfigManager _appConfig;
         private readonly SessionTimeService _sessionTimeService;
         private const string STEAM_APP_ID = "1584090";
@@ -65,9 +64,8 @@ namespace THMI_Mod_Manager.Controllers
         private static extern int geteuid();
 #endif
 
-        public LauncherController(ILogger<LauncherController> logger, AppConfigManager appConfig, SessionTimeService sessionTimeService)
+        public LauncherController(AppConfigManager appConfig, SessionTimeService sessionTimeService)
         {
-            _logger = logger;
             _appConfig = appConfig;
             _sessionTimeService = sessionTimeService;
             
@@ -80,16 +78,16 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                _logger.LogInformation("Attempting to launch game...");
+                Logger.LogInfo("Attempting to launch game...");
 
                 if (IsProcessRunning())
                 {
-                    _logger.LogWarning("Game process is already running");
+                    Logger.LogWarning("Game process is already running");
                     return BadRequest("Process is already running");
                 }
 
                 _sessionTimeService.StartSession();
-                _logger.LogInformation("Session time tracking started");
+                Logger.LogInfo("Session time tracking started");
 
                 var launchModeValue = _appConfig.Get("[Game]LaunchMode", "steam_launch");
                 string launchMode = launchModeValue ?? "steam_launch";
@@ -97,17 +95,17 @@ namespace THMI_Mod_Manager.Controllers
                 var userSpecifiedExePathValue = _appConfig.Get("[Game]LauncherPath", "");
                 string userSpecifiedExePath = userSpecifiedExePathValue ?? "";
 
-                _logger.LogInformation($"Launch mode: {launchMode}");
+                Logger.LogInfo($"Launch mode: {launchMode}");
 
                 if (launchMode == "steam_launch")
                 {
                     if (!IsSteamRunning())
                     {
-                        _logger.LogInformation("Steam is not running, will attempt to start Steam and then launch the game");
+                        Logger.LogInfo("Steam is not running, will attempt to start Steam and then launch the game");
                         bool steamStarted = await StartSteamAsync();
                         if (!steamStarted)
                         {
-                            _logger.LogWarning("Failed to start Steam, but will attempt to launch game anyway");
+                            Logger.LogWarning("Failed to start Steam, but will attempt to launch game anyway");
                         }
                         else
                         {
@@ -116,12 +114,12 @@ namespace THMI_Mod_Manager.Controllers
                     }
                     else
                     {
-                        _logger.LogInformation("Steam is already running");
+                        Logger.LogInfo("Steam is already running");
                     }
 
                     // Launch game using Steam official protocol
                     var steamUrl = $"steam://rungameid/{STEAM_APP_ID}";
-                    _logger.LogInformation($"[Compliance Notice] Initiating Steam official protocol: {steamUrl}, user must ensure they have valid authorization for this game");
+                    Logger.LogInfo($"[Compliance Notice] Initiating Steam official protocol: {steamUrl}, user must ensure they have valid authorization for this game");
 
                     try
                         {
@@ -133,15 +131,15 @@ namespace THMI_Mod_Manager.Controllers
                                     UseShellExecute = true,
                                     CreateNoWindow = true
                                 };
-                                _logger.LogInformation("Windows: Steam protocol launch configuration complete, starting...");
+                                Logger.LogInfo("Windows: Steam protocol launch configuration complete, starting...");
                                 var process = Process.Start(psi);
-                                _logger.LogInformation($"Process launch result: {(process != null ? "Success" : "Failed")}");
+                                Logger.LogInfo($"Process launch result: {(process != null ? "Success" : "Failed")}");
                                 
                                 // Note: Steam protocol launch doesn't give us the actual game process
                                 // So we need to search by process name after the game starts
                                 if (process != null)
                                 {
-                                    _logger.LogInformation($"Steam launcher process ID: {process.Id}");
+                                    Logger.LogInfo($"Steam launcher process ID: {process.Id}");
                                 }
 
                                 // Start background task to modify window title after launch
@@ -153,7 +151,7 @@ namespace THMI_Mod_Manager.Controllers
                                     }
                                     catch (Exception ex)
                                     {
-                                        _logger.LogError(ex, "Error in background window title modification");
+                                        Logger.LogException(ex, "Error in background window title modification");
                                     }
                                 });
                             }
@@ -167,18 +165,18 @@ namespace THMI_Mod_Manager.Controllers
                                 UseShellExecute = false,
                                 CreateNoWindow = true
                             };
-                            _logger.LogInformation("Non-Windows: Steam protocol launch configuration complete, starting...");
+                            Logger.LogInfo("Non-Windows: Steam protocol launch configuration complete, starting...");
                             var process = Process.Start(psi);
-                            _logger.LogInformation($"Process launch result: {(process != null ? "Success" : "Failed")}");
+                            Logger.LogInfo($"Process launch result: {(process != null ? "Success" : "Failed")}");
                             if (process != null)
                             {
-                                _logger.LogInformation($"Process ID: {process.Id}");
+                                Logger.LogInfo($"Process ID: {process.Id}");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Exception occurred during Steam protocol launch");
+                        Logger.LogException(ex, "Exception occurred during Steam protocol launch");
                         return StatusCode(500, new { success = false, message = $"Steam launch failed: {ex.Message}" });
                     }
                 }
@@ -190,13 +188,13 @@ namespace THMI_Mod_Manager.Controllers
                         // Use user-specified external program path from configuration
                         if (string.IsNullOrEmpty(userSpecifiedExePath))
                         {
-                            _logger.LogError("[Compliance Notice] User-specified external program path not found, please select a valid authorized program path in settings");
+                            Logger.LogError("[Compliance Notice] User-specified external program path not found, please select a valid authorized program path in settings");
                             return StatusCode(500, new { success = false, message = "User-specified external program path not found, please select in settings" });
                         }
 
                         if (!System.IO.File.Exists(userSpecifiedExePath))
                         {
-                            _logger.LogError($"[Compliance Notice] User-specified external program path does not exist: {userSpecifiedExePath}");
+                            Logger.LogError($"[Compliance Notice] User-specified external program path does not exist: {userSpecifiedExePath}");
                             return StatusCode(500, new { success = false, message = $"User-specified external program path does not exist: {userSpecifiedExePath}" });
                         }
 
@@ -209,13 +207,13 @@ namespace THMI_Mod_Manager.Controllers
                                 CreateNoWindow = true
                             };
                             // Core compliance log: clearly state user bears legal responsibility
-                            _logger.LogInformation($"[Compliance Notice] Windows: Launching user-specified external program {userSpecifiedExePath}, user must ensure they have valid authorization for this program, this tool assumes no related liability");
-                            _logger.LogInformation("Windows: User-specified external program launch configuration complete, starting...");
+                            Logger.LogInfo($"[Compliance Notice] Windows: Launching user-specified external program {userSpecifiedExePath}, user must ensure they have valid authorization for this program, this tool assumes no related liability");
+                            Logger.LogInfo("Windows: User-specified external program launch configuration complete, starting...");
                             var process = Process.Start(psi);
-                            _logger.LogInformation($"Process launch result: {(process != null ? "Success" : "Failed")}");
+                            Logger.LogInfo($"Process launch result: {(process != null ? "Success" : "Failed")}");
                             if (process != null)
                             {
-                                _logger.LogInformation($"Process ID: {process.Id}");
+                                Logger.LogInfo($"Process ID: {process.Id}");
                             }
 
                             // Start background task to modify window title after launch
@@ -227,20 +225,20 @@ namespace THMI_Mod_Manager.Controllers
                                 }
                                 catch (Exception ex)
                                 {
-                                    _logger.LogError(ex, "Error in background window title modification");
+                                    Logger.LogException(ex, "Error in background window title modification");
                                 }
                             });
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, $"Exception occurred during user-specified external program launch: {userSpecifiedExePath}");
+                            Logger.LogException(ex, $"Exception occurred during user-specified external program launch: {userSpecifiedExePath}");
                             return StatusCode(500, new { success = false, message = $"External program launch failed: {ex.Message}" });
                         }
                     }
                     else
                     {
                         // Non-Windows platforms do not support user-specified external program launch
-                        _logger.LogError("Non-Windows platforms do not support user-specified external program launch");
+                        Logger.LogError("Non-Windows platforms do not support user-specified external program launch");
                         return StatusCode(500, new { success = false, message = "Non-Windows platforms do not support user-specified external program launch" });
                     }
                 }
@@ -249,7 +247,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while launching process");
+                Logger.LogException(ex, "Error occurred while launching process");
                 return StatusCode(500, new { success = false, message = $"Launch failed: {ex.Message}" });
             }
         }
@@ -265,7 +263,7 @@ namespace THMI_Mod_Manager.Controllers
                 }
 
                 _sessionTimeService.StopSession();
-                _logger.LogInformation("Session time tracking stopped");
+                Logger.LogInfo("Session time tracking stopped");
 
                 var processes = Process.GetProcessesByName(PROCESS_NAME);
                 int stoppedCount = 0;
@@ -276,11 +274,11 @@ namespace THMI_Mod_Manager.Controllers
                     {
                         process.Kill();
                         stoppedCount++;
-                        _logger.LogInformation($"Stopped process: {PROCESS_NAME} (PID: {process.Id})");
+                        Logger.LogInfo($"Stopped process: {PROCESS_NAME} (PID: {process.Id})");
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, $"Error occurred while stopping process {PROCESS_NAME}");
+                        Logger.LogException(ex, $"Error occurred while stopping process {PROCESS_NAME}");
                     }
                 }
 
@@ -295,7 +293,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while stopping process");
+                Logger.LogException(ex, "Error occurred while stopping process");
                 return StatusCode(500, new { success = false, message = "Failed to stop process" });
             }
         }
@@ -367,7 +365,7 @@ namespace THMI_Mod_Manager.Controllers
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "获取网络接口信息时出错");
+                        Logger.LogWarning(ex, "获取网络接口信息时出错");
                     }
                 }
 
@@ -386,7 +384,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "获取网络状态时发生错误");
+                Logger.LogError(ex, "获取网络状态时发生错误");
                 return Ok(new
                 {
                     hasEthernet = false,
@@ -444,7 +442,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "无法使用 netsh 获取无线网络 SSID");
+                Logger.LogDebug(ex, "无法使用 netsh 获取无线网络 SSID");
             }
             
             // 备用：尝试使用网络接口名称
@@ -462,7 +460,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "无法使用备用方法获取无线网络 SSID");
+                Logger.LogDebug(ex, "无法使用备用方法获取无线网络 SSID");
             }
             
             return "";
@@ -560,7 +558,7 @@ namespace THMI_Mod_Manager.Controllers
                 var isAdmin = PermissionHelper.IsAdministrator();
                 var permissionStatus = PermissionHelper.GetPermissionStatus();
                 
-                _logger.LogInformation($"权限检查请求 - 管理员权限: {isAdmin}");
+                Logger.LogInfo($"权限检查请求 - 管理员权限: {isAdmin}");
                 
                 return Ok(new 
                 { 
@@ -578,7 +576,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "权限检查失败");
+                Logger.LogError(ex, "权限检查失败");
                 return StatusCode(500, new { success = false, message = $"权限检查失败: {ex.Message}" });
             }
         }
@@ -593,14 +591,14 @@ namespace THMI_Mod_Manager.Controllers
                     return Ok(new { success = true, message = "已经具有管理员权限", alreadyElevated = true });
                 }
 
-                _logger.LogInformation("用户请求提升权限");
+                Logger.LogInfo("用户请求提升权限");
                 
                 // 尝试重新启动为管理员
                 bool success = PermissionHelper.RestartAsAdministrator();
                 
                 if (success)
                 {
-                    _logger.LogInformation("权限提升成功，程序将重新启动");
+                    Logger.LogInfo("权限提升成功，程序将重新启动");
                     
                     // 通知前端程序即将重新启动
                     return Ok(new 
@@ -613,7 +611,7 @@ namespace THMI_Mod_Manager.Controllers
                 }
                 else
                 {
-                    _logger.LogWarning("用户取消了权限提升或提升失败");
+                    Logger.LogWarning("用户取消了权限提升或提升失败");
                     return Ok(new 
                     { 
                         success = false, 
@@ -625,7 +623,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "权限提升失败");
+                Logger.LogError(ex, "权限提升失败");
                 return StatusCode(500, new { success = false, message = $"权限提升失败: {ex.Message}" });
             }
         }
@@ -638,13 +636,13 @@ namespace THMI_Mod_Manager.Controllers
                 // Only output detailed logs in debug mode to avoid frequent logging in production
                 if (System.Diagnostics.Debugger.IsAttached)
                 {
-                    _logger.LogDebug($"Detected {processes.Length} game process(es)");
+                    Logger.LogDebug($"Detected {processes.Length} game process(es)");
                 }
                 return processes.Length > 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while checking process status");
+                Logger.LogError(ex, "Error occurred while checking process status");
                 return false;
             }
         }
@@ -665,7 +663,7 @@ namespace THMI_Mod_Manager.Controllers
                 {
                     if (System.Diagnostics.Debugger.IsAttached)
                     {
-                        _logger.LogDebug("Steam executable not found, using basic process detection");
+                        Logger.LogDebug("Steam executable not found, using basic process detection");
                     }
                     return steamProcesses.Length > 0;
                 }
@@ -702,7 +700,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while checking Steam process status");
+                Logger.LogError(ex, "Error occurred while checking Steam process status");
                 return false;
             }
         }
@@ -711,7 +709,7 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                _logger.LogInformation("Attempting to start Steam...");
+                Logger.LogInfo("Attempting to start Steam...");
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
@@ -728,37 +726,37 @@ namespace THMI_Mod_Manager.Controllers
                     var process = Process.Start(psi);
                     if (process != null)
                     {
-                        _logger.LogInformation($"Steam launch process started with PID: {process.Id}");
+                        Logger.LogInfo($"Steam launch process started with PID: {process.Id}");
 
                         await Task.Delay(5000);
 
                         if (!process.HasExited)
                         {
-                            _logger.LogInformation("Steam appears to be starting successfully");
+                            Logger.LogInfo("Steam appears to be starting successfully");
                             return true;
                         }
                         else
                         {
                             var error = await process.StandardError.ReadToEndAsync();
-                            _logger.LogError($"Steam launch failed. Exit code: {process.ExitCode}, Error: {error}");
+                            Logger.LogError($"Steam launch failed. Exit code: {process.ExitCode}, Error: {error}");
                             return false;
                         }
                     }
                     else
                     {
-                        _logger.LogError("Failed to start Steam process");
+                        Logger.LogError("Failed to start Steam process");
                         return false;
                     }
                 }
                 else
                 {
-                    _logger.LogWarning("Steam auto-start is only supported on Windows");
+                    Logger.LogWarning("Steam auto-start is only supported on Windows");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while starting Steam");
+                Logger.LogError(ex, "Error occurred while starting Steam");
                 return false;
             }
         }
@@ -798,7 +796,7 @@ namespace THMI_Mod_Manager.Controllers
                     {
                         if (System.Diagnostics.Debugger.IsAttached)
                         {
-                            _logger.LogDebug($"Unable to get Steam process path: {ex.Message}");
+                            Logger.LogDebug($"Unable to get Steam process path: {ex.Message}");
                         }
                     }
                 }
@@ -807,7 +805,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while finding Steam executable");
+                Logger.LogError(ex, "Error occurred while finding Steam executable");
                 return null;
             }
         }
@@ -825,7 +823,7 @@ namespace THMI_Mod_Manager.Controllers
             
             if (!modifyTitle)
             {
-                _logger.LogInformation("窗口标题修改功能已禁用，跳过标题修改");
+                Logger.LogInfo("窗口标题修改功能已禁用，跳过标题修改");
                 return;
             }
 
@@ -834,17 +832,17 @@ namespace THMI_Mod_Manager.Controllers
                 // 检查管理员权限
                 if (!PermissionHelper.IsAdministrator())
                 {
-                    _logger.LogWarning("当前程序没有管理员权限，可能导致窗口标题修改失败");
-                    _logger.LogWarning("建议以管理员身份运行此程序");
-                    _logger.LogWarning("Discord 叠加面板若报告错误则表明存在权限问题");
+                    Logger.LogWarning("当前程序没有管理员权限，可能导致窗口标题修改失败");
+                    Logger.LogWarning("建议以管理员身份运行此程序");
+                    Logger.LogWarning("Discord 叠加面板若报告错误则表明存在权限问题");
                     
                     // 提供更详细的权限状态信息
                     var permissionStatus = PermissionHelper.GetPermissionStatus();
-                    _logger.LogInformation($"权限状态: {permissionStatus}");
+                    Logger.LogInfo($"权限状态: {permissionStatus}");
                 }
                 else
                 {
-                    _logger.LogInformation("程序以管理员权限运行，应该可以正常修改窗口标题");
+                    Logger.LogInfo("程序以管理员权限运行，应该可以正常修改窗口标题");
                 }
 
                 const int maxAttempts = 60; // 60 seconds timeout (increased from 30)
@@ -875,13 +873,13 @@ namespace THMI_Mod_Manager.Controllers
                         // 检查是否可以修改目标进程
                         if (!PermissionHelper.CanModifyProcess(gameProcesses[0]))
                         {
-                            _logger.LogWarning("无法修改目标游戏进程 - 权限不足");
-                            _logger.LogWarning($"目标进程PID: {gameProcesses[0].Id}, 名称: {gameProcesses[0].ProcessName}");
-                            _logger.LogWarning("建议：以管理员身份重新运行此程序");
+                            Logger.LogWarning("无法修改目标游戏进程 - 权限不足");
+                            Logger.LogWarning($"目标进程PID: {gameProcesses[0].Id}, 名称: {gameProcesses[0].ProcessName}");
+                            Logger.LogWarning("建议：以管理员身份重新运行此程序");
                             return; // 退出修改尝试
                         }
                         
-                        _logger.LogInformation($"找到游戏进程: {gameProcesses[0].ProcessName} (PID: {gameProcesses[0].Id})");
+                        Logger.LogInfo($"找到游戏进程: {gameProcesses[0].ProcessName} (PID: {gameProcesses[0].Id})");
                         
                         // Multiple detection attempts for the same process
                         for (int cycle = 0; cycle < detectionCycles && !titleModified; cycle++)
@@ -910,7 +908,7 @@ namespace THMI_Mod_Manager.Controllers
                                             string newTitle = MODDED_PREFIX + originalTitle;
                                             if (SetWindowText(targetWindow, newTitle))
                                             {
-                                                _logger.LogInformation($"游戏窗口标题已修改: '{originalTitle}' -> '{newTitle}'");
+                                                Logger.LogInfo($"游戏窗口标题已修改: '{originalTitle}' -> '{newTitle}'");
                                                 titleModified = true;
                                                 consecutiveFailures = 0;
                                                 break; // Exit detection cycle on success
@@ -924,16 +922,16 @@ namespace THMI_Mod_Manager.Controllers
                                                 int errorCode = Marshal.GetLastWin32Error();
                                                 string errorMessage = GetWin32ErrorMessage(errorCode);
                                                 
-                                                _logger.LogWarning($"SetWindowText 失败 (错误代码: {errorCode}): {errorMessage}");
+                                                Logger.LogWarning($"SetWindowText 失败 (错误代码: {errorCode}): {errorMessage}");
                                                 
                                                 if (consecutiveFailures >= 5)
                                                 {
-                                                    _logger.LogWarning($"连续 {consecutiveFailures} 次修改失败");
-                                                    _logger.LogWarning("可能的原因：");
-                                                    _logger.LogWarning("1. 程序没有管理员权限");
-                                                    _logger.LogWarning("2. 目标窗口属于更高权限的进程");
-                                                    _logger.LogWarning("3. 目标窗口被其他程序保护");
-                                                    _logger.LogWarning("4. 游戏使用了自定义窗口管理器");
+                                                    Logger.LogWarning($"连续 {consecutiveFailures} 次修改失败");
+                                                    Logger.LogWarning("可能的原因：");
+                                                    Logger.LogWarning("1. 程序没有管理员权限");
+                                                    Logger.LogWarning("2. 目标窗口属于更高权限的进程");
+                                                    Logger.LogWarning("3. 目标窗口被其他程序保护");
+                                                    Logger.LogWarning("4. 游戏使用了自定义窗口管理器");
                                                     break;
                                                 }
                                             }
@@ -950,7 +948,7 @@ namespace THMI_Mod_Manager.Controllers
                                 else if (!string.IsNullOrEmpty(originalTitle))
                                 {
                                     // Found a window but it's not our target game window
-                                    _logger.LogDebug($"检测到非目标窗口: '{originalTitle}'，继续搜索");
+                                    Logger.LogDebug($"检测到非目标窗口: '{originalTitle}'，继续搜索");
                                     consecutiveFailures = 0;
                                 }
                             }
@@ -970,7 +968,7 @@ namespace THMI_Mod_Manager.Controllers
 
                 if (!titleModified)
                 {
-                    _logger.LogWarning("未能找到游戏窗口或修改标题 (超时 60 秒)");
+                    Logger.LogWarning("未能找到游戏窗口或修改标题 (超时 60 秒)");
                     
                     // 发送浏览器通知
                     var titleModifyFailed = _appConfig.GetLocalized("Notifications:TitleModifyFailed", "标题修改失败");
@@ -988,7 +986,7 @@ namespace THMI_Mod_Manager.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "修改游戏窗口标题时发生错误");
+                Logger.LogError(ex, "修改游戏窗口标题时发生错误");
             }
         }
 
@@ -1238,19 +1236,19 @@ namespace THMI_Mod_Manager.Controllers
             {
                 if (!IsRunningAsAdministrator())
                 {
-                    _logger.LogInformation("正在尝试请求管理员权限...");
-                    _logger.LogInformation("请确保在UAC提示时点击'是'以授予权限");
+                    Logger.LogInfo("正在尝试请求管理员权限...");
+                    Logger.LogInfo("请确保在UAC提示时点击'是'以授予权限");
                     
                     // 记录当前进程的详细信息
                     var currentProcess = Process.GetCurrentProcess();
-                    _logger.LogInformation($"当前进程: {currentProcess.ProcessName} (PID: {currentProcess.Id})");
-                    _logger.LogInformation($"启动时间: {currentProcess.StartTime}");
-                    _logger.LogInformation($"工作目录: {Environment.CurrentDirectory}");
+                    Logger.LogInfo($"当前进程: {currentProcess.ProcessName} (PID: {currentProcess.Id})");
+                    Logger.LogInfo($"启动时间: {currentProcess.StartTime}");
+                    Logger.LogInfo($"工作目录: {Environment.CurrentDirectory}");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"权限检查失败: {ex.Message}");
+                Logger.LogWarning($"权限检查失败: {ex.Message}");
             }
         }
 

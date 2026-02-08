@@ -7,7 +7,6 @@ namespace THMI_Mod_Manager.Services
 {
     public class ModServiceOptimized
     {
-        private readonly ILogger<ModServiceOptimized> _logger;
         private readonly AppConfigManager _appConfig;
         
         // Cache for mod info data to avoid repeated file reading
@@ -25,9 +24,8 @@ namespace THMI_Mod_Manager.Services
             public DateTime LastModified { get; set; }
         }
 
-        public ModServiceOptimized(ILogger<ModServiceOptimized> logger, AppConfigManager appConfig)
+        public ModServiceOptimized(AppConfigManager appConfig)
         {
-            _logger = logger;
             _appConfig = appConfig;
         }
 
@@ -38,7 +36,7 @@ namespace THMI_Mod_Manager.Services
 
             if (!Directory.Exists(pluginsPath))
             {
-                _logger.LogWarning($"BepInEx/plugins directory not found: {pluginsPath}");
+                Logger.LogWarning($"BepInEx/plugins directory not found: {pluginsPath}");
                 return mods;
             }
 
@@ -49,7 +47,7 @@ namespace THMI_Mod_Manager.Services
                 
                 var allFiles = dllFiles.Concat(disabledFiles).ToArray();
                 
-                _logger.LogInformation($"Found {dllFiles.Length} DLL files and {disabledFiles.Length} disabled files in {pluginsPath}");
+                Logger.LogInfo($"Found {dllFiles.Length} DLL files and {disabledFiles.Length} disabled files in {pluginsPath}");
 
                 foreach (var dllFile in allFiles)
                 {
@@ -57,17 +55,17 @@ namespace THMI_Mod_Manager.Services
                     mods.Add(modInfo);
                     if (modInfo.IsValid)
                     {
-                        _logger.LogInformation($"Successfully loaded mod: {modInfo.Name} v{modInfo.Version} (File: {modInfo.FileName})");
+                        Logger.LogInfo($"Successfully loaded mod: {modInfo.Name} v{modInfo.Version} (File: {modInfo.FileName})");
                     }
                     else
                     {
-                        _logger.LogWarning($"Failed to load mod {modInfo.FileName}: {modInfo.ErrorMessage}");
+                        Logger.LogWarning($"Failed to load mod {modInfo.FileName}: {modInfo.ErrorMessage}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error loading mods from {pluginsPath}");
+                Logger.LogException(ex, $"Error loading mods from {pluginsPath}");
             }
 
             return mods;
@@ -85,7 +83,7 @@ namespace THMI_Mod_Manager.Services
                 if (cachedInfo.FileSize == fileSize && cachedInfo.LastModified == lastModified && 
                     DateTime.UtcNow - cachedInfo.CacheTime < _cacheTimeout)
                 {
-                    _logger.LogInformation($"Using cached mod info for: {dllPath}");
+                    Logger.LogDebug($"Using cached mod info for: {dllPath}");
                     return cachedInfo.ModInfo;
                 }
                 
@@ -115,12 +113,12 @@ namespace THMI_Mod_Manager.Services
                     using var reader = new StreamReader(manifestPath);
                     var manifestData = TOML.Parse(reader);
                     
-                    _logger.LogInformation($"Parsed Manifest.toml from {manifestPath}");
-                    _logger.LogInformation($"Manifest sections: {string.Join(", ", manifestData.Keys)}");
+                    Logger.LogDebug($"Parsed Manifest.toml from {manifestPath}");
+                    Logger.LogDebug($"Manifest sections: {string.Join(", ", manifestData.Keys)}");
                     
                     if (manifestData.TryGetNode("Mod", out var modNode) && modNode is TomlTable modSection)
                     {
-                        _logger.LogInformation($"Found Mod section with {modSection.ChildrenCount} keys: {string.Join(", ", modSection.Keys)}");
+                        Logger.LogDebug($"Found Mod section with {modSection.ChildrenCount} keys: {string.Join(", ", modSection.Keys)}");
                         
                         if (modSection.TryGetNode("Name", out var nameNode) && nameNode is TomlString nameString)
                         {
@@ -163,18 +161,18 @@ namespace THMI_Mod_Manager.Services
                         }
                         
                         modInfo.IsValid = true;
-                        _logger.LogInformation($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
+                        Logger.LogInfo($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
                     }
                     else
                     {
                         modInfo.ErrorMessage = "Mod section not found in Manifest.toml";
-                        _logger.LogWarning($"Mod section not found in {manifestPath}. Available sections: {string.Join(", ", manifestData.Keys)}");
+                        Logger.LogWarning($"Mod section not found in {manifestPath}. Available sections: {string.Join(", ", manifestData.Keys)}");
                     }
                 }
                 else
                 {
                     modInfo.ErrorMessage = "Manifest.toml not found";
-                    _logger.LogWarning($"Manifest.toml not found at {manifestPath}");
+                    Logger.LogWarning($"Manifest.toml not found at {manifestPath}");
                     
                     var fileName = Path.GetFileNameWithoutExtension(dllPath);
                     if (fileName.EndsWith(".dll"))
@@ -188,7 +186,7 @@ namespace THMI_Mod_Manager.Services
             catch (Exception ex)
             {
                 modInfo.ErrorMessage = $"Error reading Manifest.toml: {ex.Message}";
-                _logger.LogError(ex, $"Error extracting mod info from {dllPath}");
+                Logger.LogException(ex, $"Error extracting mod info from {dllPath}");
                 
                 var fileName = Path.GetFileNameWithoutExtension(dllPath);
                 if (fileName.EndsWith(".dll"))
@@ -221,7 +219,7 @@ namespace THMI_Mod_Manager.Services
                 var pluginsPath = Path.Combine(gamePath, "BepInEx", "plugins");
                 if (Directory.Exists(pluginsPath))
                 {
-                    _logger.LogInformation($"Using game plugins path: {pluginsPath}");
+                    Logger.LogInfo($"Using game plugins path: {pluginsPath}");
                     return pluginsPath;
                 }
             }
@@ -241,12 +239,12 @@ namespace THMI_Mod_Manager.Services
                 var fullPath = Path.GetFullPath(path);
                 if (Directory.Exists(fullPath))
                 {
-                    _logger.LogInformation($"Using workspace plugins path: {fullPath}");
+                    Logger.LogInfo($"Using workspace plugins path: {fullPath}");
                     return fullPath;
                 }
             }
             
-            _logger.LogWarning("BepInEx/plugins directory not found in any location");
+            Logger.LogWarning("BepInEx/plugins directory not found in any location");
             return possiblePaths[0];
         }
 
@@ -260,15 +258,15 @@ namespace THMI_Mod_Manager.Services
                     _modInfoCache.TryRemove(cacheKey, out _);
                     
                     File.Delete(filePath);
-                    _logger.LogInformation($"Successfully deleted mod: {filePath}");
+                    Logger.LogInfo($"Successfully deleted mod: {filePath}");
                     return true;
                 }
-                _logger.LogWarning($"Mod file not found: {filePath}");
+                Logger.LogWarning($"Mod file not found: {filePath}");
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error deleting mod: {filePath}");
+                Logger.LogException(ex, $"Error deleting mod: {filePath}");
                 return false;
             }
         }
@@ -277,18 +275,18 @@ namespace THMI_Mod_Manager.Services
         {
             try
             {
-                _logger.LogInformation($"Attempting to toggle mod: {fileName}");
+                Logger.LogInfo($"Attempting to toggle mod: {fileName}");
                 
                 if (string.IsNullOrEmpty(fileName))
                 {
-                    _logger.LogError("File name is null or empty");
+                    Logger.LogError("File name is null or empty");
                     return false;
                 }
 
                 string? fullPath = FindModFileByName(fileName);
                 if (string.IsNullOrEmpty(fullPath))
                 {
-                    _logger.LogError($"Mod file not found by name: {fileName}");
+                    Logger.LogError($"Mod file not found by name: {fileName}");
                     return false;
                 }
 
@@ -299,12 +297,12 @@ namespace THMI_Mod_Manager.Services
                 if (fileNameOnly.EndsWith(".disabled"))
                 {
                     newFilePath = Path.Combine(directory, fileNameOnly.Substring(0, fileNameOnly.Length - ".disabled".Length));
-                    _logger.LogInformation($"Enabling mod: {fullPath} -> {newFilePath}");
+                    Logger.LogInfo($"Enabling mod: {fullPath} -> {newFilePath}");
                 }
                 else
                 {
                     newFilePath = Path.Combine(directory, fileNameOnly + ".disabled");
-                    _logger.LogInformation($"Disabling mod: {fullPath} -> {newFilePath}");
+                    Logger.LogInfo($"Disabling mod: {fullPath} -> {newFilePath}");
                 }
 
                 File.Move(fullPath, newFilePath);
@@ -312,27 +310,27 @@ namespace THMI_Mod_Manager.Services
                 var cacheKey = fullPath.ToLowerInvariant();
                 _modInfoCache.TryRemove(cacheKey, out _);
                 
-                _logger.LogInformation($"Successfully toggled mod: {newFilePath}");
+                Logger.LogInfo($"Successfully toggled mod: {newFilePath}");
                 return true;
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogError(ex, $"Access denied when toggling mod: {fileName}");
+                Logger.LogException(ex, $"Access denied when toggling mod: {fileName}");
                 return false;
             }
             catch (DirectoryNotFoundException ex)
             {
-                _logger.LogError(ex, $"Directory not found when toggling mod: {fileName}");
+                Logger.LogException(ex, $"Directory not found when toggling mod: {fileName}");
                 return false;
             }
             catch (IOException ex)
             {
-                _logger.LogError(ex, $"IO error when toggling mod: {fileName}");
+                Logger.LogException(ex, $"IO error when toggling mod: {fileName}");
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Unexpected error toggling mod: {fileName}");
+                Logger.LogException(ex, $"Unexpected error toggling mod: {fileName}");
                 return false;
             }
         }
@@ -393,7 +391,7 @@ namespace THMI_Mod_Manager.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error searching for mod file: {fileName}");
+                Logger.LogException(ex, $"Error searching for mod file: {fileName}");
             }
 
             return null;

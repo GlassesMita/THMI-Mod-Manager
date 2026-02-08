@@ -9,15 +9,13 @@ namespace THMI_Mod_Manager.Services
 {
     public class ModUpdateService
     {
-        private readonly ILogger<ModUpdateService> _logger;
         private readonly AppConfigManager _appConfig;
         private readonly HttpClient _httpClient;
         private const string ThunderStoreApiUrl = "https://thunderstore.io/c/touhou-mystia-izakaya/p/{packageId}";
         private static readonly Dictionary<string, UpdateProgress> _updateProgress = new();
 
-        public ModUpdateService(ILogger<ModUpdateService> logger, AppConfigManager appConfig, HttpClient httpClient)
+        public ModUpdateService(AppConfigManager appConfig, HttpClient httpClient)
         {
-            _logger = logger;
             _appConfig = appConfig;
             _httpClient = httpClient;
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
@@ -55,17 +53,17 @@ namespace THMI_Mod_Manager.Services
                         mod.FileSizeBytes = latestVersion.FileSizeBytes;
                         mod.HasUpdateAvailable = IsVersionNewer(mod.Version, latestVersion.VersionString);
                         
-                        _logger.LogInformation($"Mod {mod.Name}: current={mod.Version}, latest={latestVersion.VersionString}, update available={mod.HasUpdateAvailable}");
+                        Logger.LogInfo($"Mod {mod.Name}: current={mod.Version}, latest={latestVersion.VersionString}, update available={mod.HasUpdateAvailable}");
                     }
                     else
                     {
-                        _logger.LogInformation($"Mod {mod.Name}: no update info available");
+                        Logger.LogInfo($"Mod {mod.Name}: no update info available");
                         mod.HasUpdateAvailable = false;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, $"Failed to check update for mod {mod.Name}");
+                    Logger.LogWarning(ex, $"Failed to check update for mod {mod.Name}");
                     mod.HasUpdateAvailable = false;
                 }
 
@@ -81,14 +79,14 @@ namespace THMI_Mod_Manager.Services
             
             if (string.IsNullOrEmpty(updateUrl))
             {
-                _logger.LogInformation($"Mod {mod.Name} has no UpdateUrl or ModLink, skipping update check");
+                Logger.LogInfo($"Mod {mod.Name} has no UpdateUrl or ModLink, skipping update check");
                 return null;
             }
 
             try
             {
                 var cleanUrl = CleanUrl(updateUrl);
-                _logger.LogInformation($"Mod {mod.Name}: raw URL = '{updateUrl}', clean URL = '{cleanUrl}'");
+                Logger.LogInfo($"Mod {mod.Name}: raw URL = '{updateUrl}', clean URL = '{cleanUrl}'");
                 
                 var uri = new Uri(cleanUrl);
                 
@@ -103,13 +101,13 @@ namespace THMI_Mod_Manager.Services
                 }
                 else
                 {
-                    _logger.LogInformation($"Unsupported update URL host: {uri.Host}");
+                    Logger.LogInfo($"Unsupported update URL host: {uri.Host}");
                     return null;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"Error checking update for mod {mod.Name}");
+                Logger.LogWarning(ex, $"Error checking update for mod {mod.Name}");
                 return null;
             }
         }
@@ -169,7 +167,7 @@ namespace THMI_Mod_Manager.Services
                 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning($"ThunderStore API returned: {(int)response.StatusCode}");
+                    Logger.LogWarning($"ThunderStore API returned: {(int)response.StatusCode}");
                     return null;
                 }
 
@@ -193,7 +191,7 @@ namespace THMI_Mod_Manager.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"Error checking ThunderStore for mod");
+                Logger.LogWarning(ex, $"Error checking ThunderStore for mod");
                 return null;
             }
         }
@@ -207,14 +205,14 @@ namespace THMI_Mod_Manager.Services
                 if (updateUrl.StartsWith("https://api.github.com/repos/", StringComparison.OrdinalIgnoreCase))
                 {
                     releaseUrl = updateUrl;
-                    _logger.LogInformation($"Using API URL directly: {releaseUrl}");
+                    Logger.LogInfo($"Using API URL directly: {releaseUrl}");
                 }
                 else
                 {
                     var (owner, repo, tag) = ExtractGitHubInfo(updateUrl);
                     if (string.IsNullOrEmpty(owner) || string.IsNullOrEmpty(repo))
                     {
-                        _logger.LogWarning($"Failed to extract GitHub info from URL: {updateUrl}");
+                        Logger.LogWarning($"Failed to extract GitHub info from URL: {updateUrl}");
                         return null;
                     }
 
@@ -227,13 +225,13 @@ namespace THMI_Mod_Manager.Services
                         releaseUrl = $"https://api.github.com/repos/{owner}/{repo}/releases/latest";
                     }
                     
-                    _logger.LogInformation($"Constructed API URL: {releaseUrl}");
+                    Logger.LogInfo($"Constructed API URL: {releaseUrl}");
                 }
                 
                 var response = await _httpClient.GetAsync(releaseUrl);
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning($"GitHub API returned HTTP {(int)response.StatusCode}");
+                    Logger.LogWarning($"GitHub API returned HTTP {(int)response.StatusCode}");
                     return null;
                 }
 
@@ -250,7 +248,7 @@ namespace THMI_Mod_Manager.Services
                     
                     if (dllAsset != null)
                     {
-                        _logger.LogInformation($"Found release asset: {dllAsset.Name}, tag: {release.TagName}");
+                        Logger.LogInfo($"Found release asset: {dllAsset.Name}, tag: {release.TagName}");
                         return new ModUpdateCheckResult
                         {
                             VersionString = release.TagName.TrimStart('v'),
@@ -260,19 +258,19 @@ namespace THMI_Mod_Manager.Services
                     }
                     else
                     {
-                        _logger.LogWarning($"No .dll or .zip asset found in release");
+                        Logger.LogWarning($"No .dll or .zip asset found in release");
                     }
                 }
                 else
                 {
-                    _logger.LogWarning($"No assets found in release");
+                    Logger.LogWarning($"No assets found in release");
                 }
 
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"Error checking GitHub for mod {(modName ?? "unknown")}");
+                Logger.LogWarning(ex, $"Error checking GitHub for mod {(modName ?? "unknown")}");
                 return null;
             }
         }
@@ -281,13 +279,13 @@ namespace THMI_Mod_Manager.Services
         {
             if (string.IsNullOrEmpty(mod.DownloadUrl))
             {
-                _logger.LogWarning($"No download URL for mod {mod.Name}");
+                Logger.LogWarning($"No download URL for mod {mod.Name}");
                 return false;
             }
 
             try
             {
-                _logger.LogInformation($"Starting update for mod: {mod.Name}");
+                Logger.LogInfo($"Starting update for mod: {mod.Name}");
 
                 var pluginsPath = GetPluginsPath();
                 var dllFileName = Path.GetFileNameWithoutExtension(mod.FilePath);
@@ -300,7 +298,7 @@ namespace THMI_Mod_Manager.Services
                 var zipPath = Path.Combine(tempPath, "mod.zip");
                 
                 SetUpdateProgress(mod.FileName, 0, 0, "准备下载...");
-                _logger.LogInformation($"Downloading: {mod.DownloadUrl}");
+                Logger.LogInfo($"Downloading: {mod.DownloadUrl}");
                 
                 // Retry mechanism for downloads
                 HttpResponseMessage response = null;
@@ -317,7 +315,7 @@ namespace THMI_Mod_Manager.Services
                         }
                         else
                         {
-                            _logger.LogWarning($"Download attempt failed with status: {(int)response.StatusCode}, retries left: {retryCount - 1}");
+                            Logger.LogWarning($"Download attempt failed with status: {(int)response.StatusCode}, retries left: {retryCount - 1}");
                             retryCount--;
                             if (retryCount > 0)
                             {
@@ -327,7 +325,7 @@ namespace THMI_Mod_Manager.Services
                     }
                     catch (HttpRequestException ex)
                     {
-                        _logger.LogWarning($"Download attempt failed with error: {ex.Message}, retries left: {retryCount - 1}");
+                        Logger.LogWarning($"Download attempt failed with error: {ex.Message}, retries left: {retryCount - 1}");
                         retryCount--;
                         if (retryCount > 0)
                         {
@@ -338,7 +336,7 @@ namespace THMI_Mod_Manager.Services
                 
                 if (response == null || !response.IsSuccessStatusCode)
                 {
-                    _logger.LogError($"Download failed after retries: HTTP {(int)(response?.StatusCode ?? 0)}");
+                    Logger.LogError($"Download failed after retries: HTTP {(int)(response?.StatusCode ?? 0)}");
                     SetUpdateProgress(mod.FileName, 0, 0, "下载失败");
                     return false;
                 }
@@ -370,13 +368,13 @@ namespace THMI_Mod_Manager.Services
                 }
                 catch (Exception streamEx)
                 {
-                    _logger.LogError(streamEx, "Error during download stream processing");
+                    Logger.LogError(streamEx, "Error during download stream processing");
                     SetUpdateProgress(mod.FileName, 0, 0, "下载流处理失败");
                     return false;
                 }
                 
                 SetUpdateProgress(mod.FileName, totalBytes, totalBytes, "解压中...");
-                _logger.LogInformation($"Extracting to: {tempPath}");
+                Logger.LogInfo($"Extracting to: {tempPath}");
                 
                 // Determine if the downloaded file is a zip archive or a direct DLL file
                 var isZipFile = IsZipFile(zipPath);
@@ -389,7 +387,7 @@ namespace THMI_Mod_Manager.Services
                     var dllFiles = Directory.GetFiles(tempPath, "*.dll", SearchOption.AllDirectories);
                     if (dllFiles.Length == 0)
                     {
-                        _logger.LogError("No DLL files found in update package");
+                        Logger.LogError("No DLL files found in update package");
                         CleanupTempPath(tempPath);
                         SetUpdateProgress(mod.FileName, 0, 0, "更新失败：未找到 DLL 文件");
                         return false;
@@ -408,11 +406,11 @@ namespace THMI_Mod_Manager.Services
                                 File.Delete(backupPath);
                             }
                             File.Move(destDllPath, backupPath);
-                            _logger.LogInformation($"Backed up existing DLL: {destDllPath}");
+                            Logger.LogInfo($"Backed up existing DLL: {destDllPath}");
                         }
 
                         File.Copy(dllFile, destDllPath, true);
-                        _logger.LogInformation($"Updated DLL: {dllFileNameOnly}");
+                        Logger.LogInfo($"Updated DLL: {dllFileNameOnly}");
                     }
                 }
                 else
@@ -429,11 +427,11 @@ namespace THMI_Mod_Manager.Services
                             File.Delete(backupPath);
                         }
                         File.Move(destDllPath, backupPath);
-                        _logger.LogInformation($"Backed up existing DLL: {destDllPath}");
+                        Logger.LogInfo($"Backed up existing DLL: {destDllPath}");
                     }
 
                     File.Copy(zipPath, destDllPath, true);
-                    _logger.LogInformation($"Updated DLL directly: {dllFileNameOnly}");
+                    Logger.LogInfo($"Updated DLL directly: {dllFileNameOnly}");
                 }
 
                 var manifestFiles = Directory.GetFiles(tempPath, "Manifest.*", SearchOption.AllDirectories);
@@ -442,7 +440,7 @@ namespace THMI_Mod_Manager.Services
                     var manifestFileName = Path.GetFileName(manifestFile);
                     var destManifestPath = Path.Combine(modFolder, manifestFileName);
                     File.Copy(manifestFile, destManifestPath, true);
-                    _logger.LogInformation($"Updated manifest: {manifestFileName}");
+                    Logger.LogInfo($"Updated manifest: {manifestFileName}");
                 }
 
                 if (!string.IsNullOrEmpty(mod.LatestVersion))
@@ -455,12 +453,12 @@ namespace THMI_Mod_Manager.Services
                 SetUpdateProgress(mod.FileName, 0, 0, "更新完成");
                 _updateProgress.Remove(mod.FileName);
 
-                _logger.LogInformation($"Successfully updated mod: {mod.Name}");
+                Logger.LogInfo($"Successfully updated mod: {mod.Name}");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to update mod {mod.Name}");
+                Logger.LogError(ex, $"Failed to update mod {mod.Name}");
                 SetUpdateProgress(mod.FileName, 0, 0, "更新失败：" + ex.Message);
                 return false;
             }
@@ -472,7 +470,7 @@ namespace THMI_Mod_Manager.Services
             {
                 if (!File.Exists(manifestPath))
                 {
-                    _logger.LogWarning($"Manifest not found: {manifestPath}");
+                    Logger.LogWarning($"Manifest not found: {manifestPath}");
                     return;
                 }
 
@@ -502,12 +500,12 @@ namespace THMI_Mod_Manager.Services
                 if (updated)
                 {
                     File.WriteAllText(manifestPath, string.Join("\n", newLines));
-                    _logger.LogInformation($"Updated manifest version to: {newVersion}");
+                    Logger.LogInfo($"Updated manifest version to: {newVersion}");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"Failed to update manifest version");
+                Logger.LogWarning(ex, $"Failed to update manifest version");
             }
         }
 
@@ -522,7 +520,7 @@ namespace THMI_Mod_Manager.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"Failed to cleanup temp path: {tempPath}");
+                Logger.LogWarning(ex, $"Failed to cleanup temp path: {tempPath}");
             }
         }
 

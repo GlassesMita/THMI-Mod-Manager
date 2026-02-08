@@ -9,12 +9,10 @@ namespace THMI_Mod_Manager.Pages.Shared
     public class LayoutModel : PageModel
     {
         private readonly AppConfigManager _appConfig;
-        private readonly ILogger<LayoutModel> _logger;
 
-        public LayoutModel(AppConfigManager appConfig, ILogger<LayoutModel> logger)
+        public LayoutModel(AppConfigManager appConfig)
         {
             _appConfig = appConfig;
-            _logger = logger;
         }
 
         // 按钮属性
@@ -62,7 +60,7 @@ namespace THMI_Mod_Manager.Pages.Shared
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"检查进程 {ProcessName} 状态时出错");
+                Logger.LogException(ex, $"检查进程 {ProcessName} 状态时出错");
                 return false;
             }
         }
@@ -78,10 +76,10 @@ namespace THMI_Mod_Manager.Pages.Shared
                     var steamUrl = $"steam://rungameid/{SteamAppId}";
                     
                     // 记录启动尝试
-                    _logger.LogInformation($"=== Process Launch Attempt ===");
-                    _logger.LogInformation($"Launch Method: Steam Protocol");
-                    _logger.LogInformation($"Steam URL: {steamUrl}");
-                    _logger.LogInformation($"Launch Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                    Logger.LogInfo($"=== Process Launch Attempt ===");
+                    Logger.LogInfo($"Launch Method: Steam Protocol");
+                    Logger.LogInfo($"Steam URL: {steamUrl}");
+                    Logger.LogInfo($"Launch Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                     
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     {
@@ -102,25 +100,25 @@ namespace THMI_Mod_Manager.Pages.Shared
                         });
                     }
                     
-                    _logger.LogInformation($"已启动Steam应用: {SteamAppId}");
-                    _logger.LogInformation($"=== Launch Complete ===");
+                    Logger.LogInfo($"已启动Steam应用: {SteamAppId}");
+                    Logger.LogInfo($"=== Launch Complete ===");
                 }
                 
                 return RedirectToPage();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "启动进程时出错");
+                Logger.LogException(ex, "启动进程时出错");
                 
                 // 记录错误详情
-                _logger.LogError($"=== Process Launch Failed ===");
-                _logger.LogError($"Error: {ex.Message}");
-                _logger.LogError($"Stack Trace: {ex.StackTrace}");
+                Logger.LogError($"=== Process Launch Failed ===");
+                Logger.LogError($"Error: {ex.Message}");
+                Logger.LogError($"Stack Trace: {ex.StackTrace}");
                 if (ex.InnerException != null)
                 {
-                    _logger.LogError($"Inner Exception: {ex.InnerException.Message}");
+                    Logger.LogError($"Inner Exception: {ex.InnerException.Message}");
                 }
-                _logger.LogError($"=== Launch Failed ===");
+                Logger.LogError($"=== Launch Failed ===");
                 
                 return RedirectToPage();
             }
@@ -133,9 +131,9 @@ namespace THMI_Mod_Manager.Pages.Shared
             {
                 if (IsProcessRunning)
                 {
-                    _logger.LogInformation($"=== Process Stop Attempt ===");
-                    _logger.LogInformation($"Process Name: {ProcessName}");
-                    _logger.LogInformation($"Stop Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                    Logger.LogInfo($"=== Process Stop Attempt ===");
+                    Logger.LogInfo($"Process Name: {ProcessName}");
+                    Logger.LogInfo($"Stop Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                     
                     var processes = Process.GetProcessesByName(ProcessName);
                     foreach (var process in processes)
@@ -143,36 +141,36 @@ namespace THMI_Mod_Manager.Pages.Shared
                         try
                         {
                             process.Kill();
-                            _logger.LogInformation($"已停止进程: {ProcessName} (PID: {process.Id})");
+                            Logger.LogInfo($"已停止进程: {ProcessName} (PID: {process.Id})");
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, $"停止进程 {ProcessName} 时出错");
+                            Logger.LogException(ex, $"停止进程 {ProcessName} 时出错");
                         }
                     }
                     
-                    _logger.LogInformation($"=== Stop Complete ===");
+                    Logger.LogInfo($"=== Stop Complete ===");
                 }
                 else
                 {
-                    _logger.LogInformation($"Process {ProcessName} is not running, no action taken.");
+                    Logger.LogInfo($"Process {ProcessName} is not running, no action taken.");
                 }
                 
                 return RedirectToPage();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "停止进程时出错");
+                Logger.LogException(ex, "停止进程时出错");
                 
                 // 记录错误详情
-                _logger.LogError($"=== Process Stop Failed ===");
-                _logger.LogError($"Error: {ex.Message}");
-                _logger.LogError($"Stack Trace: {ex.StackTrace}");
+                Logger.LogError($"=== Process Stop Failed ===");
+                Logger.LogError($"Error: {ex.Message}");
+                Logger.LogError($"Stack Trace: {ex.StackTrace}");
                 if (ex.InnerException != null)
                 {
-                    _logger.LogError($"Inner Exception: {ex.InnerException.Message}");
+                    Logger.LogError($"Inner Exception: {ex.InnerException.Message}");
                 }
-                _logger.LogError($"=== Stop Failed ===");
+                Logger.LogError($"=== Stop Failed ===");
                 
                 return RedirectToPage();
             }
