@@ -1,5 +1,4 @@
-/* Settings页面 OOUI 样式 - MediaWiki Vector 2022 Skin Style */
-@import "oojs-ui-theme.css";
+/* Settings页面样式 - Codex CSS 规范 */
 
 .settings-container {
     animation: oojs-fade-in 0.5s ease-in-out;
