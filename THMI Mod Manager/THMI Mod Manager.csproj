@@ -49,6 +49,11 @@
     
     <!-- 静态资源优化配置：减小 staticwebassets.endpoints.json 文件大小 -->
     <StaticWebAssetsBuildMediaFile>false</StaticWebAssetsBuildMediaFile>
+    
+    <!-- 禁用裁剪器 - 对于 ASP.NET Core MVC 项目最安全的选择 -->
+    <!-- 注意：PublishTrimmed=false 会禁用"裁剪未使用的代码"功能 -->
+    <!-- 这会防止 ASP.NET Core MVC 的重要类型被错误移除 -->
+    <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
 
   <!-- 动态路径配置（用于 publish 时指定输出路径） -->

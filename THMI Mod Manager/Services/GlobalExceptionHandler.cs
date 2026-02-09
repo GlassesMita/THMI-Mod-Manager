@@ -14,19 +14,20 @@ namespace THMI_Mod_Manager.Services
       .--.        _ 
      |o_o |      | | 
      |:_/ |      | | 
-    //   \ \   |_| 
+    //   \ \     |_| 
    (|     | )     _ 
-  /'\_   _/`\  (_) 
+  /'\_   _/`\    (_) 
   \___)=(___/ 
 ";
 
         private static readonly string[] OopsAscii = new string[]
         {
-            @"  ____    ____    _   _   _____    ____    _____   _   _   _____ ",
-            @" |  _ \  |  _ \  | \ | | |_   _|  / __ \  |  _ \ | \ | | |_   _|",
-            @" | |_) | | |_) | |  \| |   | |   | |  | | | |_) ||  \| |   | |  ",
-            @" |  __/  |  __/  | . ` |   | |   | |  | | |  __/ | . ` |   | |  ",
-            @" |_|     |_|     |_|\\_|   |_|    \____/  |_|    |_|\\_|   |_|  ",
+            @"  _____                                _     _                  ",
+            @" | ____| __  __   ___    ___   _ __   | |_  (_)   ___    _ __   ",
+            @" |  _|   \ \/ /  / __|  / _ \ | '_ \  | __| | |  / _ \  | '_ \ ",
+            @" | |___   >  <  | (__  |  __/ | |_) | | |_  | | | (_) | | | | | ",
+            @" |_____| /_/\_\  \___|  \___| | .__/   \__| |_|  \___/  |_| |_| ",
+            @"                              |_|                               ",
         };
 
         public static void Initialize()
@@ -206,7 +207,7 @@ namespace THMI_Mod_Manager.Services
             var sb = new StringBuilder();
             sb.AppendLine();
             sb.AppendLine("╔══════════════════════════════════════════════════════════════════════════════════╗");
-            sb.AppendLine("║                           KERNEL PANIC TRIGGERED                                ║");
+            sb.AppendLine("║                           KERNEL PANIC TRIGGERED                                 ║");
             sb.AppendLine("╚══════════════════════════════════════════════════════════════════════════════════╝");
             sb.AppendLine();
             sb.AppendLine($"[{DateTime.Now:yyyy/MM/dd HH:mm:ss.ffff}]");
