@@ -5,13 +5,13 @@
 ![Framework](https://img.shields.io/badge/Framework-ASP.NET-9fa0db?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20x64-00b600?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Trae-1af000?style=flat-square)
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager)
 
 **This project using GNU General Public License Version 3.0**
 
 A mod manager for Touhou Mystia Izakaya game.
 
-[DeepWiki Document (English Only)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager/)
+<abbr title="Based on editing .devin/wiki.json to inject prompts">[DeepWiki Document (Simplified Chinese Only)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager/)</abbr>
 
 ## Features
 

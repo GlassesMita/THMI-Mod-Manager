@@ -5,12 +5,13 @@
 ![Framework](https://img.shields.io/badge/Framework-ASP.NET-9fa0db?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20x64-00b600?style=flat-square)
 ![Editor](https://img.shields.io/badge/Editor-Trae-1af000?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager)
 
 **本项目使用 GNU 通用公共许可证第三版**
 
 专为《东方夜雀食堂》游戏打造的 Mod 管理器。
 
-[DeepWiki 文档 (仅英文)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager/)
+<abbr title="基于修改 .devin/wiki.json 实现提示词注入">[DeepWiki 文档 (仅简体中文)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager/)</abbr>
 
 ## 功能特性
 
