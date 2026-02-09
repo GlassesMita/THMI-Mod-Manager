@@ -12,6 +12,7 @@
 专为《东方夜雀食堂》游戏打造的 Mod 管理器。
 
 <abbr title="基于修改 .devin/wiki.json 实现提示词注入">[DeepWiki 文档 (仅简体中文)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager/)</abbr>
+
 <small>_基于修改 .devin/wiki.json 实现提示词注入_</small>
 
 ## 功能特性
