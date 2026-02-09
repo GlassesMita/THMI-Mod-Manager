@@ -12,6 +12,7 @@
 A mod manager for Touhou Mystia Izakaya game.
 
 <abbr title="Based on editing .devin/wiki.json to inject prompts">[DeepWiki Document (Simplified Chinese Only)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager/)</abbr>
+<small>_Based on editing .devin/wiki.json to inject prompts_</small>
 
 ## Features
 
