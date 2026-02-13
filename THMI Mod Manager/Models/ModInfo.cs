@@ -26,6 +26,9 @@ namespace THMI_Mod_Manager.Models
         public string? LatestVersion { get; set; }
         public string? DownloadUrl { get; set; }
         public long? FileSizeBytes { get; set; }
+        public string? ReleaseNotes { get; set; }
+        public string? ChangelogUrl { get; set; }
+        public string? ReleaseHtmlUrl { get; set; }
     }
 
     public class UpdateProgress

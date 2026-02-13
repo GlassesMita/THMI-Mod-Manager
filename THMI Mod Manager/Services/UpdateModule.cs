@@ -352,31 +352,43 @@ namespace THMI_Mod_Manager
             {
                 Logger.LogException(ex, "Error checking for updates");
                 
-                var innerEx = ex.InnerException;
-                string fullStackTrace = $"Error checking for updates: {ex.Message}";
-                while (innerEx != null)
-                {
-                    fullStackTrace += $"\n  ---> {innerEx.GetType().Name}: {innerEx.Message}";
-                    if (!string.IsNullOrEmpty(innerEx.StackTrace))
-                    {
-                        foreach (var line in innerEx.StackTrace.Split('\n').Take(3))
-                        {
-                            var trimmed = line.Trim();
-                            if (!string.IsNullOrEmpty(trimmed))
-                            {
-                                fullStackTrace += $"\n    {trimmed}";
-                            }
-                        }
-                    }
-                    innerEx = innerEx.InnerException;
-                }
-                
-                Logger.LogError(fullStackTrace);
-                
                 return new UpdateCheckResult
                 {
                     Success = false,
                     Message = $"Failed to check for updates: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<object> CheckForUpdatesApiAsync(string currentVersion)
+        {
+            var result = await CheckForUpdatesAsync(currentVersion);
+            var now = DateTime.Now;
+            
+            if (result.Success)
+            {
+                _appConfig.Set("[Updates]LastCheckTime", now.ToString("o"));
+                
+                return new
+                {
+                    success = true,
+                    isUpdateAvailable = result.IsUpdateAvailable,
+                    currentVersion = result.CurrentVersion,
+                    latestVersion = result.LatestVersion,
+                    releaseNotes = result.ReleaseNotes,
+                    downloadUrl = result.DownloadUrl,
+                    publishedAt = result.PublishedAt,
+                    message = result.IsUpdateAvailable 
+                        ? $"New version {result.LatestVersion} is available" 
+                        : "No updates available"
+                };
+            }
+            else
+            {
+                return new
+                {
+                    success = false,
+                    message = result.Message
                 };
             }
         }

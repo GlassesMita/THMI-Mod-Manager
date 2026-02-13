@@ -50,3 +50,249 @@ body {
     50% { transform: scale(1.1); }
     100% { transform: scale(1); }
 }
+
+/* Update Changelog Button */
+#updateChangelogBtn {
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+#updateChangelogBtn:hover {
+    background-color: var(--theme-color, #c670ff);
+    border-color: var(--theme-color, #c670ff);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#updateChangelogBtn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+#updateChangelogBtn i {
+    font-size: 0.875rem;
+}
+
+/* Changelog Modal Styles */
+.changelog-content {
+    line-height: 1.6;
+}
+
+.changelog-meta {
+    font-size: 0.9rem;
+    color: #6c757d;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.changelog-body h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--theme-color, #c670ff);
+}
+
+.changelog-body h2 {
+    font-size: 1.3rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #333;
+}
+
+.changelog-body h3 {
+    font-size: 1.1rem;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #444;
+}
+
+.changelog-body p {
+    margin-bottom: 1rem;
+}
+
+.changelog-body ul, .changelog-body ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.changelog-body li {
+    margin-bottom: 0.5rem;
+}
+
+.changelog-body code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #e83e8c;
+}
+
+.changelog-body pre {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.changelog-body pre code {
+    background-color: transparent;
+    padding: 0;
+    color: #333;
+}
+
+.changelog-body a {
+    color: var(--theme-color, #c670ff);
+    text-decoration: none;
+}
+
+.changelog-body a:hover {
+    text-decoration: underline;
+}
+
+.changelog-body strong {
+    font-weight: 600;
+    color: #333;
+}
+
+.changelog-body em {
+    font-style: italic;
+}
+
+/* Loading spinner animation */
+.spinner-border {
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Modal responsive design */
+@media (max-width: 768px) {
+    #changelogModal .modal-lg {
+        max-width: 95%;
+        margin: 0.5rem auto;
+    }
+    
+    #changelogModal .modal-body {
+        padding: 1rem;
+    }
+    
+    #changelogModal .modal-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    #changelogModal .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    #changelogModal .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    #changelogModal .modal-title {
+        font-size: 1rem;
+    }
+    
+    #changelogModalVersion {
+        font-size: 0.75rem;
+    }
+}
+
+/* Smooth modal transitions */
+#changelogModal .modal-content {
+    transition: all 0.3s ease-in-out;
+}
+
+#changelogModal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+}
+
+#changelogModal.show .modal-dialog {
+    transform: translate(0, 0);
+}
+
+#changelogModal.show .modal-dialog {
+    transform: translateY(20px);
+}
+
+#changelogModal.show.fade .modal-dialog {
+    transform: translateY(0);
+}
+
+/* Hover effects for links in changelog */
+.changelog-body a:hover {
+    background-color: rgba(198, 112, 255, 0.1);
+    padding: 0.1rem 0.2rem;
+    border-radius: 0.2rem;
+    margin: -0.1rem -0.2rem;
+}
+
+/* List styles enhancement */
+.changelog-body ul {
+    list-style-type: disc;
+}
+
+.changelog-body ul li::marker {
+    color: var(--theme-color, #c670ff);
+}
+
+.changelog-body ol {
+    list-style-type: decimal;
+}
+
+.changelog-body ol li::marker {
+    color: var(--theme-color, #c670ff);
+    font-weight: 600;
+}
+
+/* Blockquote styling for notes/highlights */
+.changelog-body blockquote {
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--theme-color, #c670ff);
+    margin: 1rem 0;
+    padding: 0.5rem 1rem;
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.changelog-body blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* Version badge styling */
+#changelogModalVersion {
+    font-weight: 500;
+    background-color: var(--theme-color, #c670ff);
+    color: white;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.5rem;
+}
+
+/* Error state icon */
+#changelogModalError i {
+    opacity: 0.7;
+}
+
+/* Focus styles for accessibility */
+#updateChangelogBtn:focus,
+.changelogModal .btn-close:focus {
+    outline: 2px solid var(--theme-color, #c670ff);
+    outline-offset: 2px;
+}
+
+/* Print styles for changelog */
+@media print {
+    #changelogModal {
+        display: none !important;
+    }
+    
+    .changelog-body {
+        font-size: 12pt;
+    }
+}

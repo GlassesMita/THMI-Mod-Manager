@@ -245,7 +245,19 @@
             html += '<div class="mod-item-body" id="mod-details-' + modId + '" style="display: none;">';
             
             if (hasUpdate && mod.latestVersion) {
-                html += '<div class="alert alert-info py-2 mb-2"><strong>新版本:</strong> ' + this.escapeHtml(mod.latestVersion) + ' <span class="text-muted">(当前: ' + this.escapeHtml(mod.version) + ')</span></div>';
+                html += '<div class="alert alert-info py-2 mb-2">';
+                html += '<div class="d-flex align-items-center justify-content-between mb-2">';
+                html += '<div><strong>新版本:</strong> ' + this.escapeHtml(mod.latestVersion) + ' <span class="text-muted">(当前: ' + this.escapeHtml(mod.version) + ')</span></div>';
+                html += '<div class="btn-group">';
+                html += '<button class="btn btn-outline-primary btn-sm" onclick="ModRenderer.showModChangelog(\'' + this.escapeJs(fileName) + '\')"><i data-icon="icon-changelog"></i> 更新日志</button>';
+                
+                if (mod.releaseHtmlUrl) {
+                    html += '<a class="btn btn-outline-secondary btn-sm" href="' + this.escapeHtml(mod.releaseHtmlUrl) + '" target="_blank" rel="noopener noreferrer"><i data-icon="icon-external-link"></i> 在 Github 上查看</a>';
+                } else if (mod.modLink) {
+                    html += '<a class="btn btn-outline-secondary btn-sm" href="' + this.escapeHtml(mod.modLink) + '" target="_blank" rel="noopener noreferrer"><i data-icon="icon-external-link"></i> 在 Github 上查看</a>';
+                }
+                
+                html += '</div></div></div>';
             }
             
             if (mod.modLink) {
@@ -571,6 +583,216 @@
         
         refresh: function() {
             this.loadMods();
+        },
+        
+        showModChangelog: async function(fileName) {
+            const mod = this.modsList.find(m => m.fileName === fileName);
+            if (!mod) {
+                ModalUtils.alert('错误', '找不到 Mod 信息');
+                return;
+            }
+            
+            let modalEl = document.getElementById('modChangelogModal');
+            if (!modalEl) {
+                modalEl = document.createElement('div');
+                modalEl.id = 'modChangelogModal';
+                modalEl.className = 'modal fade';
+                modalEl.setAttribute('tabindex', '-1');
+                modalEl.setAttribute('aria-hidden', 'true');
+                modalEl.innerHTML = this.getModChangelogModalHtml();
+                document.body.appendChild(modalEl);
+                
+                // Add event listeners for close buttons
+                modalEl.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
+                    btn.addEventListener('click', () => this.hideModChangelog());
+                });
+                
+                // Close on backdrop click
+                modalEl.addEventListener('click', (e) => {
+                    if (e.target === modalEl) {
+                        this.hideModChangelog();
+                    }
+                });
+                
+                // Close on Escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && modalEl.classList.contains('show')) {
+                        this.hideModChangelog();
+                    }
+                });
+            }
+            
+            // Update modal content
+            document.getElementById('modChangelogTitle').textContent = mod.name + ' - 更新日志';
+            document.getElementById('modChangelogVersion').textContent = mod.latestVersion || '未知';
+            
+            const loadingEl = document.getElementById('modChangelogLoading');
+            const contentEl = document.getElementById('modChangelogContent');
+            const errorEl = document.getElementById('modChangelogError');
+            
+            loadingEl.style.display = 'flex';
+            contentEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            
+            // Show modal
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            document.body.classList.add('modal-open');
+            
+            // Add backdrop
+            let backdrop = document.getElementById('modChangelogBackdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.id = 'modChangelogBackdrop';
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+            } else {
+                backdrop.style.display = 'block';
+            }
+            
+            // Fetch changelog
+            this.fetchAndDisplayModChangelog(mod, loadingEl, contentEl, errorEl);
+        },
+        
+        hideModChangelog: function() {
+            const modalEl = document.getElementById('modChangelogModal');
+            const backdrop = document.getElementById('modChangelogBackdrop');
+            
+            if (modalEl) {
+                modalEl.classList.remove('show');
+                modalEl.style.display = 'none';
+            }
+            
+            if (backdrop) {
+                backdrop.style.display = 'none';
+            }
+            
+            document.body.classList.remove('modal-open');
+        },
+        
+        fetchAndDisplayModChangelog: async function(mod, loadingEl, contentEl, errorEl) {
+            try {
+                console.log('[ModRenderer] Fetching changelog for mod:', mod.name);
+                console.log('[ModRenderer] mod.releaseNotes:', mod.releaseNotes ? mod.releaseNotes.substring(0, 100) + '...' : 'null');
+                console.log('[ModRenderer] mod.changelog:', mod.changelog ? mod.changelog.substring(0, 100) + '...' : 'null');
+                
+                let changelog = mod.changelog || mod.releaseNotes;
+                
+                // If still no changelog, try to fetch from GitHub API directly
+                if (!changelog && mod.modLink && mod.latestVersion) {
+                    console.log('[ModRenderer] Trying to fetch changelog from GitHub API...');
+                    try {
+                        const ownerRepo = this.extractGitHubOwnerRepo(mod.modLink);
+                        if (ownerRepo) {
+                            const apiUrl = `https://api.github.com/repos/${ownerRepo}/releases/latest`;
+                            const response = await fetch(apiUrl);
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.body) {
+                                    changelog = data.body;
+                                    console.log('[ModRenderer] GitHub API response:', changelog ? changelog.substring(0, 100) + '...' : 'null');
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[ModRenderer] Failed to fetch changelog from GitHub:', e);
+                    }
+                }
+                
+                console.log('[ModRenderer] Final changelog:', changelog ? changelog.substring(0, 100) + '...' : 'null');
+                
+                if (changelog) {
+                    const parsedHtml = this.parseModChangelogMarkdown(changelog);
+                    document.getElementById('modChangelogBody').innerHTML = parsedHtml;
+                    loadingEl.style.display = 'none';
+                    contentEl.style.display = 'block';
+                } else {
+                    document.getElementById('modChangelogErrorMessage').textContent = '暂无更新日志';
+                    loadingEl.style.display = 'none';
+                    errorEl.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('[ModRenderer] Error showing changelog:', error);
+                document.getElementById('modChangelogErrorMessage').textContent = '加载失败: ' + error.message;
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'flex';
+            }
+        },
+        
+        extractGitHubOwnerRepo: function(url) {
+            if (!url) return null;
+            const githubMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)/i);
+            if (githubMatch) {
+                return githubMatch[1] + '/' + githubMatch[2].replace(/\.git$/i, '');
+            }
+            return null;
+        },
+        
+        parseModChangelogMarkdown: function(markdown) {
+            if (!markdown) return '';
+            
+            let html = String(markdown);
+            
+            // Basic markdown parsing
+            html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // Headers
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            
+            // Bold and italic
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Code
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // Links
+            html = html.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+            
+            // Line breaks
+            html = html.replace(/\n/g, '<br>');
+            
+            // Lists
+            html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
+            
+            return '<div class="mod-changelog-body">' + html + '</div>';
+        },
+        
+        getModChangelogModalHtml: function() {
+            return `
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i data-icon="icon-changelog" class="me-2"></i>
+                                <span id="modChangelogTitle">更新日志</span>
+                                <span id="modChangelogVersion" class="badge bg-info ms-2"></span>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="modChangelogLoading" class="text-center py-5" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">加载中...</span>
+                                </div>
+                                <p class="mt-2 text-muted">正在加载更新日志...</p>
+                            </div>
+                            <div id="modChangelogContent" style="display: none;">
+                                <div id="modChangelogBody" class="mod-changelog-content"></div>
+                            </div>
+                            <div id="modChangelogError" class="text-center py-5" style="display: none;">
+                                <i data-icon="icon-warning" class="text-warning mb-3" style="font-size: 3rem;"></i>
+                                <p id="modChangelogErrorMessage" class="text-muted">加载失败</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
     };
     

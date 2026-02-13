@@ -558,3 +558,143 @@
     background-color: #0dcaf0;
     border-color: #0dcaf0;
 }
+
+/* Mod 更新日志模态框样式 */
+.mod-changelog-content {
+    line-height: 1.6;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.mod-changelog-content h1 {
+    font-size: 1.5rem;
+    color: var(--theme-color, #c670ff);
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--theme-color, #c670ff);
+    padding-bottom: 0.5rem;
+}
+
+.mod-changelog-content h2 {
+    font-size: 1.3rem;
+    color: #333;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.mod-changelog-content h3 {
+    font-size: 1.1rem;
+    color: #444;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.mod-changelog-content p {
+    margin-bottom: 1rem;
+}
+
+.mod-changelog-content ul, .mod-changelog-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.mod-changelog-content li {
+    margin-bottom: 0.5rem;
+}
+
+.mod-changelog-content code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+    color: #e83e8c;
+}
+
+.mod-changelog-content pre {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.mod-changelog-content pre code {
+    background-color: transparent;
+    padding: 0;
+    color: #333;
+}
+
+.mod-changelog-content a {
+    color: var(--theme-color, #c670ff);
+    text-decoration: none;
+}
+
+.mod-changelog-content a:hover {
+    text-decoration: underline;
+}
+
+.mod-changelog-content strong {
+    font-weight: 600;
+    color: #333;
+}
+
+.mod-changelog-content em {
+    font-style: italic;
+}
+
+.mod-changelog-content li::marker {
+    color: var(--theme-color, #c670ff);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .mod-changelog-content {
+        max-height: 50vh;
+        font-size: 0.9rem;
+    }
+    
+    .mod-changelog-content h1 {
+        font-size: 1.25rem;
+    }
+    
+    .mod-changelog-content h2 {
+        font-size: 1.1rem;
+    }
+    
+    .mod-changelog-content h3 {
+        font-size: 1rem;
+    }
+}
+
+/* 模态框动画 */
+#modChangelogModal .modal-content {
+    transition: all 0.3s ease-in-out;
+}
+
+#modChangelogModal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+}
+
+#modChangelogModal.show .modal-dialog {
+    transform: translateY(20px);
+}
+
+#modChangelogModal.show.fade .modal-dialog {
+    transform: translateY(0);
+}
+
+/* 按钮悬停效果 */
+.mod-item .btn-outline-primary {
+    transition: all 0.2s ease-in-out;
+}
+
+.mod-item .btn-outline-primary:hover {
+    background-color: var(--theme-color, #c670ff);
+    border-color: var(--theme-color, #c670ff);
+    color: white;
+}
+
+#modChangelogModal .modal-title .badge {
+    font-weight: 500;
+    font-size: 0.85rem;
+}

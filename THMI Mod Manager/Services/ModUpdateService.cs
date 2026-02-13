@@ -51,6 +51,8 @@ namespace THMI_Mod_Manager.Services
                         mod.LatestVersion = latestVersion.VersionString;
                         mod.DownloadUrl = latestVersion.DownloadUrl;
                         mod.FileSizeBytes = latestVersion.FileSizeBytes;
+                        mod.ReleaseNotes = latestVersion.ReleaseNotes;
+                        mod.ReleaseHtmlUrl = latestVersion.ReleaseHtmlUrl;
                         mod.HasUpdateAvailable = IsVersionNewer(mod.Version, latestVersion.VersionString);
                         
                         Logger.LogInfo($"Mod {mod.Name}: current={mod.Version}, latest={latestVersion.VersionString}, update available={mod.HasUpdateAvailable}");
@@ -253,7 +255,9 @@ namespace THMI_Mod_Manager.Services
                         {
                             VersionString = release.TagName.TrimStart('v'),
                             DownloadUrl = dllAsset.BrowserDownloadUrl,
-                            FileSizeBytes = dllAsset.Size
+                            FileSizeBytes = dllAsset.Size,
+                            ReleaseNotes = release.Body,
+                            ReleaseHtmlUrl = release.HtmlUrl
                         };
                     }
                     else
@@ -656,6 +660,8 @@ namespace THMI_Mod_Manager.Services
         public string VersionString { get; set; } = string.Empty;
         public string DownloadUrl { get; set; } = string.Empty;
         public long? FileSizeBytes { get; set; }
+        public string? ReleaseNotes { get; set; }
+        public string? ReleaseHtmlUrl { get; set; }
     }
 
     public class ThunderStoreResponse
@@ -678,6 +684,12 @@ namespace THMI_Mod_Manager.Services
         
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+        
+        [JsonPropertyName("body")]
+        public string? Body { get; set; }
+        
+        [JsonPropertyName("html_url")]
+        public string? HtmlUrl { get; set; }
         
         [JsonPropertyName("assets")]
         public List<GitHubAssetResponse> Assets { get; set; } = new();

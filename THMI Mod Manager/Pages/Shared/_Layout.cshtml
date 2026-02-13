@@ -513,6 +513,10 @@
                         <span id="updateNotificationText"></span>
                     </div>
                     <div>
+                        <button id="updateChangelogBtn" type="button" class="btn btn-outline-primary btn-sm me-2" style="display: none;" title="@AppConfig.GetLocalized("Updates:ViewChangelog", "View Changelog")">
+                            <i data-icon="icon-changelog" class="me-1"></i>
+                            <span>@AppConfig.GetLocalized("Updates:Changelog", "Changelog")</span>
+                        </button>
                         <a id="updateDownloadLink" href="#" class="btn btn-primary btn-sm me-2" target="_blank">
                             <i data-icon="icon-download" class="me-1"></i>
                             <span id="updateDownloadText">Download</span>
@@ -571,6 +575,56 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
                     </div>
                     <div class="toast-body">
+                    </div>
+                </div>
+                
+                <!-- Changelog Modal -->
+                <div class="modal fade" id="changelogModal" tabindex="-1" aria-labelledby="changelogModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="changelogModalLabel">
+                                    <i data-icon="icon-changelog" class="me-2"></i>
+                                    @AppConfig.GetLocalized("Updates:ChangelogTitle", "What's New in Version {0}")
+                                    <span id="changelogModalVersion" class="badge bg-secondary ms-2"></span>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Loading State -->
+                                <div id="changelogModalLoading" class="text-center py-5" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">@AppConfig.GetLocalized("Updates:LoadingChangelog", "Loading changelog...")</p>
+                                </div>
+                                
+                                <!-- Error State -->
+                                <div id="changelogModalError" class="text-center py-5" style="display: none;">
+                                    <i data-icon="icon-error" class="text-danger mb-3" style="font-size: 3rem;"></i>
+                                    <p id="changelogErrorMessage" class="text-muted">@AppConfig.GetLocalized("Updates:ChangelogFetchError", "Failed to load changelog. Please try again later.")</p>
+                                    <button type="button" class="btn btn-outline-primary mt-3" onclick="ChangelogModal.showChangelog(document.getElementById('changelogModalVersion').textContent)">
+                                        <i data-icon="icon-refresh" class="me-1"></i>
+                                        @AppConfig.GetLocalized("Common:Retry", "Retry")
+                                    </button>
+                                </div>
+                                
+                                <!-- Content -->
+                                <div id="changelogModalContent" class="changelog-content" style="display: none;">
+                                    <div class="changelog-meta mb-3">
+                                        <span id="changelogModalPublished" class="text-muted"></span>
+                                    </div>
+                                    <div class="changelog-body">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i data-icon="icon-close" class="me-1"></i>
+                                    @AppConfig.GetLocalized("Common:Close", "Close")
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

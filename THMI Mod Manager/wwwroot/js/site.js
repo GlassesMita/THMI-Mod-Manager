@@ -3,12 +3,14 @@
 
 // Write your JavaScript code.
 
-// Update notification system
+// Update notification system with changelog functionality
 const UpdateNotification = {
     checkInterval: 24 * 60 * 60 * 1000, // 24 hours
     lastCheckKey: 'thmi_last_update_check',
     updateAvailableKey: 'thmi_update_available',
     updateDataKey: 'thmi_update_data',
+    changelogCacheKey: 'thmi_changelog_cache',
+    changelogCacheExpiry: 24 * 60 * 60 * 1000, // 24 hours cache
     
     init: function() {
         // Check if we should perform an automatic update check
@@ -83,11 +85,18 @@ const UpdateNotification = {
         const downloadText = document.getElementById('updateDownloadText');
         const settingsBadge = document.getElementById('settingsUpdateBadge');
         const settingsBadgeOffcanvas = document.getElementById('settingsUpdateBadgeOffcanvas');
+        const changelogBtn = document.getElementById('updateChangelogBtn');
         
         if (banner && text && downloadLink && downloadText) {
             text.textContent = getLocalizedString('Updates:UpdateAvailableBanner', 'Update available: Version {0}').replace('{0}', updateData.latestVersion);
             downloadLink.href = updateData.downloadUrl;
             downloadText.textContent = getLocalizedString('Common:Download', 'Download');
+            
+            // Show changelog button if we have release notes
+            if (changelogBtn && updateData.releaseNotes) {
+                changelogBtn.style.display = 'inline-flex';
+                changelogBtn.dataset.version = updateData.latestVersion;
+            }
             
             banner.style.display = 'block';
             
@@ -106,6 +115,7 @@ const UpdateNotification = {
         const banner = document.getElementById('updateNotificationBanner');
         const settingsBadge = document.getElementById('settingsUpdateBadge');
         const settingsBadgeOffcanvas = document.getElementById('settingsUpdateBadgeOffcanvas');
+        const changelogBtn = document.getElementById('updateChangelogBtn');
         
         if (banner) {
             banner.style.display = 'none';
@@ -114,6 +124,175 @@ const UpdateNotification = {
         // Hide notification badges
         if (settingsBadge) settingsBadge.style.display = 'none';
         if (settingsBadgeOffcanvas) settingsBadgeOffcanvas.style.display = 'none';
+        
+        // Hide changelog button
+        if (changelogBtn) changelogBtn.style.display = 'none';
+    }
+};
+
+// Changelog modal functionality
+const ChangelogModal = {
+    cacheKey: 'thmi_changelog_cache',
+    cacheExpiry: 24 * 60 * 60 * 1000, // 24 hours
+    
+    init: function() {
+        const modal = document.getElementById('changelogModal');
+        if (modal) {
+            modal.addEventListener('show.bs.modal', () => {
+                // Clear previous content when opening
+                const contentEl = document.getElementById('changelogModalContent');
+                const loadingEl = document.getElementById('changelogModalLoading');
+                const errorEl = document.getElementById('changelogModalError');
+                const versionEl = document.getElementById('changelogModalVersion');
+                
+                if (contentEl) contentEl.innerHTML = '';
+                if (loadingEl) loadingEl.style.display = 'flex';
+                if (errorEl) errorEl.style.display = 'none';
+                if (versionEl) versionEl.textContent = '';
+            });
+        }
+        
+        // Handle changelog button click
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('#updateChangelogBtn');
+            if (btn) {
+                const version = btn.dataset.version;
+                this.showChangelog(version);
+            }
+        });
+    },
+    
+    showChangelog: async function(version) {
+        const modal = new bootstrap.Modal(document.getElementById('changelogModal'));
+        const loadingEl = document.getElementById('changelogModalLoading');
+        const errorEl = document.getElementById('changelogModalError');
+        const contentEl = document.getElementById('changelogModalContent');
+        const versionEl = document.getElementById('changelogModalVersion');
+        const errorMessageEl = document.getElementById('changelogErrorMessage');
+        
+        // Show modal
+        modal.show();
+        
+        // Update version display
+        if (versionEl) {
+            versionEl.textContent = version || '';
+        }
+        
+        // Check cache first
+        const cachedData = this.getCachedChangelog(version);
+        if (cachedData) {
+            this.displayChangelog(cachedData);
+            return;
+        }
+        
+        try {
+            // Show loading state
+            if (loadingEl) loadingEl.style.display = 'flex';
+            if (errorEl) errorEl.style.display = 'none';
+            if (contentEl) contentEl.innerHTML = '';
+            
+            // Fetch from API
+            const response = await fetch(`/api/whatsnew/release-notes?version=${encodeURIComponent(version)}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                // Cache the result
+                this.cacheChangelog(version, data);
+                
+                // Display the changelog
+                this.displayChangelog(data);
+                
+                // Hide loading
+                if (loadingEl) loadingEl.style.display = 'none';
+            } else {
+                throw new Error(data.message || 'Failed to fetch changelog');
+            }
+        } catch (error) {
+            console.error('Error fetching changelog:', error);
+            
+            // Show error state
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (errorEl) errorEl.style.display = 'flex';
+            if (errorMessageEl) {
+                errorMessageEl.textContent = getLocalizedString(
+                    'Updates:ChangelogFetchError', 
+                    'Failed to load changelog. Please try again later.'
+                );
+            }
+        }
+    },
+    
+    displayChangelog: function(data) {
+        const loadingEl = document.getElementById('changelogModalLoading');
+        const errorEl = document.getElementById('changelogModalError');
+        const contentEl = document.getElementById('changelogModalContent');
+        const versionEl = document.getElementById('changelogModalVersion');
+        const publishedEl = document.getElementById('changelogModalPublished');
+        
+        // Hide loading and error
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'none';
+        
+        // Update version info
+        if (versionEl) {
+            versionEl.textContent = data.version || '';
+        }
+        
+        // Update published date
+        if (publishedEl && data.publishedAt) {
+            const date = new Date(data.publishedAt);
+            publishedEl.textContent = date.toLocaleDateString(getLocalizedString('Common:DateFormat', 'en-US'), {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        // Display content
+        if (contentEl && data.releaseNotes) {
+            contentEl.innerHTML = data.releaseNotes;
+        }
+    },
+    
+    cacheChangelog: function(version, data) {
+        try {
+            const cache = {
+                version: version,
+                data: data,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(`${this.cacheKey}_${version}`, JSON.stringify(cache));
+        } catch (e) {
+            console.warn('Failed to cache changelog:', e);
+        }
+    },
+    
+    getCachedChangelog: function(version) {
+        try {
+            const cached = localStorage.getItem(`${this.cacheKey}_${version}`);
+            if (cached) {
+                const cache = JSON.parse(cached);
+                // Check if cache is still valid
+                if (Date.now() - cache.timestamp < this.cacheExpiry) {
+                    return cache.data;
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to get cached changelog:', e);
+        }
+        return null;
+    },
+    
+    clearCache: function() {
+        try {
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith(this.cacheKey)) {
+                    localStorage.removeItem(key);
+                }
+            });
+        } catch (e) {
+            console.warn('Failed to clear changelog cache:', e);
+        }
     }
 };
 
@@ -126,10 +305,15 @@ function getLocalizedString(key, defaultValue) {
     return defaultValue;
 }
 
-// Initialize update notifications when DOM is ready (delayed to not block page render)
+// Initialize update notifications and changelog modal when DOM is ready (delayed to not block page render)
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize icon font
     initIconFont();
+    
+    // Initialize changelog modal functionality
+    if (typeof ChangelogModal !== 'undefined') {
+        ChangelogModal.init();
+    }
     
     // Delay update check to allow page to render first
     // This reduces perceived load time and avoids conflicts with browser extensions
