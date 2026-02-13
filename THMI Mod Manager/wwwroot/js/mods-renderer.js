@@ -208,6 +208,9 @@
             if (typeof launchButtonComponentCurrentIsRunning !== 'undefined' && launchButtonComponentCurrentIsRunning) {
                 this.setModActionsDisabled(true);
             }
+            
+            // Check for mod configs after rendering
+            this.checkModConfigs();
         },
         
         createModItemHtml: function(mod, index) {
@@ -231,7 +234,7 @@
                 html += '<div class="update-badge" title="有新版本可用"><i data-icon="icon-download"></i></div>';
             }
             
-            html += '<div class="mod-item-title"><div class="mod-title-container"><h5 class="mb-0">' + this.escapeHtml(name) + '</h5></div></div>';
+            html += '<div class="mod-item-title"><h5 class="mb-0">' + this.escapeHtml(name) + '<button class="config-btn" onclick="ModRenderer.showConfigEditor(\'' + this.escapeJs(fileName) + '\')" style="display: none;" title="设置"><i data-icon="icon-settings"></i></button></h5></div>';
             html += '<div class="mod-item-actions">';
             html += '<button class="btn btn-outline-secondary btn-sm me-2" onclick="ModRenderer.toggleDetails(\'' + modId + '\')"><i data-icon="icon-chevron-down" id="toggle-icon-' + modId + '"></i></button>';
             html += '<button class="btn ' + buttonClass + ' btn-sm me-2 mod-action-btn" onclick="ModRenderer.toggleMod(\'' + this.escapeJs(fileName) + '\')"><i data-icon="' + buttonIcon + '"></i> ' + buttonText + '</button>';
@@ -789,6 +792,255 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        },
+        
+        checkModConfigs: async function() {
+            try {
+                const response = await fetch('/api/modconfig/list');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const configMap = {};
+                        data.configs.forEach(config => {
+                            const dllName = config.fileName.replace(/\.cfg$/i, '.dll');
+                            configMap[dllName.toLowerCase()] = config.fileName;
+                        });
+                        
+                        console.log('[ModRenderer] Available configs:', configMap);
+                        
+                        // Show config buttons for mods that have config files
+                        const configButtons = document.querySelectorAll('.config-btn');
+                        console.log('[ModRenderer] Found config buttons:', configButtons.length);
+                        
+                        configButtons.forEach(btn => {
+                            const onclickAttr = btn.getAttribute('onclick');
+                            console.log('[ModRenderer] Checking button:', onclickAttr);
+                            if (onclickAttr) {
+                                const fileNameMatch = onclickAttr.match(/'([^']+)'/);
+                                if (fileNameMatch) {
+                                    const fileName = fileNameMatch[1].toLowerCase();
+                                    const hasConfig = !!configMap[fileName];
+                                    console.log('[ModRenderer] Mod file:', fileName, 'Has config:', hasConfig, 'Config:', configMap[fileName]);
+                                    if (hasConfig) {
+                                        btn.style.display = 'inline-flex';
+                                        console.log('[ModRenderer] Button shown for:', fileName);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.warn('[ModRenderer] Failed to check mod configs:', error);
+            }
+        },
+        
+        showConfigEditor: async function(fileName) {
+            const configFileName = fileName.replace(/\.dll$/i, '.cfg');
+            
+            let modalEl = document.getElementById('modConfigModal');
+            if (!modalEl) {
+                modalEl = document.createElement('div');
+                modalEl.id = 'modConfigModal';
+                modalEl.className = 'modal fade';
+                modalEl.setAttribute('tabindex', '-1');
+                modalEl.setAttribute('aria-hidden', 'true');
+                modalEl.innerHTML = this.getConfigModalHtml();
+                document.body.appendChild(modalEl);
+                
+                // Add event listeners
+                modalEl.querySelectorAll('[data-bs-dismiss="modal"], .btn-close').forEach(btn => {
+                    btn.addEventListener('click', () => this.hideConfigEditor());
+                });
+                
+                modalEl.addEventListener('click', (e) => {
+                    if (e.target === modalEl) {
+                        this.hideConfigEditor();
+                    }
+                });
+                
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && modalEl.classList.contains('show')) {
+                        this.hideConfigEditor();
+                    }
+                });
+            }
+            
+            // Update modal content
+            const localizedTitle = document.getElementById('localizedModConfigTitle')?.value || 'Mod Config';
+            document.getElementById('modConfigTitle').textContent = fileName + ' - ' + localizedTitle;
+            document.getElementById('modConfigFileName').value = configFileName;
+            
+            const loadingEl = document.getElementById('modConfigLoading');
+            const contentEl = document.getElementById('modConfigContent');
+            const errorEl = document.getElementById('modConfigError');
+            const editorEl = document.getElementById('modConfigEditor');
+            
+            const localizedLoading = document.getElementById('localizedModConfigLoading')?.value || 'Loading configuration...';
+            loadingEl.querySelector('p').textContent = localizedLoading;
+            
+            loadingEl.style.display = 'flex';
+            contentEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            
+            // Show modal
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            document.body.classList.add('modal-open');
+            
+            let backdrop = document.getElementById('modConfigBackdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.id = 'modConfigBackdrop';
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+            } else {
+                backdrop.style.display = 'block';
+            }
+            
+            // Fetch config
+            try {
+                const response = await fetch('/api/modconfig/read?fileName=' + encodeURIComponent(configFileName));
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('modConfigEditor').value = data.content;
+                        document.getElementById('modConfigSections').value = JSON.stringify(data.sections || []);
+                        loadingEl.style.display = 'none';
+                        contentEl.style.display = 'block';
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } else {
+                    throw new Error('Config file not found');
+                }
+            } catch (error) {
+                console.error('[ModRenderer] Error loading config:', error);
+                const localizedLoadError = document.getElementById('localizedModConfigLoadError')?.value || 'Failed to load configuration';
+                document.getElementById('modConfigErrorMessage').textContent = localizedLoadError + ': ' + error.message;
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'flex';
+            }
+        },
+        
+        hideConfigEditor: function() {
+            const modalEl = document.getElementById('modConfigModal');
+            const backdrop = document.getElementById('modConfigBackdrop');
+            
+            if (modalEl) {
+                modalEl.classList.remove('show');
+                modalEl.style.display = 'none';
+            }
+            
+            if (backdrop) {
+                backdrop.style.display = 'none';
+            }
+            
+            document.body.classList.remove('modal-open');
+        },
+        
+        saveConfig: async function() {
+            const fileName = document.getElementById('modConfigFileName').value;
+            const content = document.getElementById('modConfigEditor').value;
+            const saveBtn = document.getElementById('modConfigSaveBtn');
+            const savingEl = document.getElementById('modConfigSaving');
+            
+            const localizedSave = document.getElementById('localizedModConfigSave')?.value || 'Save';
+            const localizedSaving = document.getElementById('localizedModConfigSaving')?.value || 'Saving...';
+            const localizedSaveSuccess = document.getElementById('localizedModConfigSaveSuccess')?.value || 'Configuration saved successfully';
+            const localizedSaveError = document.getElementById('localizedModConfigSaveError')?.value || 'Failed to save configuration';
+            
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + localizedSaving;
+            savingEl.style.display = 'inline-flex';
+            
+            try {
+                const response = await fetch('/api/modconfig/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName: fileName, content: content })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        ModalUtils.alert(localizedSaveSuccess, '');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } else {
+                    throw new Error('Failed to save config');
+                }
+            } catch (error) {
+                console.error('[ModRenderer] Error saving config:', error);
+                ModalUtils.alert(localizedSaveError, error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i data-icon="icon-save"></i> ' + localizedSave;
+                savingEl.style.display = 'none';
+            }
+        },
+        
+        getConfigModalHtml: function() {
+            return `
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i data-icon="icon-settings" class="me-2"></i>
+                                <span id="modConfigTitle">Mod Config</span>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="localizedModConfigSave" value="Save" />
+                            <input type="hidden" id="localizedModConfigSaving" value="Saving..." />
+                            <input type="hidden" id="localizedModConfigSaveSuccess" value="Configuration saved successfully" />
+                            <input type="hidden" id="localizedModConfigSaveError" value="Failed to save configuration" />
+                            <input type="hidden" id="localizedModConfigLoading" value="Loading configuration..." />
+                            <input type="hidden" id="localizedModConfigLoadError" value="Failed to load configuration" />
+                            <input type="hidden" id="localizedModConfigConfigHint" value="Edit configuration file directly. Click Save to apply changes." />
+                            <input type="hidden" id="localizedModConfigNoConfig" value="No configuration file available" />
+                            <input type="hidden" id="localizedModConfigCancel" value="Cancel" />
+                            <input type="hidden" id="localizedModConfigTitle" value="Mod Config" />
+                            <input type="hidden" id="localizedModConfigConfigFileNotFound" value="Config file not found" />
+                            
+                            <input type="hidden" id="modConfigFileName" value="">
+                            <input type="hidden" id="modConfigSections" value="[]">
+                            
+                            <div id="modConfigLoading" class="text-center py-5" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading...</p>
+                            </div>
+                            
+                            <div id="modConfigContent" style="display: none;">
+                                <div class="alert alert-info mb-2">
+                                    <i data-icon="icon-info" class="me-2"></i>
+                                    Edit configuration file directly. Click Save to apply changes.
+                                </div>
+                                <textarea id="modConfigEditor" class="form-control font-monospace" rows="20" style="font-size: 12px; resize: vertical;"></textarea>
+                            </div>
+                            
+                            <div id="modConfigError" class="text-center py-5" style="display: none;">
+                                <i data-icon="icon-warning" class="text-warning mb-3" style="font-size: 3rem;"></i>
+                                <p id="modConfigErrorMessage" class="text-muted">Failed to load</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <span id="modConfigSaving" class="me-2" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                Saving...
+                            </span>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="modConfigSaveBtn" onclick="ModRenderer.saveConfig()">
+                                <i data-icon="icon-save"></i> Save
+                            </button>
                         </div>
                     </div>
                 </div>
