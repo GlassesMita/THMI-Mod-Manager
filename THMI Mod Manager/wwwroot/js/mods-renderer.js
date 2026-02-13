@@ -7,6 +7,11 @@
         debugMode: true,
         updateCheckInProgress: false,
         
+        getLocalizedText: function(key, fallback) {
+            const el = document.getElementById(key);
+            return el ? el.value : fallback;
+        },
+        
         init: function() {
             this.apiEndpoint = window.location.origin + '/api/mods';
             console.log('[ModRenderer] Initializing with endpoint:', this.apiEndpoint);
@@ -219,10 +224,23 @@
             const isValid = mod.isValid === true;
             const isDisabled = mod.isDisabled === true;
             const buttonClass = isDisabled ? 'btn-success' : 'btn-warning';
-            const buttonText = isDisabled ? '启用' : '禁用';
+            const buttonText = isDisabled ? this.getLocalizedText('localizedEnable', '启用') : this.getLocalizedText('localizedDisable', '禁用');
             const buttonIcon = isDisabled ? 'icon-play' : 'icon-pause';
             const borderClass = isValid ? '' : 'border-warning';
             const hasUpdate = mod.hasUpdateAvailable === true;
+            
+            const localizedUpdate = this.getLocalizedText('localizedUpdate', '更新');
+            const localizedDelete = this.getLocalizedText('localizedDelete', '删除');
+            const localizedConfig = this.getLocalizedText('localizedConfig', '设置');
+            const localizedNewVersion = this.getLocalizedText('localizedNewVersion', '新版本:');
+            const localizedCurrent = this.getLocalizedText('localizedCurrent', '当前:');
+            const localizedChangelog = this.getLocalizedText('localizedChangelog', '更新日志');
+            const localizedViewOnGithub = this.getLocalizedText('localizedViewOnGithub', '在 Github 上查看');
+            const localizedLink = this.getLocalizedText('localizedLink', 'Link:');
+            const localizedAuthor = this.getLocalizedText('localizedAuthor', '作者:');
+            const localizedId = this.getLocalizedText('localizedId', 'ID:');
+            const localizedModDesc = this.getLocalizedText('localizedModDesc', 'Mod Desc:');
+            const localizedUpdateAvailable = this.getLocalizedText('localizedUpdateAvailable', '有新版本可用');
             
             const modId = 'mod-' + fileName.replace(/[^a-zA-Z0-9]/g, '_').replace(/\.dll$/i, '') + '-' + index;
             
@@ -231,49 +249,49 @@
             html += '<div class="mod-item-header">';
             
             if (hasUpdate) {
-                html += '<div class="update-badge" title="有新版本可用"><i data-icon="icon-download"></i></div>';
+                html += '<div class="update-badge" title="' + localizedUpdateAvailable + '"><i data-icon="icon-download"></i></div>';
             }
             
-            html += '<div class="mod-item-title"><h5 class="mb-0">' + this.escapeHtml(name) + '<button class="config-btn" onclick="ModRenderer.showConfigEditor(\'' + this.escapeJs(fileName) + '\')" style="display: none;" title="设置"><i data-icon="icon-settings"></i></button></h5></div>';
+            html += '<div class="mod-item-title"><h5 class="mb-0">' + this.escapeHtml(name) + '<button class="config-btn" onclick="ModRenderer.showConfigEditor(\'' + this.escapeJs(fileName) + '\')" style="display: none;" title="' + localizedConfig + '"><i data-icon="icon-settings"></i></button></h5></div>';
             html += '<div class="mod-item-actions">';
             html += '<button class="btn btn-outline-secondary btn-sm me-2" onclick="ModRenderer.toggleDetails(\'' + modId + '\')"><i data-icon="icon-chevron-down" id="toggle-icon-' + modId + '"></i></button>';
             html += '<button class="btn ' + buttonClass + ' btn-sm me-2 mod-action-btn" onclick="ModRenderer.toggleMod(\'' + this.escapeJs(fileName) + '\')"><i data-icon="' + buttonIcon + '"></i> ' + buttonText + '</button>';
             
             if (hasUpdate) {
-                html += '<button class="btn btn-primary btn-sm me-2 mod-action-btn" onclick="ModRenderer.updateMod(\'' + this.escapeJs(fileName) + '\')"><i data-icon="icon-download"></i> 更新</button>';
+                html += '<button class="btn btn-primary btn-sm me-2 mod-action-btn" onclick="ModRenderer.updateMod(\'' + this.escapeJs(fileName) + '\')"><i data-icon="icon-download"></i> ' + localizedUpdate + '</button>';
             }
             
-            html += '<button class="btn btn-danger btn-sm mod-action-btn" onclick="ModRenderer.confirmDelete(\'' + this.escapeJs(fileName) + '\')"><i data-icon="icon-trash"></i> 删除</button>';
+            html += '<button class="btn btn-danger btn-sm mod-action-btn" onclick="ModRenderer.confirmDelete(\'' + this.escapeJs(fileName) + '\')"><i data-icon="icon-trash"></i> ' + localizedDelete + '</button>';
             html += '</div></div>';
             html += '<div class="mod-item-body" id="mod-details-' + modId + '" style="display: none;">';
             
             if (hasUpdate && mod.latestVersion) {
                 html += '<div class="alert alert-info py-2 mb-2">';
                 html += '<div class="d-flex align-items-center justify-content-between mb-2">';
-                html += '<div><strong>新版本:</strong> ' + this.escapeHtml(mod.latestVersion) + ' <span class="text-muted">(当前: ' + this.escapeHtml(mod.version) + ')</span></div>';
+                html += '<div><strong>' + localizedNewVersion + '</strong> ' + this.escapeHtml(mod.latestVersion) + ' <span class="text-muted">(' + localizedCurrent + ' ' + this.escapeHtml(mod.version) + ')</span></div>';
                 html += '<div class="btn-group">';
-                html += '<button class="btn btn-outline-primary btn-sm" onclick="ModRenderer.showModChangelog(\'' + this.escapeJs(fileName) + '\')"><i data-icon="icon-changelog"></i> 更新日志</button>';
+                html += '<button class="btn btn-outline-primary btn-sm" onclick="ModRenderer.showModChangelog(\'' + this.escapeJs(fileName) + '\')"><i data-icon="icon-changelog"></i> ' + localizedChangelog + '</button>';
                 
                 if (mod.releaseHtmlUrl) {
-                    html += '<a class="btn btn-outline-secondary btn-sm" href="' + this.escapeHtml(mod.releaseHtmlUrl) + '" target="_blank" rel="noopener noreferrer"><i data-icon="icon-external-link"></i> 在 Github 上查看</a>';
+                    html += '<a class="btn btn-outline-secondary btn-sm" href="' + this.escapeHtml(mod.releaseHtmlUrl) + '" target="_blank" rel="noopener noreferrer"><i data-icon="icon-external-link"></i> ' + localizedViewOnGithub + '</a>';
                 } else if (mod.modLink) {
-                    html += '<a class="btn btn-outline-secondary btn-sm" href="' + this.escapeHtml(mod.modLink) + '" target="_blank" rel="noopener noreferrer"><i data-icon="icon-external-link"></i> 在 Github 上查看</a>';
+                    html += '<a class="btn btn-outline-secondary btn-sm" href="' + this.escapeHtml(mod.modLink) + '" target="_blank" rel="noopener noreferrer"><i data-icon="icon-external-link"></i> ' + localizedViewOnGithub + '</a>';
                 }
                 
                 html += '</div></div></div>';
             }
             
             if (mod.modLink) {
-                html += '<span class="mod-item-info"><strong>Link:</strong> <a href="' + this.escapeHtml(mod.modLink) + '" target="_blank" rel="noopener noreferrer">' + this.escapeHtml(mod.modLink) + '</a></span><br>';
+                html += '<span class="mod-item-info"><strong>' + localizedLink + '</strong> <a href="' + this.escapeHtml(mod.modLink) + '" target="_blank" rel="noopener noreferrer">' + this.escapeHtml(mod.modLink) + '</a></span><br>';
             }
             if (mod.author) {
-                html += '<span class="mod-item-info"><strong>作者:</strong> ' + this.escapeHtml(mod.author) + '</span><br>';
+                html += '<span class="mod-item-info"><strong>' + localizedAuthor + '</strong> ' + this.escapeHtml(mod.author) + '</span><br>';
             }
             if (mod.uniqueId) {
-                html += '<span class="mod-item-info"><strong>ID:</strong> <code>' + this.escapeHtml(mod.uniqueId) + '</code></span>';
+                html += '<span class="mod-item-info"><strong>' + localizedId + '</strong> <code>' + this.escapeHtml(mod.uniqueId) + '</code></span>';
             }
             if (mod.description) {
-                html += '<p class="mod-item-description text-muted small mb-0"><strong>Mod Desc:</strong><br> ' + this.escapeHtml(mod.description) + '</p>';
+                html += '<p class="mod-item-description text-muted small mb-0"><strong>' + localizedModDesc + '</strong><br> ' + this.escapeHtml(mod.description) + '</p>';
             }
             
             html += '</div>';
@@ -870,7 +888,9 @@
                 });
             }
             
-            // Update modal content
+            // Update modal content with localized strings
+            this.updateConfigModalLocalization();
+            
             const localizedTitle = document.getElementById('localizedModConfigTitle')?.value || 'Mod Config';
             document.getElementById('modConfigTitle').textContent = fileName + ' - ' + localizedTitle;
             document.getElementById('modConfigFileName').value = configFileName;
@@ -924,6 +944,53 @@
                 document.getElementById('modConfigErrorMessage').textContent = localizedLoadError + ': ' + error.message;
                 loadingEl.style.display = 'none';
                 errorEl.style.display = 'flex';
+            }
+        },
+        
+        updateConfigModalLocalization: function() {
+            const modalEl = document.getElementById('modConfigModal');
+            if (!modalEl) return;
+            
+            const localizedConfigHint = document.getElementById('localizedModConfigConfigHint')?.value || 'Edit configuration file directly. Click Save to apply changes.';
+            const localizedCancel = document.getElementById('localizedModConfigCancel')?.value || 'Cancel';
+            const localizedSave = document.getElementById('localizedModConfigSave')?.value || 'Save';
+            const localizedLoading = document.getElementById('localizedModConfigLoading')?.value || 'Loading...';
+            const localizedLoadError = document.getElementById('localizedModConfigLoadError')?.value || 'Failed to load';
+            const localizedSaving = document.getElementById('localizedModConfigSaving')?.value || 'Saving...';
+            
+            const configHintEl = modalEl.querySelector('#modConfigContent .alert-info');
+            if (configHintEl) {
+                configHintEl.innerHTML = '<i data-icon="icon-info" class="me-2"></i> ' + localizedConfigHint;
+            }
+            
+            const cancelBtn = modalEl.querySelector('.btn-secondary[data-bs-dismiss="modal"]');
+            if (cancelBtn) {
+                cancelBtn.textContent = localizedCancel;
+            }
+            
+            const saveBtn = modalEl.querySelector('#modConfigSaveBtn');
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i data-icon="icon-save"></i> ' + localizedSave;
+            }
+            
+            const loadingTextEl = modalEl.querySelector('#modConfigLoading p');
+            if (loadingTextEl) {
+                loadingTextEl.textContent = localizedLoading;
+            }
+            
+            const loadingVisuallyHidden = modalEl.querySelector('#modConfigLoading .visually-hidden');
+            if (loadingVisuallyHidden) {
+                loadingVisuallyHidden.textContent = localizedLoading;
+            }
+            
+            const errorMessageEl = modalEl.querySelector('#modConfigErrorMessage');
+            if (errorMessageEl) {
+                errorMessageEl.textContent = localizedLoadError;
+            }
+            
+            const savingTextEl = modalEl.querySelector('#modConfigSaving');
+            if (savingTextEl) {
+                savingTextEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> ' + localizedSaving;
             }
         },
         
@@ -997,18 +1064,6 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <input type="hidden" id="localizedModConfigSave" value="Save" />
-                            <input type="hidden" id="localizedModConfigSaving" value="Saving..." />
-                            <input type="hidden" id="localizedModConfigSaveSuccess" value="Configuration saved successfully" />
-                            <input type="hidden" id="localizedModConfigSaveError" value="Failed to save configuration" />
-                            <input type="hidden" id="localizedModConfigLoading" value="Loading configuration..." />
-                            <input type="hidden" id="localizedModConfigLoadError" value="Failed to load configuration" />
-                            <input type="hidden" id="localizedModConfigConfigHint" value="Edit configuration file directly. Click Save to apply changes." />
-                            <input type="hidden" id="localizedModConfigNoConfig" value="No configuration file available" />
-                            <input type="hidden" id="localizedModConfigCancel" value="Cancel" />
-                            <input type="hidden" id="localizedModConfigTitle" value="Mod Config" />
-                            <input type="hidden" id="localizedModConfigConfigFileNotFound" value="Config file not found" />
-                            
                             <input type="hidden" id="modConfigFileName" value="">
                             <input type="hidden" id="modConfigSections" value="[]">
                             
