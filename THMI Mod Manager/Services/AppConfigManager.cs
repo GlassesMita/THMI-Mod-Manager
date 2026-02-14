@@ -39,7 +39,6 @@ namespace THMI_Mod_Manager.Services
                     
                     // Log that new config file was created
                     var logMessage = $"AppConfig.Schale created at: {_filePath}";
-                    Logger.Log(Logger.LogLevel.Info, logMessage);
                     Logger.LogInfo(logMessage);
                     
                     return;
@@ -75,7 +74,6 @@ namespace THMI_Mod_Manager.Services
                 
                 // Log successful config load
                 var loadLogMessage = $"AppConfig.Schale loaded from: {_filePath} ({_data.Count} sections)";
-                Logger.Log(Logger.LogLevel.Info, loadLogMessage);
                 Logger.LogInfo(loadLogMessage);
             }
             finally
@@ -200,7 +198,6 @@ namespace THMI_Mod_Manager.Services
                     if (!string.IsNullOrEmpty(oldValue))
                         logMessage += $" (was: {oldValue})";
                     
-                    Logger.Log(Logger.LogLevel.Info, logMessage);
                     Logger.LogInfo(logMessage);
                 }
 
@@ -241,7 +238,6 @@ namespace THMI_Mod_Manager.Services
                 {
                     // Log the configuration removal
                     var logMessage = $"Config removed: [{section}]{key}";
-                    Logger.Log(Logger.LogLevel.Info, logMessage);
                     Logger.LogInfo(logMessage);
                 }
                 
@@ -266,7 +262,6 @@ namespace THMI_Mod_Manager.Services
                 {
                     // Log the section removal
                     var logMessage = $"All config removed from section: [{section}]";
-                    Logger.Log(Logger.LogLevel.Info, logMessage);
                     Logger.LogInfo(logMessage);
                 }
                 
@@ -329,7 +324,6 @@ namespace THMI_Mod_Manager.Services
             
             // Log that AppConfig.Schale was written
             var logMessage = $"AppConfig.Schale written to: {_filePath}";
-            Logger.Log(Logger.LogLevel.Info, logMessage);
             Logger.LogInfo(logMessage);
         }
 

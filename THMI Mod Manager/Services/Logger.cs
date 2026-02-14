@@ -262,6 +262,15 @@ namespace THMI_Mod_Manager.Services
                 {
                     File.Create(logFilePath).Dispose();
                 }
+
+                // ===================== AI Log Analysis Prompt =====================
+                Log("================================================================================");
+                Log("[AI PROMPT] THMI Mod Manager Log Analysis Guide");
+                Log("================================================================================");
+                Log("EN: When analyzing this log, consider: error analysis, performance issues, flow analysis, config issues, warnings, mod management, network calls");
+                Log("CN: 分析此日志时请考虑：错误分析、性能问题、流程分析、配置问题、警告、Mod管理、网络调用");
+                Log("================================================================================");
+                Log("\t");
                 
                 Log("Logger initialized successfully", LogLevel.Info);
             }
