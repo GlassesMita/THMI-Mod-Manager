@@ -103,8 +103,10 @@ namespace THMI_Mod_Manager.Services
             try
             {
                 var dllFileName = Path.GetFileNameWithoutExtension(dllPath);
+                // Remove .disabled suffix first, then remove .dll extension to get the mod folder name
+                var modFolderName = Path.GetFileNameWithoutExtension(dllFileName.Replace(".disabled", "", StringComparison.OrdinalIgnoreCase));
                 var dllDirectory = Path.GetDirectoryName(dllPath) ?? string.Empty;
-                var modFolder = Path.Combine(dllDirectory, dllFileName);
+                var modFolder = Path.Combine(dllDirectory, modFolderName);
                 
                 var manifestPath = Path.Combine(modFolder, "Manifest.toml");
                 

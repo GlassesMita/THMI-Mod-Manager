@@ -293,7 +293,9 @@ namespace THMI_Mod_Manager.Services
 
                 var pluginsPath = GetPluginsPath();
                 var dllFileName = Path.GetFileNameWithoutExtension(mod.FilePath);
-                var modFolder = Path.Combine(pluginsPath, dllFileName);
+                // Remove .disabled suffix first, then remove .dll extension to get the mod folder name
+                var modFolderName = Path.GetFileNameWithoutExtension(dllFileName.Replace(".disabled", "", StringComparison.OrdinalIgnoreCase));
+                var modFolder = Path.Combine(pluginsPath, modFolderName);
                 var manifestPath = Path.Combine(modFolder, "Manifest.toml");
 
                 var tempPath = Path.Combine(Path.GetTempPath(), $"THMI_Mod_Update_{Guid.NewGuid():N}");

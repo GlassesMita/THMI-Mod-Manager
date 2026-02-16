@@ -840,9 +840,10 @@
                             if (onclickAttr) {
                                 const fileNameMatch = onclickAttr.match(/'([^']+)'/);
                                 if (fileNameMatch) {
-                                    const fileName = fileNameMatch[1].toLowerCase();
+                                    // Remove .disabled suffix for matching
+                                    const fileName = fileNameMatch[1].replace(/\.disabled$/i, '').toLowerCase();
                                     const hasConfig = !!configMap[fileName];
-                                    console.log('[ModRenderer] Mod file:', fileName, 'Has config:', hasConfig, 'Config:', configMap[fileName]);
+                                    console.log('[ModRenderer] Mod file:', fileNameMatch[1], '->', fileName, 'Has config:', hasConfig, 'Config:', configMap[fileName]);
                                     if (hasConfig) {
                                         btn.style.display = 'inline-flex';
                                         console.log('[ModRenderer] Button shown for:', fileName);
@@ -858,7 +859,8 @@
         },
         
         showConfigEditor: async function(fileName) {
-            const configFileName = fileName.replace(/\.dll$/i, '.cfg');
+            // Remove .disabled suffix if present, then replace .dll with .cfg
+            const configFileName = fileName.replace(/\.disabled$/i, '').replace(/\.dll$/i, '.cfg');
             
             let modalEl = document.getElementById('modConfigModal');
             if (!modalEl) {
