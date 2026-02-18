@@ -28,7 +28,7 @@
           "content": "重点介绍项目作为 Touhou Mystia Izakaya Mod 管理器的核心定位"
         },
         {
-          "content": "概述支持的操作系统环境（Windows 10/11）和 .NET 10.0 运行时要求"
+          "content": "概述支持的操作系统环境（Windows 10/11）和 .NET 10.0 运行时要求；如果用户在 Windows 10 x64 以下版本上运行，需要在系统环境变量内添加 `DOTNET_EnableWriteXorExecute=0` 和 `DOTNET_GCName=clrgc.dll`，然后重新启动。"
         }
       ]
     },
@@ -50,7 +50,7 @@
       "parent": "快速开始",
       "page_notes": [
         {
-          "content": "列出最低和推荐的硬件配置（CPU、内存、磁盘空间）"
+          "content": "列出最低和推荐的硬件配置（最低推荐：支持 SSE2 指令集 CPU 、内存 - 512MB、磁盘空间 - 50MB以上（不含 .NET SDK））"
         },
         {
           "content": "说明 .NET 10.0 运行时依赖和安装方式"
