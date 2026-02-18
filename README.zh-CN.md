@@ -36,6 +36,8 @@
 - 支持现代网页标准的浏览器（Chrome、Edge、Firefox 等）
 - 稳定的网络连接用于下载Mod（可选）*（注：<ruby>部分学校<rt><small><del>https://www.gfxy.com</del></small></rt></ruby>的校园网可能阻断 Github，可尝试使用代理下载）*
 
+**如果您执意要在 Windows 10 x64 以下版本上运行，您必须在系统环境变量内添加 `DOTNET_EnableWriteXorExecute=0` 和 `DOTNET_GCName=clrgc.dll`，然后重新启动。详见[此 Issue](https://github.com/dotnet/runtime/issues/79469#issuecomment-1371202114)。**
+
 ## 源码编译
 
 ### 准备工作：

@@ -37,6 +37,10 @@ A mod manager for Touhou Mystia Izakaya game.
 - Web browser that supports modern web standards (Google Chrome, Microsoft Edge, Mozilla Firefox, etc.)
 - Stable Internet connection for downloading mods (optional) *(Note: Some high school may block Github via school firewall, you can try to use proxy to download mods.)*
 
+**If you want to run on Windows 10 x64 22H2 or later, you must add `DOTNET_EnableWriteXorExecute=0` and `DOTNET_GCName=clrgc.dll` to your system environment variables, then restart the system. See [this issue](https://github.com/dotnet/runtime/issues/79469#issuecomment-1371202114) for more details.**
+
+
+
 ## Build from Source
 
 ### Prerequisites:
