@@ -4,6 +4,11 @@ using THMI_Mod_Manager.Models;
 
 namespace THMI_Mod_Manager.Controllers
 {
+    /// <summary>
+    /// API controller for mod operations / 模组操作的 API 控制器
+    /// Provides endpoints for loading, toggling, deleting and updating mods
+    /// / 提供加载、切换、删除和更新模组的端点
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class ModsController : ControllerBase
@@ -13,6 +18,13 @@ namespace THMI_Mod_Manager.Controllers
         private readonly AppConfigManager _appConfig;
         private readonly SessionTimeService _sessionTimeService;
 
+        /// <summary>
+        /// Constructor / 构造函数
+        /// </summary>
+        /// <param name="modService">Mod service instance / 模组服务实例</param>
+        /// <param name="modUpdateService">Mod update service instance / 模组更新服务实例</param>
+        /// <param name="appConfig">App config manager / 应用程序配置管理器</param>
+        /// <param name="sessionTimeService">Session time service / 会话时间服务</param>
         public ModsController(ModService modService, ModUpdateService modUpdateService, AppConfigManager appConfig, SessionTimeService sessionTimeService)
         {
             _modService = modService;
@@ -21,6 +33,10 @@ namespace THMI_Mod_Manager.Controllers
             _sessionTimeService = sessionTimeService;
         }
 
+        /// <summary>
+        /// Get all mods / 获取所有模组
+        /// </summary>
+        /// <returns>List of all mods / 所有模组的列表</returns>
         [HttpGet]
         public IActionResult GetMods()
         {
@@ -37,6 +53,11 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
+        /// <summary>
+        /// Get a specific mod by ID or filename / 通过 ID 或 文件名获取特定模组
+        /// </summary>
+        /// <param name="id">Mod unique ID or filename / 模组唯一 ID 或 文件名</param>
+        /// <returns>Mod information / 模组信息</returns>
         [HttpGet("{id}")]
         public IActionResult GetMod(string id)
         {
@@ -59,6 +80,11 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
+        /// <summary>
+        /// Delete a mod by ID / 通过ID删除模组
+        /// </summary>
+        /// <param name="id">Mod unique ID or filename / 模组唯一 ID 或 文件名</param>
+        /// <returns>Success status / 成功状态</returns>
         [HttpDelete("{id}")]
         public IActionResult DeleteMod(string id)
         {
@@ -90,6 +116,10 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
+        /// <summary>
+        /// Refresh the mods list / 刷新模组列表
+        /// </summary>
+        /// <returns>Updated list of mods / 更新后的模组列表</returns>
         [HttpPost("refresh")]
         public IActionResult RefreshMods()
         {
@@ -106,6 +136,11 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
+        /// <summary>
+        /// Toggle mod enabled/disabled state / 切换模组启用/禁用状态
+        /// </summary>
+        /// <param name="request">Toggle request containing file name / 包含文件名的切换请求</param>
+        /// <returns>Success status / 成功状态</returns>
         [HttpPost("toggle")]
         public IActionResult ToggleMod([FromBody] ToggleModRequest request)
         {
@@ -133,7 +168,11 @@ namespace THMI_Mod_Manager.Controllers
                 return StatusCode(500, new { success = false, message = $"Failed to toggle mod: {ex.Message}" });
             }
         }
-        
+
+        /// <summary>
+        /// Get current game running status / 获取当前游戏运行状态
+        /// </summary>
+        /// <returns>Game status information / 游戏状态信息</returns>
         [HttpGet("game-status")]
         public IActionResult GetGameStatus()
         {
@@ -149,7 +188,11 @@ namespace THMI_Mod_Manager.Controllers
                 return StatusCode(500, new { success = false, message = $"Failed to get game status: {ex.Message}" });
             }
         }
-        
+
+        /// <summary>
+        /// Get localized strings for the UI / 获取 UI 的本地化字符串
+        /// </summary>
+        /// <returns>Localized string dictionary / 本地化字符串字典</returns>
         [HttpGet("localized-strings")]
         public IActionResult GetLocalizedStrings()
         {
@@ -174,7 +217,12 @@ namespace THMI_Mod_Manager.Controllers
                 return StatusCode(500, new { success = false, message = $"Failed to get localized strings: {ex.Message}" });
             }
         }
-        
+
+        /// <summary>
+        /// Install a mod from a local zip file / 从本地 zip 文件安装模组
+        /// </summary>
+        /// <param name="request">Install request containing file path / 包含文件路径的安装请求</param>
+        /// <returns>Success status / 成功状态</returns>
         [HttpPost("install")]
         public IActionResult InstallMod([FromBody] InstallModRequest request)
         {
@@ -208,6 +256,10 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
+        /// <summary>
+        /// Check for updates for all mods / 检查所有模组的更新
+        /// </summary>
+        /// <returns>List of mods with update information / 包含更新信息的模组列表</returns>
         [HttpPost("check-updates")]
         public async Task<IActionResult> CheckForUpdates()
         {
@@ -232,6 +284,11 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
+        /// <summary>
+        /// Update a specific mod / 更新特定模组
+        /// </summary>
+        /// <param name="request">Update request containing file name / 包含文件名的更新请求</param>
+        /// <returns>Success status / 成功状态</returns>
         [HttpPost("update")]
         public async Task<IActionResult> UpdateMod([FromBody] UpdateModRequest request)
         {
@@ -285,6 +342,11 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
+        /// <summary>
+        /// Get update progress for a specific mod / 获取特定模组的更新进度
+        /// </summary>
+        /// <param name="id">Mod file name / 模组文件名</param>
+        /// <returns>Update progress information / 更新进度信息</returns>
         [HttpGet("update-progress/{id}")]
         public IActionResult GetUpdateProgress(string id)
         {
@@ -306,18 +368,30 @@ namespace THMI_Mod_Manager.Controllers
         }
     }
 
+    /// <summary>
+    /// Request model for toggling mod state / 切换模组状态的请求模型
+    /// </summary>
     public class ToggleModRequest
     {
+        /// <summary>File name of the mod to toggle / 要切换的模组文件名</summary>
         public string FileName { get; set; } = string.Empty;
     }
     
+    /// <summary>
+    /// Request model for installing a mod / 安装模组的请求模型
+    /// </summary>
     public class InstallModRequest
     {
+        /// <summary>Path to the mod zip file / 模组 zip 文件的路径</summary>
         public string FilePath { get; set; } = string.Empty;
     }
     
+    /// <summary>
+    /// Request model for updating a mod / 更新模组的请求模型
+    /// </summary>
     public class UpdateModRequest
     {
+        /// <summary>File name of the mod to update / 要更新的模组文件名</summary>
         public string FileName { get; set; } = string.Empty;
     }
 }

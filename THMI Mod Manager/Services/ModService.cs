@@ -4,15 +4,28 @@ using THMI_Mod_Manager.Models;
 
 namespace THMI_Mod_Manager.Services
 {
+    /// <summary>
+    /// Service for managing mods / 模组管理服务
+    /// Provides functionality to load, delete, toggle, and install mods
+    /// / 提供加载、删除、切换和安装模组的功能
+    /// </summary>
     public class ModService
     {
         private readonly AppConfigManager _appConfig;
 
+        /// <summary>
+        /// Constructor / 构造函数
+        /// </summary>
+        /// <param name="appConfig">Application configuration manager / 应用程序配置管理器</param>
         public ModService(AppConfigManager appConfig)
         {
             _appConfig = appConfig;
         }
 
+        /// <summary>
+        /// Load all mods from the plugins directory / 从插件目录加载所有模组
+        /// </summary>
+        /// <returns>List of ModInfo objects / ModInfo对象列表</returns>
         public List<ModInfo> LoadMods()
         {
             var mods = new List<ModInfo>();
@@ -26,11 +39,11 @@ namespace THMI_Mod_Manager.Services
 
             try
             {
-                // Get all .dll files (including .disabled files)
+                // Get all .dll files (including .disabled files) / 获取所有 DLL 文件（包括 .disabled 文件）
                 var dllFiles = Directory.GetFiles(pluginsPath, "*.dll", SearchOption.TopDirectoryOnly);
                 var disabledFiles = Directory.GetFiles(pluginsPath, "*.dll.disabled", SearchOption.TopDirectoryOnly);
                 
-                // Combine both lists
+                // Combine both lists / 合并两个列表
                 var allFiles = dllFiles.Concat(disabledFiles).ToArray();
                 
                 Logger.LogInfo($"Found {dllFiles.Length} DLL files and {disabledFiles.Length} disabled files in {pluginsPath}");
@@ -49,6 +62,13 @@ namespace THMI_Mod_Manager.Services
             return mods;
         }
 
+        /// <summary>
+        /// Extract mod information from a DLL file and its Manifest.toml
+        /// / 从 DLL 文件和其 Manifest.toml 中提取模组信息
+        /// / Manifest.toml 中提取模组信息
+        /// </summary>
+        /// <param name="dllPath">Full path to the mod DLL file / 模组 DLL 文件的完整路径</param>
+        /// <returns>ModInfo object with extracted information / 包含提取信息的ModInfo对象</returns>
         public ModInfo ExtractModInfo(string dllPath)
         {
             var modInfo = new ModInfo
@@ -65,6 +85,7 @@ namespace THMI_Mod_Manager.Services
             {
                 var dllFileName = Path.GetFileNameWithoutExtension(dllPath);
                 // Remove .disabled suffix first, then remove .dll extension to get the mod folder name
+                // / 先移除 .disabled 后缀，再移除 .dll 扩展名以获取模组文件夹名称
                 var modFolderName = Path.GetFileNameWithoutExtension(dllFileName.Replace(".disabled", "", StringComparison.OrdinalIgnoreCase));
                 var dllDirectory = Path.GetDirectoryName(dllPath) ?? string.Empty;
                 var modFolder = Path.Combine(dllDirectory, modFolderName);
@@ -163,6 +184,12 @@ namespace THMI_Mod_Manager.Services
             return modInfo;
         }
 
+        /// <summary>
+        /// Get the plugins directory path / 获取插件目录路径
+        /// First checks game path from config, then falls back to common locations
+        /// / 首先检查配置中的游戏路径，然后回退到常见位置
+        /// </summary>
+        /// <returns>Full path to the plugins directory / 插件目录的完整路径</returns>
         private string GetPluginsPath()
         {
             var gamePath = _appConfig.Get("[Game]GamePath", "");
@@ -201,6 +228,11 @@ namespace THMI_Mod_Manager.Services
             return possiblePaths[0];
         }
 
+        /// <summary>
+        /// Delete a mod file / 删除模组文件
+        /// </summary>
+        /// <param name="filePath">Full path to the mod file / 模组文件的完整路径</param>
+        /// <returns>True if deletion was successful / 删除是否成功</returns>
         public bool DeleteMod(string filePath)
         {
             try
@@ -221,6 +253,12 @@ namespace THMI_Mod_Manager.Services
             }
         }
 
+        /// <summary>
+        /// Toggle mod enabled/disabled state by renaming the file with .disabled suffix
+        /// / 切换模组的启用/禁用状态，通过使用 .disabled 后缀重命名文件
+        /// </summary>
+        /// <param name="fileName">File name of the mod (with or without .disabled suffix) / 模组文件名（带或不带 .disabled 后缀）</param>
+        /// <returns>True if toggle was successful / 切换是否成功</returns>
         public bool ToggleMod(string fileName)
         {
             try
@@ -281,6 +319,12 @@ namespace THMI_Mod_Manager.Services
             }
         }
 
+        /// <summary>
+        /// Find a mod file by name, handling both enabled and disabled versions
+        /// / 根据名称查找模组文件，同时处理启用和禁用版本
+        /// </summary>
+        /// <param name="fileName">File name to search for / 要搜索的文件名</param>
+        /// <returns>Full path if found, null otherwise / 如果找到则返回完整路径，否则返回null</returns>
         private string? FindModFileByName(string fileName)
         {
             var pluginsPath = GetPluginsPath();
@@ -345,9 +389,16 @@ namespace THMI_Mod_Manager.Services
                 Logger.LogException(ex, $"Error searching for mod file: {fileName}");
             }
 
-            return null; // File not found
+            return null; // File not found / 文件未找到
         }
 
+        /// <summary>
+        /// Install a mod from a zip file / 从 zip 文件安装模组
+        /// Extracts the zip contents and places DLL files in the plugins directory
+        /// / 解压 zip 文件内容并将 DLL 文件放置在插件目录中
+        /// </summary>
+        /// <param name="zipFilePath">Path to the mod zip file / 模组 zip 文件的路径</param>
+        /// <returns>True if installation was successful / 安装是否成功</returns>
         public bool InstallMod(string zipFilePath)
         {
             try

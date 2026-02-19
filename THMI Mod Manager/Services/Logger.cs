@@ -5,14 +5,26 @@ using System.Threading;
 
 namespace THMI_Mod_Manager.Services
 {
+    /// <summary>
+    /// Logging service for application-wide logging / 应用程序范围的日志服务
+    /// Supports multiple log levels and browser notifications / 支持多个日志级别和浏览器通知
+    /// </summary>
     public class Logger
     {
+        /// <summary>
+        /// Log level enumeration / 日志级别枚举
+        /// </summary>
         public enum LogLevel
         {
+            /// <summary>Information / 信息</summary>
             Info,
+            /// <summary>Warning / 警告</summary>
             Warning,
+            /// <summary>Error / 错误</summary>
             Error,
+            /// <summary>Extra / 额外</summary>
             Ex,
+            /// <summary>Mod-specific / 模组特定</summary>
             Mod
         }
         
@@ -27,42 +39,77 @@ namespace THMI_Mod_Manager.Services
         
         private const int NOTIFICATION_COOLDOWN_MS = 3000;
         
+        /// <summary>
+        /// Static constructor / 静态构造函数
+        /// Initializes the log file path on first use / 首次使用时初始化日志文件路径
+        /// </summary>
         static Logger()
         {
             InitializeLogFilePath();
         }
 
+        /// <summary>
+        /// Log a message with default Info level / 使用默认Info级别记录消息
+        /// </summary>
+        /// <param name="message">Message to log / 要记录的消息</param>
         public static void Log(string message)
         {
             Log(message, LogLevel.Info);
         }
 
+        /// <summary>
+        /// Log an error message / 记录错误消息
+        /// </summary>
+        /// <param name="message">Error message to log / 要记录的错误消息</param>
         public static void LogError(string message)
         {
             Log(message, LogLevel.Error);
         }
 
+        /// <summary>
+        /// Log a warning message / 记录警告消息
+        /// </summary>
+        /// <param name="message">Warning message to log / 要记录的警告消息</param>
         public static void LogWarning(string message)
         {
             Log(message, LogLevel.Warning);
         }
 
+        /// <summary>
+        /// Log an info message / 记录信息消息
+        /// </summary>
+        /// <param name="message">Info message to log / 要记录的信息消息</param>
         public static void LogInfo(string message)
         {
             Log(message, LogLevel.Info);
         }
 
+        /// <summary>
+        /// Log an extra message / 记录额外消息
+        /// </summary>
+        /// <param name="message">Extra message to log / 要记录的额外消息</param>
         public static void LogEx(string message)
         {
             Log(message, LogLevel.Ex);
         }
 
+        /// <summary>
+        /// Mod-specific logging method with default Info level
+        /// / 模组专用日志记录方法，默认Info级别
+        /// </summary>
+        /// <param name="message">Message to log / 要记录的消息</param>
         [ModAccess("Mod专用日志记录方法，支持日志级别参数")]
         public static void LogMod(string message)
         {
             LogMod(message, LogLevel.Info);
         }
 
+        /// <summary>
+        /// Mod-specific logging method with specified level
+        /// / 模组专用日志记录方法，支持指定级别
+        /// </summary>
+        /// <param name="message">Message to log / 要记录的消息</param>
+        /// <param name="level">Log level / 日志级别</param>
         [ModAccess("Mod专用日志记录方法，支持日志级别参数")]
         public static void LogMod(string message, LogLevel level)
         {
