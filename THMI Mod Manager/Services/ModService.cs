@@ -144,6 +144,19 @@ namespace THMI_Mod_Manager.Services
                             modInfo.UpdateUrl = updateUrlString.Value;
                         }
                         
+                        // Parse IncompatibleWith list / 解析不兼容模组列表
+                        if (modSection.TryGetNode("IncompatibleWith", out var incompatibleNode) && incompatibleNode is TomlArray incompatibleArray)
+                        {
+                            foreach (var item in incompatibleArray)
+                            {
+                                if (item is TomlString incompatibleString)
+                                {
+                                    modInfo.IncompatibleWith.Add(incompatibleString.Value);
+                                }
+                            }
+                            Logger.LogInfo($"Found IncompatibleWith: {string.Join(", ", modInfo.IncompatibleWith)}");
+                        }
+                        
                         modInfo.IsValid = true;
                         Logger.LogInfo($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
                     }
@@ -258,9 +271,11 @@ namespace THMI_Mod_Manager.Services
         /// / 切换模组的启用/禁用状态，通过使用 .disabled 后缀重命名文件
         /// </summary>
         /// <param name="fileName">File name of the mod (with or without .disabled suffix) / 模组文件名（带或不带 .disabled 后缀）</param>
-        /// <returns>True if toggle was successful / 切换是否成功</returns>
-        public bool ToggleMod(string fileName)
+        /// <returns>ToggleResult containing success status and conflict information / 包含成功状态和冲突信息的ToggleResult</returns>
+        public ToggleResult ToggleMod(string fileName)
         {
+            var result = new ToggleResult { Success = false };
+            
             try
             {
                 Logger.LogInfo($"Attempting to toggle mod: {fileName}");
@@ -268,24 +283,58 @@ namespace THMI_Mod_Manager.Services
                 if (string.IsNullOrEmpty(fileName))
                 {
                     Logger.LogError("File name is null or empty");
-                    return false;
+                    result.ErrorMessage = "File name is null or empty";
+                    return result;
                 }
 
                 string? fullPath = FindModFileByName(fileName);
                 if (string.IsNullOrEmpty(fullPath))
                 {
                     Logger.LogError($"Mod file not found by name: {fileName}");
-                    return false;
+                    result.ErrorMessage = "Mod file not found";
+                    return result;
                 }
 
                 var directory = Path.GetDirectoryName(fullPath) ?? string.Empty;
                 var fileNameOnly = Path.GetFileName(fullPath);
                 string newFilePath;
+                bool isEnabling = fileNameOnly.EndsWith(".disabled");
 
-                if (fileNameOnly.EndsWith(".disabled"))
+                if (isEnabling)
                 {
                     newFilePath = Path.Combine(directory, fileNameOnly.Substring(0, fileNameOnly.Length - ".disabled".Length));
                     Logger.LogInfo($"Enabling mod: {fullPath} -> {newFilePath}");
+                    
+                    // Check for conflicts before enabling / 在启用前检查冲突
+                    var mods = LoadMods();
+                    var modToEnable = mods.FirstOrDefault(m => m.FileName == fileNameOnly);
+                    
+                    if (modToEnable != null && modToEnable.IncompatibleWith.Count > 0)
+                    {
+                        Logger.LogInfo($"Checking conflicts for mod: {modToEnable.Name} with IncompatibleWith: {string.Join(", ", modToEnable.IncompatibleWith)}");
+                        
+                        foreach (var incompatibleId in modToEnable.IncompatibleWith)
+                        {
+                            var conflictingMod = mods.FirstOrDefault(m => 
+                                m.UniqueId == incompatibleId && 
+                                !m.IsDisabled && 
+                                m.FileName != fileNameOnly);
+                            
+                            if (conflictingMod != null)
+                            {
+                                Logger.LogWarning($"Conflict detected: {modToEnable.Name} is incompatible with {conflictingMod.Name}");
+                                result.ConflictingMods.Add(conflictingMod);
+                            }
+                        }
+                        
+                        if (result.ConflictingMods.Count > 0)
+                        {
+                            result.ModBeingEnabled = modToEnable;
+                            result.ErrorMessage = $"Mod {modToEnable.Name} ({modToEnable.Version}) [{modToEnable.UniqueId}] is incompatible with: {string.Join(", ", result.ConflictingMods.Select(m => $"{m.Name} ({m.Version}) [{m.UniqueId}]"))}";
+                            Logger.LogWarning(result.ErrorMessage);
+                            return result;
+                        }
+                    }
                 }
                 else
                 {
@@ -295,27 +344,32 @@ namespace THMI_Mod_Manager.Services
 
                 File.Move(fullPath, newFilePath);
                 Logger.LogInfo($"Successfully toggled mod: {newFilePath}");
-                return true;
+                result.Success = true;
+                return result;
             }
             catch (UnauthorizedAccessException ex)
             {
                 Logger.LogException($"Access denied when toggling mod: {fileName}", ex);
-                return false;
+                result.ErrorMessage = $"Access denied: {ex.Message}";
+                return result;
             }
             catch (DirectoryNotFoundException ex)
             {
                 Logger.LogException($"Directory not found when toggling mod: {fileName}", ex);
-                return false;
+                result.ErrorMessage = $"Directory not found: {ex.Message}";
+                return result;
             }
             catch (IOException ex)
             {
                 Logger.LogException($"IO error when toggling mod: {fileName}", ex);
-                return false;
+                result.ErrorMessage = $"IO error: {ex.Message}";
+                return result;
             }
             catch (Exception ex)
             {
                 Logger.LogException($"Unexpected error toggling mod: {fileName}", ex);
-                return false;
+                result.ErrorMessage = ex.Message;
+                return result;
             }
         }
 

@@ -56,6 +56,52 @@ namespace THMI_Mod_Manager.Controllers
             }
         }
 
+        /// <summary>
+        /// Check for mod conflicts / 检查模组冲突
+        /// </summary>
+        /// <returns>List of conflicting mod pairs / 冲突模组对列表</returns>
+        [HttpGet("conflicts")]
+        public ActionResult<dynamic> GetConflicts()
+        {
+            try
+            {
+                var mods = _modService.LoadMods();
+                var conflicts = new List<object>();
+                
+                foreach (var mod in mods.Where(m => !m.IsDisabled && m.IncompatibleWith.Count > 0))
+                {
+                    foreach (var incompatibleId in mod.IncompatibleWith)
+                    {
+                        var conflictingMod = mods.FirstOrDefault(m => 
+                            m.UniqueId == incompatibleId && 
+                            !m.IsDisabled && 
+                            m.FileName != mod.FileName);
+                        
+                        if (conflictingMod != null)
+                        {
+                            conflicts.Add(new {
+                                mod1 = new { name = mod.Name, uniqueId = mod.UniqueId, version = mod.Version, fileName = mod.FileName },
+                                mod2 = new { name = conflictingMod.Name, uniqueId = conflictingMod.UniqueId, version = conflictingMod.Version, fileName = conflictingMod.FileName }
+                            });
+                        }
+                    }
+                }
+                
+                Logger.LogInfo($"Found {conflicts.Count} conflict pairs");
+                return Ok(new { success = true, conflicts });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex, "Error checking conflicts");
+                return StatusCode(500, new { success = false, message = $"Failed to check conflicts: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// Toggle mod enabled/disabled state / 切换模组启用/禁用状态
+        /// </summary>
+        /// <param name="request">Toggle request containing file name / 包含文件名的切换请求</param>
+        /// <returns>Success status and conflict information / 成功状态和冲突信息</returns>
         [HttpPost("toggle")]
         public ActionResult<dynamic> ToggleMod([FromBody] ToggleModRequest request)
         {
@@ -67,10 +113,38 @@ namespace THMI_Mod_Manager.Controllers
                 }
 
                 Logger.LogInfo($"Toggling mod: {request.FileName}");
-                var success = _modService.ToggleMod(request.FileName);
-                Logger.LogInfo($"Mod toggle {(success ? "succeeded" : "failed")} for {request.FileName}");
+                var result = _modService.ToggleMod(request.FileName);
+                Logger.LogInfo($"Mod toggle {(result.Success ? "succeeded" : "failed")} for {request.FileName}");
                 
-                return Ok(new { success = success });
+                if (result.Success)
+                {
+                    return Ok(new { success = true, message = "Mod toggled successfully" });
+                }
+                else if (result.ConflictingMods.Count > 0)
+                {
+                    // Return conflict information / 返回冲突信息
+                    return Ok(new { 
+                        success = false, 
+                        message = result.ErrorMessage,
+                        hasConflicts = true,
+                        modBeingEnabled = result.ModBeingEnabled != null ? new {
+                            name = result.ModBeingEnabled.Name,
+                            uniqueId = result.ModBeingEnabled.UniqueId,
+                            fileName = result.ModBeingEnabled.FileName,
+                            version = result.ModBeingEnabled.Version
+                        } : null,
+                        conflicts = result.ConflictingMods.Select(m => new { 
+                            name = m.Name, 
+                            uniqueId = m.UniqueId, 
+                            fileName = m.FileName,
+                            version = m.Version
+                        }).ToList()
+                    });
+                }
+                else
+                {
+                    return StatusCode(500, new { success = false, message = result.ErrorMessage ?? "Failed to toggle mod" });
+                }
             }
             catch (Exception ex)
             {

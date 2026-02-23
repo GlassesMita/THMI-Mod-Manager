@@ -56,6 +56,9 @@ namespace THMI_Mod_Manager.Models
         public string? ChangelogUrl { get; set; }
         /// <summary>URL to the GitHub release page / GitHub发布页面URL</summary>
         public string? ReleaseHtmlUrl { get; set; }
+        
+        /// <summary>List of incompatible mod UniqueIds / 不兼容的模组UniqueId列表</summary>
+        public List<string> IncompatibleWith { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -71,5 +74,21 @@ namespace THMI_Mod_Manager.Models
         public string Status { get; set; } = string.Empty;
         /// <summary>Last update time / 最后更新时间</summary>
         public DateTime LastUpdated { get; set; }
+    }
+
+    /// <summary>
+    /// Result of a toggle operation including conflict information
+    /// 切换操作的结果，包含冲突信息
+    /// </summary>
+    public class ToggleResult
+    {
+        /// <summary>Whether the toggle was successful / 切换是否成功</summary>
+        public bool Success { get; set; }
+        /// <summary>Error message if toggle failed / 如果切换失败则包含错误信息</summary>
+        public string? ErrorMessage { get; set; }
+        /// <summary>List of conflicting mods that are currently enabled / 当前启用的冲突模组列表</summary>
+        public List<ModInfo> ConflictingMods { get; set; } = new List<ModInfo>();
+        /// <summary>The mod being enabled that triggered the conflict check / 触发冲突检查的正在启用的模组</summary>
+        public ModInfo? ModBeingEnabled { get; set; }
     }
 }

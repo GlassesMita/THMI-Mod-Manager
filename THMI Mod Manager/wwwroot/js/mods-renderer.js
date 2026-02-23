@@ -130,6 +130,8 @@
                     });
                     
                     console.log('[ModRenderer] Normalized mods:', this.modsList);
+                    
+                    this.checkConflictsOnLoad();
                     this.render();
                 } else {
                     throw new Error(data.message || 'Invalid response format');
@@ -348,12 +350,57 @@
                 const data = await response.json();
                 if (data.success) {
                     this.loadMods();
+                } else if (data.hasConflicts && data.conflicts && data.conflicts.length > 0) {
+                    const conflictWarning = document.getElementById('localizedConflictWarning')?.value || 'Conflict Warning';
+                    const conflictIncompatibleWith = document.getElementById('localizedConflictIncompatibleWith')?.value || '{0} is incompatible with {1}';
+                    const conflictDisableFirst = document.getElementById('localizedConflictDisableFirst')?.value || 'Please disable the conflicting mod first before enabling this mod';
+                    
+                    let conflictList = '';
+                    if (data.modBeingEnabled) {
+                        data.conflicts.forEach(c => {
+                            conflictList += conflictIncompatibleWith
+                                .replace('{0}', `${data.modBeingEnabled.name} (${data.modBeingEnabled.version}) [${data.modBeingEnabled.uniqueId}]`)
+                                .replace('{1}', `${c.name} (${c.version}) [${c.uniqueId}]`) + '\n';
+                        });
+                    } else {
+                        conflictList = data.conflicts.map(c => {
+                            return conflictIncompatibleWith
+                                .replace('{0}', '')
+                                .replace('{1}', `${c.name} (${c.version}) [${c.uniqueId}]`);
+                        }).join('\n');
+                    }
+                    
+                    ModalUtils.alert(conflictWarning, conflictList + '\n\n' + conflictDisableFirst);
                 } else {
                     ModalUtils.alert('操作失败', data.message);
                 }
             } catch (error) {
                 console.error('[ModRenderer] Toggle error:', error);
                 ModalUtils.alert('切换失败', error.message);
+            }
+        },
+        
+        checkConflictsOnLoad: async function() {
+            try {
+                const response = await fetch(this.apiEndpoint + '/conflicts');
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                if (data.success && data.conflicts && data.conflicts.length > 0) {
+                    const conflictWarning = document.getElementById('localizedConflictWarning')?.value || 'Conflict Warning';
+                    const conflictIncompatibleWith = document.getElementById('localizedConflictIncompatibleWith')?.value || '{0} is incompatible with {1}';
+                    
+                    let conflictMessage = '';
+                    data.conflicts.forEach(conflict => {
+                        conflictMessage += conflictIncompatibleWith
+                            .replace('{0}', `${conflict.mod1.name} (${conflict.mod1.version}) [${conflict.mod1.uniqueId}]`)
+                            .replace('{1}', `${conflict.mod2.name} (${conflict.mod2.version}) [${conflict.mod2.uniqueId}]`) + '\n';
+                    });
+                    
+                    ModalUtils.alert(conflictWarning, conflictMessage);
+                }
+            } catch (error) {
+                console.error('[ModRenderer] Conflict check error:', error);
             }
         },
         
