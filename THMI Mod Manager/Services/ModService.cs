@@ -374,6 +374,82 @@ namespace THMI_Mod_Manager.Services
         }
 
         /// <summary>
+        /// Force enable a mod even if it has conflicts with other enabled mods
+        /// / 强制启用模组，即使它与已启用的其他模组有冲突
+        /// </summary>
+        /// <param name="fileName">File name of the mod (must be .disabled file) / 模组文件名（必须是 .disabled 文件）</param>
+        /// <returns>ToggleResult containing success status / 包含成功状态的ToggleResult</returns>
+        public ToggleResult ForceEnableMod(string fileName)
+        {
+            var result = new ToggleResult { Success = false };
+            
+            try
+            {
+                Logger.LogInfo($"Force enabling mod: {fileName}");
+                
+                if (string.IsNullOrEmpty(fileName))
+                {
+                    Logger.LogError("File name is null or empty");
+                    result.ErrorMessage = "File name is null or empty";
+                    return result;
+                }
+
+                string? fullPath = FindModFileByName(fileName);
+                if (string.IsNullOrEmpty(fullPath))
+                {
+                    Logger.LogError($"Mod file not found by name: {fileName}");
+                    result.ErrorMessage = "Mod file not found";
+                    return result;
+                }
+
+                var directory = Path.GetDirectoryName(fullPath) ?? string.Empty;
+                var fileNameOnly = Path.GetFileName(fullPath);
+                string newFilePath;
+                bool isEnabling = fileNameOnly.EndsWith(".disabled");
+
+                if (isEnabling)
+                {
+                    newFilePath = Path.Combine(directory, fileNameOnly.Substring(0, fileNameOnly.Length - ".disabled".Length));
+                    Logger.LogInfo($"Force enabling mod: {fullPath} -> {newFilePath}");
+                }
+                else
+                {
+                    newFilePath = Path.Combine(directory, fileNameOnly + ".disabled");
+                    Logger.LogInfo($"Disabling mod: {fullPath} -> {newFilePath}");
+                }
+
+                File.Move(fullPath, newFilePath);
+                Logger.LogInfo($"Successfully force toggled mod: {newFilePath}");
+                result.Success = true;
+                return result;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Logger.LogException($"Access denied when force enabling mod: {fileName}", ex);
+                result.ErrorMessage = $"Access denied: {ex.Message}";
+                return result;
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                Logger.LogException($"Directory not found when force enabling mod: {fileName}", ex);
+                result.ErrorMessage = $"Directory not found: {ex.Message}";
+                return result;
+            }
+            catch (IOException ex)
+            {
+                Logger.LogException($"IO error when force enabling mod: {fileName}", ex);
+                result.ErrorMessage = $"IO error: {ex.Message}";
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException($"Unexpected error force enabling mod: {fileName}", ex);
+                result.ErrorMessage = ex.Message;
+                return result;
+            }
+        }
+
+        /// <summary>
         /// Find a mod file by name, handling both enabled and disabled versions
         /// / 根据名称查找模组文件，同时处理启用和禁用版本
         /// </summary>

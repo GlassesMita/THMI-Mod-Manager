@@ -1,6 +1,6 @@
 /* Mod 管理页面动画样式 */
 :root {
-    --theme-color: #c670ff; /* 默认主题色，会被JavaScript动态替换 */
+    --theme-color: #acceed; /* 默认主题色，会被JavaScript动态替换 */
 }
 
 .mods-container {

@@ -568,6 +568,16 @@
                     <div class="toast-body">
                     </div>
                 </div>
+                <div id="warningToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header bg-warning text-dark">
+                        <i data-icon="icon-warning" class="text-dark me-2"></i>
+                        <strong class="me-auto">@AppConfig.GetLocalized("Common:Warning", "Warning")</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        <span id="warningToastMessage"></span>
+                    </div>
+                </div>
                 <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
                     <div class="toast-header bg-danger text-white">
                         <i data-icon="icon-error" class="text-white me-2"></i>

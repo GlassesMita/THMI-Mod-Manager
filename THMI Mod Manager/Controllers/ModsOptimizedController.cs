@@ -113,7 +113,9 @@ namespace THMI_Mod_Manager.Controllers
                 }
 
                 Logger.LogInfo($"Toggling mod: {request.FileName}");
-                var result = _modService.ToggleMod(request.FileName);
+                var result = request.ForceEnable 
+                    ? _modService.ForceEnableMod(request.FileName)
+                    : _modService.ToggleMod(request.FileName);
                 Logger.LogInfo($"Mod toggle {(result.Success ? "succeeded" : "failed")} for {request.FileName}");
                 
                 if (result.Success)

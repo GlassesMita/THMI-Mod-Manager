@@ -192,7 +192,9 @@ namespace THMI_Mod_Manager.Controllers
                     return BadRequest(new { success = false, message = "File name is required" });
                 }
 
-                var result = _modService.ToggleMod(request.FileName);
+                var result = request.ForceEnable 
+                    ? _modService.ForceEnableMod(request.FileName)
+                    : _modService.ToggleMod(request.FileName);
 
                 if (result.Success)
                 {
@@ -437,6 +439,8 @@ namespace THMI_Mod_Manager.Controllers
     {
         /// <summary>File name of the mod to toggle / 要切换的模组文件名</summary>
         public string FileName { get; set; } = string.Empty;
+        /// <summary>Force enable even if conflicts exist / 即使存在冲突也强制启用</summary>
+        public bool ForceEnable { get; set; } = false;
     }
     
     /// <summary>

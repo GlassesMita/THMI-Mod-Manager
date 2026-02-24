@@ -378,6 +378,31 @@ const ToastNotification = {
             
             toast.show();
         }
+    },
+    
+    showWarningToast: function(message) {
+        const toastElement = document.getElementById('warningToast');
+        const toastMessage = document.getElementById('warningToastMessage');
+        
+        if (toastElement && toastMessage) {
+            toastMessage.textContent = message;
+            
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
+            });
+            
+            toast.show();
+        } else {
+            console.warn('Warning toast not found, using alert instead:', message);
+            alert(message);
+        }
+    }
+};
+
+const ToastUtils = {
+    warning: function(message) {
+        ToastNotification.showWarningToast(message);
     }
 };
 

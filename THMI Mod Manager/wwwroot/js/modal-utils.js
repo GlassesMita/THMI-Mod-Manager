@@ -38,6 +38,20 @@ const ModalUtils = {
         if (onClose) onClose();
     },
     
+    // 显示冲突对话框，包含两个按钮（取消和强制启用）
+    conflictDialog: function(title, message, onCancel, onForceEnable, options = {}) {
+        if (typeof OOUIModalManager !== 'undefined') {
+            return OOUIModalManager.showConflictDialog(title, message, onCancel, onForceEnable, options);
+        }
+        
+        if (confirm(message + '\n\nClick OK to force enable, Cancel to abort.')) {
+            if (onForceEnable) onForceEnable();
+            return true;
+        }
+        if (onCancel) onCancel();
+        return false;
+    },
+    
     // 显示警告对话框
     warning: function(title, message, onConfirm, onCancel, options = {}) {
         if (typeof OOUIModalManager !== 'undefined') {

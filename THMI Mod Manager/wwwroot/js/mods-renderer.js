@@ -353,9 +353,13 @@
                 } else if (data.hasConflicts && data.conflicts && data.conflicts.length > 0) {
                     const conflictWarning = document.getElementById('localizedConflictWarning')?.value || 'Conflict Warning';
                     const conflictIncompatibleWith = document.getElementById('localizedConflictIncompatibleWith')?.value || '{0} is incompatible with {1}';
-                    const conflictDisableFirst = document.getElementById('localizedConflictDisableFirst')?.value || 'Please disable the conflicting mod first before enabling this mod';
+                    const conflictForceEnable = document.getElementById('localizedConflictForceEnable')?.value || 'Disable {0} then enable {1}';
+                    const conflictRiskWarning = document.getElementById('localizedConflictRiskWarning')?.value || 'Use at your own risk';
                     
                     let conflictList = '';
+                    const modBeingEnabledName = data.modBeingEnabled ? data.modBeingEnabled.name : '';
+                    const conflictModsName = data.conflicts.map(c => c.name).join(', ');
+                    
                     if (data.modBeingEnabled) {
                         data.conflicts.forEach(c => {
                             conflictList += conflictIncompatibleWith
@@ -370,7 +374,32 @@
                         }).join('\n');
                     }
                     
-                    ModalUtils.alert(conflictWarning, conflictList + '\n\n' + conflictDisableFirst);
+                    const forceEnableText = conflictForceEnable
+                        .replace('{0}', conflictModsName)
+                        .replace('{1}', modBeingEnabledName || data.modBeingEnabled?.name || '');
+                    
+                    ModalUtils.conflictDialog(
+                        conflictWarning,
+                        conflictList,
+                        () => {},
+                        () => {
+                            fetch(this.apiEndpoint + '/toggle', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ fileName: fileName, forceEnable: true })
+                            }).then(res => res.json()).then(result => {
+                                if (result.success) {
+                                    this.loadMods();
+                                    ToastUtils.warning(conflictRiskWarning);
+                                } else {
+                                    ModalUtils.alert('操作失败', result.message);
+                                }
+                            }).catch(err => {
+                                ModalUtils.alert('切换失败', err.message);
+                            });
+                        },
+                        { cancelText: '好', forceEnableText: forceEnableText }
+                    );
                 } else {
                     ModalUtils.alert('操作失败', data.message);
                 }

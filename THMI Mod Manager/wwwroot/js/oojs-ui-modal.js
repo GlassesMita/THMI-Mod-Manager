@@ -257,14 +257,140 @@ const OOUIModalManager = {
         };
     },
     
+    createConflictDialog: function() {
+        if (!document.getElementById('oo-ui-conflict-dialog')) {
+            const dialog = document.createElement('div');
+            dialog.id = 'oo-ui-conflict-dialog';
+            dialog.className = 'oo-ui-dialog-overlay';
+            dialog.style.cssText = 'display: none; position: fixed; top: 0px; left: 0px; width: 100%; height: 100%; background-color: rgba(255,255,255,0.5); z-index: 1000;';
+            dialog.innerHTML = `
+                <div class="oo-ui-window-frame oo-ui-window-centered oo-ui-window-auto-size" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: auto; min-width: 400px; max-width: 90%; min-height: auto; background-color: white; border-radius: 4px; box-shadow: rgba(0, 0, 0, 0.15) 0px 4px 12px;">
+                    <div class="oo-ui-window-content oo-ui-dialog-content oo-ui-messageDialog-content" style="padding: 24px; display: flex; flex-direction: column;">
+                        <div class="oo-ui-window-body" style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 60px;">
+                            <div class="oo-ui-messageDialog-container" style="width: 100%; text-align: center;">
+                                <div class="oo-ui-messageDialog-text" style="padding: 8px 0;">
+                                    <label class="oo-ui-messageDialog-title" style="display: none; font-weight: bold; margin-bottom: 12px; font-size: 16px;"></label>
+                                    <label class="oo-ui-messageDialog-message" style="display: block; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="oo-ui-window-foot" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #eaecf0;">
+                            <div class="oo-ui-messageDialog-actions oo-ui-messageDialog-actions-vertical" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                                <span class="oo-ui-buttonElement oo-ui-labelElement oo-ui-flaggedElement-primary oo-ui-buttonWidget oo-ui-buttonElement-framed">
+                                    <a class="oo-ui-buttonElement-button" role="button" tabindex="0" style="display: inline-flex; align-items: center; justify-content: center; padding: 8px 20px; min-width: 200px; font-size: 14px;">
+                                        <span class="oo-ui-labelElement-label" style="white-space: nowrap;"></span>
+                                    </a>
+                                </span>
+                                <span class="oo-ui-buttonElement oo-ui-labelElement oo-ui-flaggedElement-safe oo-ui-buttonWidget oo-ui-buttonElement-framed">
+                                    <a class="oo-ui-buttonElement-button" role="button" tabindex="0" style="display: inline-flex; align-items: center; justify-content: center; padding: 8px 20px; min-width: 80px; font-size: 14px;">
+                                        <span class="oo-ui-labelElement-label" style="white-space: nowrap;"></span>
+                                    </a>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+        }
+    },
+    
+    showConflictDialog: function(title, message, onCancel, onForceEnable, options = {}) {
+        const dialog = document.getElementById('oo-ui-conflict-dialog');
+        if (!dialog) {
+            this.createConflictDialog();
+            return this.showConflictDialog(title, message, onCancel, onForceEnable, options);
+        }
+        
+        const titleEl = dialog.querySelector('.oo-ui-messageDialog-title');
+        const messageEl = dialog.querySelector('.oo-ui-messageDialog-message');
+        const cancelBtn = dialog.querySelector('.oo-ui-flaggedElement-safe .oo-ui-buttonElement-button');
+        const forceEnableBtn = dialog.querySelector('.oo-ui-flaggedElement-primary .oo-ui-buttonElement-button');
+        const cancelLabel = cancelBtn.querySelector('.oo-ui-labelElement-label');
+        const forceEnableLabel = forceEnableBtn.querySelector('.oo-ui-labelElement-label');
+        const windowFrame = dialog.querySelector('.oo-ui-window-frame');
+        
+        titleEl.textContent = title || '';
+        messageEl.textContent = message || '';
+        cancelLabel.textContent = options.cancelText || '好';
+        forceEnableLabel.textContent = options.forceEnableText || '禁用然后启用';
+        
+        dialog.style.display = 'flex';
+        
+        const adjustDialogSize = () => {
+            const messageText = messageEl.textContent;
+            const cancelText = cancelLabel.textContent;
+            const forceEnableText = forceEnableLabel.textContent;
+            
+            const messageWidth = Math.max(messageText.length * 8, 280);
+            const buttonWidth = Math.max(cancelText.length * 8, forceEnableText.length * 8) + 32;
+            const totalWidth = Math.max(messageWidth, buttonWidth + 16);
+            
+            const messageLines = messageText.split('\n').length;
+            const minHeight = 80 + (messageLines - 1) * 20;
+            
+            windowFrame.style.width = 'auto';
+            windowFrame.style.minWidth = '320px';
+            windowFrame.style.maxWidth = Math.min(totalWidth, 600) + 'px';
+            windowFrame.style.minHeight = minHeight + 'px';
+        };
+        
+        setTimeout(adjustDialogSize, 0);
+        
+        const handleForceEnable = () => {
+            cleanup();
+            if (onForceEnable) onForceEnable();
+        };
+        
+        const handleCancel = () => {
+            cleanup();
+            if (onCancel) onCancel();
+        };
+        
+        const handleOverlayClick = (e) => {
+            if (e.target === dialog) {
+                cleanup();
+                if (onCancel) onCancel();
+            }
+        };
+        
+        const handleEscKey = (e) => {
+            if (e.key === 'Escape') {
+                cleanup();
+                if (onCancel) onCancel();
+            }
+        };
+        
+        const cleanup = () => {
+            dialog.style.display = 'none';
+            cancelBtn.removeEventListener('click', handleCancel);
+            forceEnableBtn.removeEventListener('click', handleForceEnable);
+            dialog.removeEventListener('click', handleOverlayClick);
+            document.removeEventListener('keydown', handleEscKey);
+        };
+        
+        cancelBtn.addEventListener('click', handleCancel);
+        forceEnableBtn.addEventListener('click', handleForceEnable);
+        dialog.addEventListener('click', handleOverlayClick);
+        document.addEventListener('keydown', handleEscKey);
+        
+        return {
+            close: cleanup
+        };
+    },
+    
     closeAllModals: function() {
         const exitDialog = document.getElementById('oo-ui-exit-dialog');
         const stopGameDialog = document.getElementById('oo-ui-stop-game-dialog');
+        const conflictDialog = document.getElementById('oo-ui-conflict-dialog');
         if (exitDialog) {
             exitDialog.style.display = 'none';
         }
         if (stopGameDialog) {
             stopGameDialog.style.display = 'none';
+        }
+        if (conflictDialog) {
+            conflictDialog.style.display = 'none';
         }
     }
 };
