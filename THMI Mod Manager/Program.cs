@@ -12,6 +12,68 @@ using System.Diagnostics;
 using THMI_Mod_Manager;
 using THMI_Mod_Manager.Services;
 
+// ===================== 触发异常的测试方法 =====================
+string GetRandomCodeLocation()
+{
+    var random = new Random();
+    string[] sourceFiles = new string[]
+    {
+        @"THMI Mod Manager\Program.cs",
+        @"THMI Mod Manager\Services\GlobalExceptionHandler.cs",
+        @"THMI Mod Manager\Services\Logger.cs",
+        @"THMI Mod Manager\Services\ModService.cs",
+        @"THMI Mod Manager\Services\ModServiceOptimized.cs",
+        @"THMI Mod Manager\Services\ModUpdateService.cs",
+        @"THMI Mod Manager\Services\Tommy.cs",
+        @"THMI Mod Manager\Models\ModInfo.cs",
+        @"THMI Mod Manager\Controllers\ModsController.cs",
+        @"THMI Mod Manager\Controllers\ModsOptimizedController.cs",
+        @"THMI Mod Manager\Pages\Index.cshtml.cs",
+        @"THMI Mod Manager\Pages\Mods.cshtml.cs",
+        @"THMI Mod Manager\Pages\Settings.cshtml.cs",
+        @"THMI Mod Manager\Pages\DebugPage.cshtml.cs"
+    };
+    
+    string selectedFile = sourceFiles[random.Next(sourceFiles.Length)];
+    int randomLine = random.Next(1, 500);
+    
+    return $"{selectedFile}:line {randomLine}";
+}
+
+void TryTriggerException(string exceptionTypeName, bool isProduction = false)
+{
+    string message;
+    if (isProduction)
+    {
+        string location = GetRandomCodeLocation();
+        message = $"Exception at {location}";
+    }
+    else
+    {
+        message = $"Test exception: {exceptionTypeName}";
+    }
+    
+    Exception exceptionToThrow = exceptionTypeName.ToLower() switch
+    {
+        "dividebyzeroexception" => new DivideByZeroException(message),
+        "nullreferenceexception" => new NullReferenceException(message),
+        "indexoutofrangeexception" => new IndexOutOfRangeException(message),
+        "invalidoperationexception" => new InvalidOperationException(message),
+        "argumentnullexception" => new ArgumentNullException("paramName", message),
+        "argumentexception" => new ArgumentException(message),
+        "timeoutexception" => new TimeoutException(message),
+        "ioexception" => new IOException(message),
+        "unauthorizedaccessexception" => new UnauthorizedAccessException(message),
+        "notsupportedexception" => new NotSupportedException(message),
+        "outofmemoryexception" => new OutOfMemoryException(message),
+        "stackoverflowexception" => new StackOverflowException(message),
+        _ => new Exception($"Unknown exception type: {exceptionTypeName}")
+    };
+    
+    Console.WriteLine($"About to throw exception: {exceptionToThrow.GetType().Name}");
+    throw exceptionToThrow;
+}
+
 // ===================== 初始化全局异常处理程序 =====================
 GlobalExceptionHandler.Initialize();
 
@@ -252,6 +314,7 @@ var builder = WebApplication.CreateBuilder(args);
 string? updateVersion = null;
 string? openPage = null;
 bool openDebugPage = false;
+bool noTest = false;
 // ===================== 关键修改1：新增--no-newtab参数检测（优先级最高） =====================
 bool noNewTab = args != null && args.Contains("--no-newtab", StringComparer.OrdinalIgnoreCase);
 
@@ -265,12 +328,15 @@ if (noNewTab)
 
 foreach (var arg in args)
 {
-    if (arg.StartsWith("--updated-version="))
+    if (arg == "--no-test")
+    {
+        noTest = true;
+    }
+    else if (arg.StartsWith("--updated-version="))
     {
         updateVersion = arg.Substring("--updated-version=".Length);
         ConsoleOutput($"Update version parameter detected: {updateVersion}");
         Logger.LogInfo($"Update version parameter detected: {updateVersion}");
-        break;
     }
     else if (arg.StartsWith("--open="))
     {
@@ -283,6 +349,13 @@ foreach (var arg in args)
         openDebugPage = true;
         ConsoleOutput($"Open debug page parameter detected");
         Logger.LogInfo($"Open debug page parameter detected");
+    }
+    else if (arg.StartsWith("--try-ex="))
+    {
+        var exceptionTypeName = arg.Substring("--try-ex=".Length);
+        ConsoleOutput($"Trying to trigger exception: {exceptionTypeName}");
+        Logger.LogInfo($"Trying to trigger exception: {exceptionTypeName}");
+        TryTriggerException(exceptionTypeName, noTest);
     }
 }
 

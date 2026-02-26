@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace THMI_Mod_Manager.Services
 {
@@ -10,6 +11,32 @@ namespace THMI_Mod_Manager.Services
     /// </summary>
     public static class GlobalExceptionHandler
     {
+        private static readonly Regex StackTracePathRegex = new Regex(@"in\s+[A-Za-z0-9_$.]+\s+in\s+[^:]+:\s*line\s+\d+", RegexOptions.Compiled);
+        
+        private static string CleanStackTrace(string? stackTrace)
+        {
+            if (string.IsNullOrEmpty(stackTrace))
+                return stackTrace;
+            
+            return StackTracePathRegex.Replace(stackTrace, match => 
+            {
+                var original = match.Value;
+                var lastInIndex = original.LastIndexOf(" in ");
+                if (lastInIndex > 0)
+                {
+                    var beforeIn = original.Substring(0, lastInIndex);
+                    var afterIn = original.Substring(lastInIndex + 4);
+                    var lineIndex = afterIn.LastIndexOf(" line ");
+                    if (lineIndex > 0)
+                    {
+                        afterIn = afterIn.Substring(lineIndex);
+                    }
+                    return $"{beforeIn} in{afterIn}";
+                }
+                return original;
+            });
+        }
+        
         private static readonly string KernelPanicAscii = @"
       .--.        _ 
      |o_o |      | | 
@@ -125,7 +152,8 @@ namespace THMI_Mod_Manager.Services
                 Console.WriteLine("Stack Trace:");
                 Console.ForegroundColor = ConsoleColor.Gray;
                 
-                var stackTrace = exception.StackTrace.Split('\n');
+                var cleanedStackTrace = CleanStackTrace(exception.StackTrace);
+                var stackTrace = cleanedStackTrace.Split('\n');
                 foreach (var line in stackTrace)
                 {
                     var trimmedLine = line.Trim();
@@ -221,7 +249,7 @@ namespace THMI_Mod_Manager.Services
             if (!string.IsNullOrEmpty(exception.StackTrace))
             {
                 sb.AppendLine("Stack Trace:");
-                sb.AppendLine(exception.StackTrace);
+                sb.AppendLine(CleanStackTrace(exception.StackTrace));
                 sb.AppendLine();
             }
             
@@ -279,7 +307,7 @@ namespace THMI_Mod_Manager.Services
                 if (!string.IsNullOrEmpty(exception.StackTrace))
                 {
                     sb.AppendLine("Stack Trace:");
-                    sb.AppendLine(exception.StackTrace);
+                    sb.AppendLine(CleanStackTrace(exception.StackTrace));
                     sb.AppendLine();
                 }
                 
@@ -298,6 +326,28 @@ namespace THMI_Mod_Manager.Services
                 sb.AppendLine($"Process ID: {Environment.ProcessId}");
                 sb.AppendLine($"Working Directory: {Environment.CurrentDirectory}");
                 sb.AppendLine();
+                
+                // ===================== AI Log Analysis Prompt =====================
+                sb.AppendLine("================================================================================");
+                sb.AppendLine("[AI PROMPT] THMI Mod Manager Exception Analysis Guide");
+                sb.AppendLine("================================================================================");
+                sb.AppendLine("KEY INFORMATION FOR ANALYSIS:");
+                sb.AppendLine($"- Exception Type: {exception.GetType().FullName}");
+                sb.AppendLine($"- Exception Message: {exception.Message}");
+                sb.AppendLine($"- Exception Time: {DateTime.Now:yyyy/MM/dd HH:mm:ss.ffff}");
+                sb.AppendLine($"- OS Version: {RuntimeInformation.OSDescription}");
+                sb.AppendLine($"- .NET Version: {Environment.Version}");
+                sb.AppendLine($"- Architecture: {RuntimeInformation.OSArchitecture}");
+                sb.AppendLine($"- Process ID: {Environment.ProcessId}");
+                sb.AppendLine();
+                sb.AppendLine("EN: When analyzing this exception log, consider: exception type analysis, stack trace debugging, ");
+                sb.AppendLine("   system compatibility issues, race conditions, null reference handling, async/await issues, ");
+                sb.AppendLine("   file system permissions, network timeout, database connection, memory leaks, ");
+                sb.AppendLine("   and BepInEx mod loader specific errors.");
+                sb.AppendLine();
+                sb.AppendLine("CN: 分析此异常日志时请考虑：异常类型分析、堆栈跟踪调试、系统兼容性问题、");
+                sb.AppendLine("   竞态条件处理、异步编程问题、文件系统权限、网络超时、数据库连接、");
+                sb.AppendLine("   内存泄漏以及 BepInEx 模组加载器特定错误。");
                 sb.AppendLine("================================================================================");
                 
                 File.WriteAllText(logFilePath, sb.ToString());

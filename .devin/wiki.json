@@ -110,6 +110,9 @@
         },
         {
           "content": "说明日期时间格式的本地化显示"
+        },
+        {
+          "content": "说明 BepInEx.cfg 文件的配置方法和注意事项。配置文件自动识别，也无手动选择功能。"
         }
       ]
     },
@@ -147,16 +150,13 @@
           "content": "描述启用/禁用操作的即时生效机制"
         },
         {
-          "content": "解释 Mod 依赖关系检测和冲突提示"
+          "content": "解释 Mod 依赖关系检测和冲突提示（基于 Manifest.toml 文件内定义的 UniqueID = \"\" 和 IncompatibleWith = [] 字段）"
         },
         {
-          "content": "说明删除操作的确认机制和恢复途径"
+          "content": "说明删除操作的确认机制（无恢复途径）"
         },
         {
-          "content": "介绍 Mod 导入的自动扫描和手动添加功能"
-        },
-        {
-          "content": "注意：某些 Mod 管理功能可能有隐藏的操作方式，如通过特定操作顺序触发的批量处理功能"
+          "content": "介绍 Mod 配置文件的编辑方式（在 WebUI 内直接修改 CFG 文件，保存后启动游戏生效）"
         }
       ]
     },
@@ -213,7 +213,10 @@
       "parent": "用户指南",
       "page_notes": [
         {
-          "content": "说明日志文件的存储位置（位于 ./Logs/ 目录下）"
+          "content": "说明日志文件的存储位置（位于 ./Logs/ 目录下的 Latest.log 文件。如果遇到 Kernel Panic，会自动将日志转储到 KernelPanic_{yyyyMMdd_HHmmss}.log 文件，基于 GlobalExceptionHandler.cs。）"
+        },
+        {
+          "content": "说明内核恐慌的触发条件和处理机制，以及控制台和日志输出的格式。本地日志会被存储在 KernelPanic_{yyyyMMdd_HHmmss}.log 文件中。"
         },
         {
           "content": "说明日志记录的触发条件和级别"
@@ -222,7 +225,7 @@
           "content": "描述日志记录的存储位置和格式"
         },
         {
-          "content": "解释日志记录的查看和分析方法"
+          "content": "解释日志记录的查看和分析方法（日志可被 AI 分析工具读取和解析，且注入了提示词，便于 LLM 分析。）"
         }
       ]
     },
