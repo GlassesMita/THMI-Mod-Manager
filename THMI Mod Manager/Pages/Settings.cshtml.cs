@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.Reflection;
 using System.Xml.Linq;
 using System.Collections.Generic;
+using System.Drawing.Text;
 
 namespace THMI_Mod_Manager.Pages
 {
@@ -86,6 +87,10 @@ namespace THMI_Mod_Manager.Pages
         
         // 图标字体设置属性
         public string IconFont { get; set; } = "mdl2"; // mdl2 或 fluent
+        
+        // UI 字体设置属性
+        public List<string> UIFonts { get; set; } = new List<string>(); // 支持多个字体，作为回滚字体
+        public List<string> SystemFonts { get; set; } = new List<string>();
         
         // 主题色属性
         public string ThemeColor { get; set; } = "#c670ff";
@@ -175,6 +180,16 @@ namespace THMI_Mod_Manager.Pages
                 
                 var iconFontValue = _appConfig.Get("[Icon]Font", "mdl2");
                 IconFont = iconFontValue ?? "mdl2";
+                
+                // 加载 UI 字体设置（支持多个字体，用逗号分隔）
+                var uiFontsValue = _appConfig.Get("[UI]Fonts", "");
+                if (!string.IsNullOrEmpty(uiFontsValue))
+                {
+                    UIFonts = uiFontsValue.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+                }
+                
+                // 获取系统字体列表
+                SystemFonts = GetSystemFonts();
                 
                 if (UseOsuCursor && CursorType == "default")
                 {
@@ -635,7 +650,7 @@ namespace THMI_Mod_Manager.Pages
             }
         }
 
-        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string iconFont, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications, bool showSeconds, bool use12Hour, string dateFormat, string dateSeparator)
+        public IActionResult OnPostSaveLanguage(string language, string status, bool useOsuCursor, bool useCustomCursor, string cursorType, string iconFont, string uiFonts, string themeColor, string launchMode, string launcherPath, string modsPath, string gamePath, bool modifyTitle, bool autoCheckUpdates, string updateFrequency, bool enableNotifications, bool showSeconds, bool use12Hour, string dateFormat, string dateSeparator)
         {
             if (string.IsNullOrEmpty(language))
             {
@@ -663,6 +678,16 @@ namespace THMI_Mod_Manager.Pages
                 if (!string.IsNullOrEmpty(iconFont))
                 {
                     _appConfig.Set("[Icon]Font", iconFont);
+                }
+                
+                // Save UI fonts setting (支持多个字体，用逗号分隔)
+                if (!string.IsNullOrEmpty(uiFonts))
+                {
+                    _appConfig.Set("[UI]Fonts", uiFonts);
+                }
+                else
+                {
+                    _appConfig.Set("[UI]Fonts", "");
                 }
                 
                 // Save theme color setting
@@ -909,6 +934,36 @@ namespace THMI_Mod_Manager.Pages
             }
             
             return false;
+        }
+        
+        private List<string> GetSystemFonts()
+        {
+            var fonts = new List<string>();
+            try
+            {
+                // 添加默认选项
+                fonts.Add("");
+                
+                // 使用 InstalledFontCollection 获取系统字体
+                using (var fontCollection = new InstalledFontCollection())
+                {
+                    var fontFamilies = fontCollection.Families;
+                    foreach (var fontFamily in fontFamilies)
+                    {
+                        fonts.Add(fontFamily.Name);
+                    }
+                }
+                
+                // 排序字体列表
+                fonts.Sort();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error getting system fonts: {ex.Message}");
+                // 如果出错，至少返回默认选项
+                fonts.Add("");
+            }
+            return fonts;
         }
     }
 }

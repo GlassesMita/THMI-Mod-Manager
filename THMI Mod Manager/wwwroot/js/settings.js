@@ -1057,6 +1057,12 @@ window.saveAllSettings = function() {
         formData.append('iconFont', iconFontHidden.value);
     }
     
+    // 添加 UI 字体设置（支持多个字体，用逗号分隔）
+    const uiFontsInput = document.getElementById('uiFonts');
+    if (uiFontsInput) {
+        formData.append('uiFonts', uiFontsInput.value);
+    }
+    
     // 添加主题颜色
     const themeColorInput = document.querySelector('input[name="themeColor"]');
     if (themeColorInput) {

@@ -133,6 +133,33 @@
                     </select>
                     <p class="cdx-help-text">@AppConfig.GetLocalized("Settings:IconFontHelp", "Select icon font to use for UI icons.")</p>
                 </div>
+                <div class="cdx-field">
+                    <label for="uiFontSelector" class="cdx-label">@AppConfig.GetLocalized("Settings:UIFontLabel", "UI Fonts")</label>
+                    <div class="cdx-input-button">
+                        <select id="uiFontSelector" class="cdx-select" style="flex: 1;">
+                            <option value="">@AppConfig.GetLocalized("Settings:UIFontDefault", "Default Font")</option>
+                            @foreach (var font in Model.SystemFonts)
+                            {
+                                if (!string.IsNullOrEmpty(font))
+                                {
+                                    <option value="@font">@font</option>
+                                }
+                            }
+                        </select>
+                        <button type="button" class="cdx-button cdx-button--primary" id="addUIFont">@AppConfig.GetLocalized("Common:Add", "Add")</button>
+                    </div>
+                    <div id="selectedUIFonts" class="selected-fonts-container">
+                        @foreach (var font in Model.UIFonts)
+                        {
+                            <div class="selected-font-item" data-font="@font">
+                                <span class="font-name">@font</span>
+                                <button type="button" class="cdx-button cdx-button--destructive cdx-button--small remove-font" data-font="@font">×</button>
+                            </div>
+                        }
+                    </div>
+                    <p class="cdx-help-text">@AppConfig.GetLocalized("Settings:UIFontHelp", "Select fonts to use for UI text. The first font will be used as primary, and subsequent fonts will be used as fallbacks if the primary font is not available.")</p>
+                    <input type="hidden" id="uiFonts" name="uiFonts" value="@string.Join(',', Model.UIFonts)" />
+                </div>
             </div>
         </section>
 
@@ -363,6 +390,51 @@
                 flex: 1;
                 min-width: 0;
             }
+            .selected-fonts-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 12px;
+                padding: 12px;
+                background-color: var(--cdx-color-surface, #f8f9fa);
+                border: 1px solid var(--cdx-color-border, #e0e0e0);
+                border-radius: 4px;
+                min-height: 48px;
+            }
+            .selected-font-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 12px;
+                background-color: var(--cdx-color-progressive, #3366cc);
+                color: white;
+                border-radius: 16px;
+                font-size: 14px;
+                transition: all 0.2s ease;
+            }
+            .selected-font-item:hover {
+                background-color: var(--cdx-color-progressive--hover, #447ff5);
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .font-name {
+                font-weight: 500;
+            }
+            .selected-font-item .cdx-button {
+                background: transparent;
+                border: none;
+                color: white;
+                padding: 0;
+                width: 20px;
+                height: 20px;
+                line-height: 1;
+                font-size: 18px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+            .selected-font-item .cdx-button:hover {
+                background-color: rgba(255,255,255,0.2);
+            }
             .bepinex-group {
                 margin-top: 1.5rem;
                 padding-top: 1rem;
@@ -445,6 +517,96 @@
                 window.contextMenu.show(e.clientX, e.clientY);
             });
         }
+        
+        // 初始化 UI 字体
+        const uiFontsInput = document.getElementById('uiFonts');
+        const selectedUIFonts = uiFontsInput.value;
+        updateUIFont(selectedUIFonts);
+        
+        // 添加字体按钮事件
+        const addUIFontButton = document.getElementById('addUIFont');
+        const uiFontSelector = document.getElementById('uiFontSelector');
+        const selectedUIFontsContainer = document.getElementById('selectedUIFonts');
+        
+        addUIFontButton.addEventListener('click', function() {
+            const selectedFont = uiFontSelector.value;
+            if (selectedFont) {
+                addUIFont(selectedFont);
+                uiFontSelector.value = '';
+            }
+        });
+        
+        // 删除字体按钮事件
+        selectedUIFontsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-font')) {
+                const fontToRemove = e.target.dataset.font;
+                removeUIFont(fontToRemove);
+            }
+        });
     });
+    
+    function addUIFont(font) {
+        const selectedUIFontsContainer = document.getElementById('selectedUIFonts');
+        const uiFontsInput = document.getElementById('uiFonts');
+        
+        // 检查是否已经添加过该字体
+        const existingFonts = uiFontsInput.value.split(',').filter(f => f.trim());
+        if (existingFonts.includes(font)) {
+            return;
+        }
+        
+        // 创建字体项
+        const fontItem = document.createElement('div');
+        fontItem.className = 'selected-font-item';
+        fontItem.dataset.font = font;
+        fontItem.innerHTML = `
+            <span class="font-name">${font}</span>
+            <button type="button" class="cdx-button cdx-button--destructive cdx-button--small remove-font" data-font="${font}">×</button>
+        `;
+        
+        selectedUIFontsContainer.appendChild(fontItem);
+        
+        // 更新隐藏输入框的值
+        const newFonts = [...existingFonts, font];
+        uiFontsInput.value = newFonts.join(',');
+        
+        // 应用字体
+        updateUIFont(uiFontsInput.value);
+    }
+    
+    function removeUIFont(font) {
+        const selectedUIFontsContainer = document.getElementById('selectedUIFonts');
+        const uiFontsInput = document.getElementById('uiFonts');
+        
+        // 找到并删除字体项
+        const fontItem = selectedUIFontsContainer.querySelector(`[data-font="${font}"]`);
+        if (fontItem) {
+            fontItem.remove();
+        }
+        
+        // 更新隐藏输入框的值
+        const existingFonts = uiFontsInput.value.split(',').filter(f => f.trim() && f !== font);
+        uiFontsInput.value = existingFonts.join(',');
+        
+        // 应用字体
+        updateUIFont(uiFontsInput.value);
+    }
+    
+    function updateUIFont(fontsValue) {
+        // 应用字体到所有页面元素，但不影响图标
+        const fonts = fontsValue.split(',').filter(f => f.trim());
+        const fontFamily = fonts.length > 0 ? fonts.join(', ') : '';
+        
+        const uiElements = document.querySelectorAll('html, body, .cdx-page-container, .cdx-page-title, .cdx-page-subtitle, .cdx-card-title, .cdx-label, .cdx-help-text, .cdx-button, .cdx-select, .cdx-text-input');
+        uiElements.forEach(element => {
+            // 确保不会影响图标元素
+            if (!element.classList.contains('cdx-icon') && !element.classList.contains('segoe-icon')) {
+                element.style.fontFamily = fontFamily;
+            }
+        });
+        
+        // 保存到 localStorage 以便在所有页面应用
+        localStorage.setItem('uiFonts', fontsValue);
+    }
 </script>
 

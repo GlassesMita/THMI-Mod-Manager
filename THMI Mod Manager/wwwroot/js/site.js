@@ -310,6 +310,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize icon font
     initIconFont();
     
+    // Initialize UI font
+    initUIFont();
+    
     // Initialize changelog modal functionality
     if (typeof ChangelogModal !== 'undefined') {
         ChangelogModal.init();
@@ -350,6 +353,29 @@ window.updateIconFont = function(fontValue) {
     // Save to localStorage for persistence
     localStorage.setItem('iconFont', fontValue);
     console.log('Icon font changed to:', fontValue);
+};
+
+// Initialize UI font
+function initUIFont() {
+    const savedUIFonts = localStorage.getItem('uiFonts') || '';
+    updateUIFont(savedUIFonts);
+}
+
+// Update UI font function
+window.updateUIFont = function(fontsValue) {
+    const fonts = fontsValue.split(',').filter(f => f.trim());
+    const fontFamily = fonts.length > 0 ? fonts.join(', ') : '';
+    
+    const uiElements = document.querySelectorAll('html, body, .cdx-page-container, .cdx-page-title, .cdx-page-subtitle, .cdx-card-title, .cdx-label, .cdx-help-text, .cdx-button, .cdx-select, .cdx-text-input');
+    uiElements.forEach(element => {
+        if (!element.classList.contains('cdx-icon') && !element.classList.contains('segoe-icon')) {
+            element.style.fontFamily = fontFamily;
+        }
+    });
+    
+    // Save to localStorage for persistence
+    localStorage.setItem('uiFonts', fontsValue);
+    console.log('UI fonts changed to:', fontsValue);
 };
 
 // Global function to manually check for updates

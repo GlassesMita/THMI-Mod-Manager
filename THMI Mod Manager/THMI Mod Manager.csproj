@@ -87,6 +87,7 @@
 
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.44.0" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.5" />
   </ItemGroup>
 
   <!-- 强制保留必要文件 -->
