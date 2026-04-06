@@ -9,6 +9,13 @@
 
 **This project using GNU General Public License Version 3.0**
 
+> [!WARNING]
+> **Disclaimer**: This software is provided "AS IS" without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software. This project has no affiliation with and is not endorsed by the original game developer (Dichroic Purplion/二色幽紫蝶).
+>
+> **Free Release**: This project is released for free of charge. If you have paid to obtain this software, please request an immediate refund and leave a negative review for the seller. This software is an independent third-party tool.
+>
+> This mod manager is designed for **legal use only** with a legitimate copy of Touhou Mystia Izakaya. Using this software implies your agreement to use it only with legally purchased games and to respect intellectual property rights.
+
 A mod manager for Touhou Mystia Izakaya game.
 
 <abbr title="Based on editing .devin/wiki.json to inject prompts">[DeepWiki Document (Simplified Chinese Only)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager/)</abbr>
