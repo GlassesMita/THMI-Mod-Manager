@@ -56,16 +56,16 @@
       "parent": "快速开始",
       "page_notes": [
         {
-          "content": "列出最低和推荐的硬件配置（最低推荐：支持 SSE2 指令集 CPU 、内存 - 512MB、磁盘空间 - 128MB以上（如果你想编译包含 Runtime 的版本，需要其中的 100MB 磁盘空间。这 100MB空间用于存储运行时 DLL,应用本体并不会占用这么多））"
+          "content": "列出最低和推荐的硬件配置（最低推荐：支持 SSE2 指令集 CPU 、内存 - 512MB、磁盘空间 - 128MB以上（如果用户试图编译自包含 Runtime 的版本，需要 128MB 磁盘空间。其中至少 100MB 空间用于存储 .NET 10 运行时 DLL，应用本体并不会占用这么多，除非用户使用 PublishSingleFile 开关来编译，这样所有的运行时都会被编译进本体可执行文件内））"
         },
         {
-          "content": "解释为什么完全不支持 Linux 和 macOS 系统，以及相关的技术限制和原因；解释为什么推荐使用 Windows 10/11 系统"
+          "content": "解释为什么完全不支持 Linux 和 macOS 系统，以及相关的技术限制和原因；解释为什么推荐使用 Windows 10/11 系统，同时说明 **最低支持 Windows 7 x64 SP1 系统，标注其可能体验不佳，不支持任何 32 位 Windows 系统和旧版 Windows（如 Windows XP、Windows 95、Windows 98、Windows Millenium Edition 等）系统，以及 Linux 和 macOS 系统 **。"
         },
         {
           "content": "说明 .NET 10.0 运行时依赖和安装方式"
         },
         {
-          "content": "解释为什么需要在 Windows 10 x64 以下版本上添加环境变量 `DOTNET_EnableWriteXorExecute=0` 和 `DOTNET_GCName=clrgc.dll`，以及说明在 Windows 10/11 上无需添加这些环境变量，不需要说明原因"
+          "content": "解释为什么需要在 Windows 10 x64 以下版本（如 Windows 8.1、Windows 7 等）上添加环境变量 `DOTNET_EnableWriteXorExecute=0` 和 `DOTNET_GCName=clrgc.dll`，以及说明在所有版本的 Windows 10/11 系统上无需添加这些环境变量，不需要说明原因"
         },
         {
           "content": "描述游戏目录配置要求和权限设置，说明修改标题的权限机制：当 Mod 管理器的权限大于等于目标进程的权限时，Mod 管理器才能修改目标进程的标题，否则无法修改。"
