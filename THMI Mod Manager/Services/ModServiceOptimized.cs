@@ -8,12 +8,15 @@ namespace THMI_Mod_Manager.Services
     public class ModServiceOptimized
     {
         private readonly AppConfigManager _appConfig;
-        
+
         // Cache for mod info data to avoid repeated file reading
         private static readonly ConcurrentDictionary<string, CachedModInfo> _modInfoCache = new();
-        
+
         // Cache timeout (5 minutes)
         private static readonly TimeSpan _cacheTimeout = TimeSpan.FromMinutes(5);
+
+        // Indicates whether the first mod loading has completed
+        private static bool HasEverLoadedMods = false;
 
         // Cached mod info with timestamp
         private class CachedModInfo
@@ -44,23 +47,53 @@ namespace THMI_Mod_Manager.Services
             {
                 var dllFiles = Directory.GetFiles(pluginsPath, "*.dll", SearchOption.TopDirectoryOnly);
                 var disabledFiles = Directory.GetFiles(pluginsPath, "*.dll.disabled", SearchOption.TopDirectoryOnly);
-                
-                var allFiles = dllFiles.Concat(disabledFiles).ToArray();
-                
-                Logger.LogInfo($"Found {dllFiles.Length} DLL files and {disabledFiles.Length} disabled files in {pluginsPath}");
 
-                foreach (var dllFile in allFiles)
+                var allFiles = dllFiles.Concat(disabledFiles).ToArray();
+                int validCount = 0;
+                int invalidCount = 0;
+
+                if (!HasEverLoadedMods)
                 {
-                    var modInfo = ExtractModInfoOptimized(dllFile);
-                    mods.Add(modInfo);
-                    if (modInfo.IsValid)
+                    Logger.LogEx($"Found {dllFiles.Length} DLL files and {disabledFiles.Length} disabled files in {pluginsPath}");
+
+                    foreach (var dllFile in allFiles)
                     {
-                        Logger.LogInfo($"Successfully loaded mod: {modInfo.Name} v{modInfo.Version} (File: {modInfo.FileName})");
+                        var modInfo = ExtractModInfoOptimized(dllFile);
+                        mods.Add(modInfo);
+                        if (modInfo.IsValid)
+                        {
+                            validCount++;
+                            Logger.LogInfo($"Successfully loaded mod: {modInfo.Name} v{modInfo.Version} (File: {modInfo.FileName})");
+                        }
+                        else
+                        {
+                            invalidCount++;
+                            Logger.LogWarning($"Failed to load mod {modInfo.FileName}: {modInfo.ErrorMessage}");
+                        }
                     }
-                    else
+
+                    Logger.LogInfo($"Mod loading completed: {validCount} loaded, {invalidCount} failed");
+                    HasEverLoadedMods = true;
+                }
+                else
+                {
+                    Logger.LogEx($"Refreshing mods: found {allFiles.Length} mod files");
+
+                    foreach (var dllFile in allFiles)
                     {
-                        Logger.LogWarning($"Failed to load mod {modInfo.FileName}: {modInfo.ErrorMessage}");
+                        var modInfo = ExtractModInfoOptimized(dllFile);
+                        mods.Add(modInfo);
+                        if (modInfo.IsValid)
+                        {
+                            validCount++;
+                        }
+                        else
+                        {
+                            invalidCount++;
+                        }
                     }
+
+                    Logger.LogEx($"Mod refresh completed: {validCount} loaded, {invalidCount} failed");
                 }
             }
             catch (Exception ex)
@@ -114,13 +147,13 @@ namespace THMI_Mod_Manager.Services
                 {
                     using var reader = new StreamReader(manifestPath);
                     var manifestData = TOML.Parse(reader);
-                    
-                    Logger.LogDebug($"Parsed Manifest.toml from {manifestPath}");
-                    Logger.LogDebug($"Manifest sections: {string.Join(", ", manifestData.Keys)}");
-                    
+
+                    Logger.LogEx($"Parsed Manifest.toml from {manifestPath}");
+                    Logger.LogEx($"Manifest sections: {string.Join(", ", manifestData.Keys)}");
+
                     if (manifestData.TryGetNode("Mod", out var modNode) && modNode is TomlTable modSection)
                     {
-                        Logger.LogDebug($"Found Mod section with {modSection.ChildrenCount} keys: {string.Join(", ", modSection.Keys)}");
+                        Logger.LogEx($"Found Mod section with {modSection.ChildrenCount} keys: {string.Join(", ", modSection.Keys)}");
                         
                         if (modSection.TryGetNode("Name", out var nameNode) && nameNode is TomlString nameString)
                         {
@@ -172,11 +205,11 @@ namespace THMI_Mod_Manager.Services
                                     modInfo.IncompatibleWith.Add(incompatibleString.Value);
                                 }
                             }
-                            Logger.LogDebug($"Found IncompatibleWith: {string.Join(", ", modInfo.IncompatibleWith)}");
+                            Logger.LogEx($"Found IncompatibleWith: {string.Join(", ", modInfo.IncompatibleWith)}");
                         }
-                        
+
                         modInfo.IsValid = true;
-                        Logger.LogInfo($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
+                        Logger.LogEx($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
                     }
                     else
                     {
