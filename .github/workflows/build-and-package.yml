@@ -87,4 +87,4 @@ jobs:
         with:
           name: ${{ steps.package.outputs.ZIP_FILE_NAME }}
           path: ${{ steps.package.outputs.ZIP_PATH }}
-          retention-days: 30
+          retention-days: 1
