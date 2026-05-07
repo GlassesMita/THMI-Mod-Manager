@@ -1,0 +1,87 @@
+name: Build and Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      runtime:
+        description: 'Target runtime'
+        required: false
+        default: 'win-x64'
+        type: choice
+        options:
+          - win-x64
+          - win-x86
+          - linux-x64
+          - osx-x64
+          - osx-arm64
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      # 检出 master 分支代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      # 安装 .NET 10 SDK
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      # 从 .csproj 文件中提取版本号
+      - name: Extract version from .csproj
+        id: version
+        shell: pwsh
+        run: |
+          $csprojPath = "THMI Mod Manager/THMI Mod Manager.csproj"
+          [xml]$csproj = Get-Content $csprojPath
+          $version = $csproj.Project.PropertyGroup.Version
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Detected version: $version"
+
+      # 执行构建
+      - name: Build project
+        run: |
+          dotnet publish "THMI Mod Manager/THMI Mod Manager.csproj" `
+            --configuration Release `
+            --no-incremental `
+            --runtime ${{ inputs.runtime || 'win-x64' }}
+
+      # 打包构建产物为 ZIP
+      - name: Package build artifacts
+        id: package
+        shell: pwsh
+        run: |
+          $runtime = "${{ inputs.runtime || 'win-x64' }}"
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $projectName = "THMI_Mod_Manager"
+          $zipFileName = "${projectName}_${runtime}_${version}_MasterBranch.zip"
+
+          # dotnet publish 的默认输出路径
+          $publishDir = "THMI Mod Manager/bin/Release/net10.0/${runtime}/publish/"
+
+          # 确保输出目录存在
+          if (-Not (Test-Path $publishDir)) {
+            Write-Error "Publish directory not found: $publishDir"
+            exit 1
+          }
+
+          # 创建 ZIP 包
+          $zipPath = "${{ github.workspace }}/${zipFileName}"
+          Compress-Archive -Path "${publishDir}*" -DestinationPath $zipFileName -Force
+
+          echo "ZIP_FILE_NAME=$zipFileName" >> $env:GITHUB_OUTPUT
+          echo "ZIP_PATH=$zipPath" >> $env:GITHUB_OUTPUT
+          echo "Created package: $zipFileName"
+
+      # 上传构建产物
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.ZIP_FILE_NAME }}
+          path: ${{ steps.package.outputs.ZIP_PATH }}
+          retention-days: 30
