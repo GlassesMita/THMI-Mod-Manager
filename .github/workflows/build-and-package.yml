@@ -15,6 +15,10 @@ on:
           - osx-x64
           - osx-arm64
 
+env:
+  # 提前启用 Node.js 24，避免 Node.js 20 弃用警告
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: windows-latest
@@ -43,12 +47,11 @@ jobs:
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "Detected version: $version"
 
-      # 执行构建
+      # 执行构建（dotnet publish 默认非增量构建，无需 --no-incremental）
       - name: Build project
         run: |
           dotnet publish "THMI Mod Manager/THMI Mod Manager.csproj" `
             --configuration Release `
-            --no-incremental `
             --runtime ${{ inputs.runtime || 'win-x64' }}
 
       # 打包构建产物为 ZIP
