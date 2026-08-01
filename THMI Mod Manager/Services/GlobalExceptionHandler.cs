@@ -12,13 +12,13 @@ namespace THMI_Mod_Manager.Services
     public static class GlobalExceptionHandler
     {
         private static readonly Regex StackTracePathRegex = new Regex(@"in\s+[A-Za-z0-9_$.]+\s+in\s+[^:]+:\s*line\s+\d+", RegexOptions.Compiled);
-        
+
         private static string CleanStackTrace(string? stackTrace)
         {
             if (string.IsNullOrEmpty(stackTrace))
                 return stackTrace;
-            
-            return StackTracePathRegex.Replace(stackTrace, match => 
+
+            return StackTracePathRegex.Replace(stackTrace, match =>
             {
                 var original = match.Value;
                 var lastInIndex = original.LastIndexOf(" in ");
@@ -36,7 +36,7 @@ namespace THMI_Mod_Manager.Services
                 return original;
             });
         }
-        
+
         private static readonly string KernelPanicAscii = @"
       .--.        _ 
      |o_o |      | | 
@@ -61,7 +61,7 @@ namespace THMI_Mod_Manager.Services
         {
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
-            
+
             Console.CancelKeyPress += OnCancelKeyPress;
         }
 
@@ -69,7 +69,7 @@ namespace THMI_Mod_Manager.Services
         {
             var exception = e.ExceptionObject as Exception;
             DisplayKernelPanic(exception ?? new Exception("Unknown error"));
-            
+
             // 确保缓冲区刷新
             Console.Out.Flush();
             Console.Error.Flush();
@@ -96,62 +96,95 @@ namespace THMI_Mod_Manager.Services
         /// </summary>
         public static void DisplayKernelPanicWithUI(Exception exception, bool waitForKey = true)
         {
+
+            // 设置标题（后台线程循环切换，不阻塞主线程）
+            var titleThread = new System.Threading.Thread(() =>
+            {
+                const int switchInterval = 3000;
+                var languages = new string[]
+                {
+                    "Exceptioned? The fault lies on you, Ishmael!",
+                    "出现异常？都是你的错，以实玛利！",
+                    "發生異常？都是你的錯，以實瑪利！",
+                    "發生異常？都係你嘅錯，以實瑪利！",
+                    "예외가 발생합니다. 너 때문이야, 이스마엘!",
+                    "例外が発生します。あなたのせいです、イシュマエル！",
+                };
+
+                while (true)
+                {
+                    try
+                    {
+                        foreach (var title in languages)
+                        {
+                            Console.Title = title;
+                            System.Threading.Thread.Sleep(switchInterval);
+                        }
+                    }
+                    catch
+                    {
+                        // 忽略设置标题失败的异常，继续尝试
+                    }
+                }
+            });
+            titleThread.IsBackground = true;
+            titleThread.Start();
             // 清屏
             Console.Clear();
-            
+
             // 输出 Kernel Panic ASCII
             Console.ForegroundColor = ConsoleColor.Red;
             Console.BackgroundColor = ConsoleColor.Black;
             Console.WriteLine(KernelPanicAscii);
             Console.ResetColor();
-            
+
             Console.WriteLine();
-            
+
             // 输出 Oops 标题
             foreach (var line in OopsAscii)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(line);
             }
-            
+
             Console.ResetColor();
             Console.WriteLine();
             Console.WriteLine(new string('=', 78));
             Console.WriteLine();
-            
+
             // 输出异常信息
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"[{DateTime.Now:yyyy/MM/dd HH:mm:ss.ffff}]");
             Console.ResetColor();
             Console.WriteLine();
-            
+
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("KERNEL PANIC - UNHANDLED EXCEPTION");
             Console.ResetColor();
             Console.WriteLine();
             Console.WriteLine(new string('-', 78));
             Console.WriteLine();
-            
+
             // 输出异常类型和消息
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Exception Type: {exception.GetType().FullName}");
             Console.ResetColor();
             Console.WriteLine();
-            
+
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("Message:");
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine(exception.Message);
             Console.ResetColor();
             Console.WriteLine();
-            
+
             // 输出堆栈跟踪
             if (!string.IsNullOrEmpty(exception.StackTrace))
             {
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine("Stack Trace:");
                 Console.ForegroundColor = ConsoleColor.Gray;
-                
+
                 var cleanedStackTrace = CleanStackTrace(exception.StackTrace);
                 var stackTrace = cleanedStackTrace.Split('\n');
                 foreach (var line in stackTrace)
@@ -165,7 +198,7 @@ namespace THMI_Mod_Manager.Services
                 Console.ResetColor();
                 Console.WriteLine();
             }
-            
+
             // 输出内部异常
             if (exception.InnerException != null)
             {
@@ -181,10 +214,10 @@ namespace THMI_Mod_Manager.Services
                 Console.ResetColor();
                 Console.WriteLine();
             }
-            
+
             Console.WriteLine(new string('-', 78));
             Console.WriteLine();
-            
+
             // 输出系统信息
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("System Information:");
@@ -196,24 +229,24 @@ namespace THMI_Mod_Manager.Services
             Console.WriteLine($"  Process ID: {Environment.ProcessId}");
             Console.WriteLine($"  Working Directory: {Environment.CurrentDirectory}");
             Console.WriteLine();
-            
+
             Console.WriteLine(new string('=', 78));
             Console.WriteLine();
-            
+
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("THE SYSTEM HAS ENCOUNTERED AN UNRECOVERABLE ERROR.");
             Console.WriteLine("PLEASE RESTART THE APPLICATION.");
             Console.ResetColor();
             Console.WriteLine();
-            
+
             // 记录到日志文件
             WriteToLogFile(exception);
-            
+
             if (waitForKey)
             {
                 Console.WriteLine("Press any key to exit...");
                 Console.ResetColor();
-                
+
                 // 等待用户按键
                 try
                 {
@@ -245,14 +278,14 @@ namespace THMI_Mod_Manager.Services
             sb.AppendLine("Message:");
             sb.AppendLine(exception.Message);
             sb.AppendLine();
-            
+
             if (!string.IsNullOrEmpty(exception.StackTrace))
             {
                 sb.AppendLine("Stack Trace:");
                 sb.AppendLine(CleanStackTrace(exception.StackTrace));
                 sb.AppendLine();
             }
-            
+
             if (exception.InnerException != null)
             {
                 sb.AppendLine("Inner Exception:");
@@ -260,7 +293,7 @@ namespace THMI_Mod_Manager.Services
                 sb.AppendLine($"  Message: {exception.InnerException.Message}");
                 sb.AppendLine();
             }
-            
+
             sb.AppendLine("System Information:");
             sb.AppendLine($"  OS: {RuntimeInformation.OSDescription}");
             sb.AppendLine($"  Architecture: {RuntimeInformation.OSArchitecture}");
@@ -273,7 +306,7 @@ namespace THMI_Mod_Manager.Services
             sb.AppendLine("NOTE: This is a simulated kernel panic for testing purposes.");
             sb.AppendLine("      The actual kernel panic UI would be shown on unhandled exceptions.");
             sb.AppendLine();
-            
+
             // 同时输出到控制台和日志文件
             var message = sb.ToString();
             Console.WriteLine(message);
@@ -286,14 +319,14 @@ namespace THMI_Mod_Manager.Services
             {
                 string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 string logDirectory = Path.Combine(baseDirectory, "Logs");
-                
+
                 if (!Directory.Exists(logDirectory))
                 {
                     Directory.CreateDirectory(logDirectory);
                 }
-                
+
                 string logFilePath = Path.Combine(logDirectory, $"KernelPanic_{DateTime.Now:yyyyMMdd_HHmmss}.log");
-                
+
                 var sb = new StringBuilder();
                 sb.AppendLine("================================================================================");
                 sb.AppendLine($"KERNEL PANIC LOG - {DateTime.Now:yyyy/MM/dd HH:mm:ss.ffff}");
@@ -303,30 +336,7 @@ namespace THMI_Mod_Manager.Services
                 sb.AppendLine($"Type: {exception.GetType().FullName}");
                 sb.AppendLine($"Message: {exception.Message}");
                 sb.AppendLine();
-                
-                if (!string.IsNullOrEmpty(exception.StackTrace))
-                {
-                    sb.AppendLine("Stack Trace:");
-                    sb.AppendLine(CleanStackTrace(exception.StackTrace));
-                    sb.AppendLine();
-                }
-                
-                if (exception.InnerException != null)
-                {
-                    sb.AppendLine("Inner Exception:");
-                    sb.AppendLine($"Type: {exception.InnerException.GetType().FullName}");
-                    sb.AppendLine($"Message: {exception.InnerException.Message}");
-                    sb.AppendLine();
-                }
-                
-                sb.AppendLine("System Information:");
-                sb.AppendLine($"OS: {RuntimeInformation.OSDescription}");
-                sb.AppendLine($"Architecture: {RuntimeInformation.OSArchitecture}");
-                sb.AppendLine($".NET Version: {Environment.Version}");
-                sb.AppendLine($"Process ID: {Environment.ProcessId}");
-                sb.AppendLine($"Working Directory: {Environment.CurrentDirectory}");
-                sb.AppendLine();
-                
+
                 // ===================== AI Log Analysis Prompt =====================
                 sb.AppendLine("================================================================================");
                 sb.AppendLine("[AI PROMPT] THMI Mod Manager Exception Analysis Guide");
@@ -349,7 +359,56 @@ namespace THMI_Mod_Manager.Services
                 sb.AppendLine("   竞态条件处理、异步编程问题、文件系统权限、网络超时、数据库连接、");
                 sb.AppendLine("   内存泄漏以及 BepInEx 模组加载器特定错误。");
                 sb.AppendLine("================================================================================");
-                
+
+
+                if (!string.IsNullOrEmpty(exception.StackTrace))
+                {
+                    sb.AppendLine("Stack Trace:");
+                    sb.AppendLine(CleanStackTrace(exception.StackTrace));
+                    sb.AppendLine();
+                }
+
+                if (exception.InnerException != null)
+                {
+                    sb.AppendLine("Inner Exception:");
+                    sb.AppendLine($"Type: {exception.InnerException.GetType().FullName}");
+                    sb.AppendLine($"Message: {exception.InnerException.Message}");
+                    sb.AppendLine();
+                }
+
+                sb.AppendLine("System Information:");
+                sb.AppendLine($"OS: {RuntimeInformation.OSDescription}");
+                sb.AppendLine($"Architecture: {RuntimeInformation.OSArchitecture}");
+                sb.AppendLine($".NET Version: {Environment.Version}");
+                sb.AppendLine($"Process ID: {Environment.ProcessId}");
+                sb.AppendLine($"Working Directory: {Environment.CurrentDirectory}");
+                sb.AppendLine();
+
+                sb.AppendLine("================================================================================");
+                sb.AppendLine("Exceptioned? The fault lies on you, Ishmael!");
+                sb.AppendLine("出现异常？都是你的错，以实玛利！");
+                sb.AppendLine("發生異常？都是你的錯，以實瑪利！");
+                sb.AppendLine("發生異常？都係你嘅錯，以實瑪利！");
+                sb.AppendLine("예외가 발생합니다. 너 때문이야, 이스마엘!");
+                sb.AppendLine("例外が発生します。あなたのせいです、イシュマエル！");
+                sb.AppendLine("================================================================================");
+                sb.AppendLine();
+
+                sb.AppendLine("================================================================================");
+                sb.AppendLine("Ishmael: The fault lies on me again?");
+                sb.AppendLine("以实玛利：又是我的错？");
+                sb.AppendLine("以實瑪利：又是我的錯？");
+                sb.AppendLine("以實瑪利：又係我嘅錯？");
+                sb.AppendLine("이시마엘: 또 내 잘못인가?");
+                sb.AppendLine("イシュマエル: また私のせいですか？");
+                sb.AppendLine("================================================================================");
+                sb.AppendLine();
+
+
+                sb.AppendLine("================================================================================");
+                sb.AppendLine("End of Kernel Panic Log");
+                sb.AppendLine("================================================================================");
+
                 File.WriteAllText(logFilePath, sb.ToString());
             }
             catch

@@ -7,6 +7,7 @@
     <RootNamespace>THMI_Mod_Manager</RootNamespace>
     <IsPackable>true</IsPackable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>icon\appicon.ico</ApplicationIcon>
     
     <!-- 语义化版本号配置 -->
     <!-- Version: 用于 NuGet 包和 informational 版本显示，支持预发布标签 -->

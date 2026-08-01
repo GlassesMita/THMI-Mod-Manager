@@ -489,6 +489,10 @@
                     <span id="sessionTimeValue" class="time-value">00:00:00</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px;">
+                    <button id="aboutButton" class="cdx-button" onclick="showShellAbout()" style="padding: 10px 20px !important; font-size: 14px !important; min-height: 44px !important;">
+                        <i data-icon="icon-about"></i>
+                        <span>@AppConfig.GetLocalized("Sidebar:About", "About")</span>
+                    </button>
                     <button id="exitButton" class="cdx-button cdx-button--destructive" onclick="showExitConfirmation()" style="padding: 10px 20px !important; font-size: 14px !important; min-height: 44px !important;">
                         <i data-icon="icon-exit"></i>
                         <span>@AppConfig.GetLocalized("Common:Exit", "Exit")</span>
@@ -1293,6 +1297,14 @@
             sessionTimeManager.init();
         });
         
+        function showShellAbout() {
+            fetch('/api/about', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ appName: 'THMI Mod Manager', version: '0.10.0' })
+            }).catch(() => {});
+        }
+
         function showExitConfirmation() {
             const exitText = document.getElementById('localizedExitConfirm')?.value || 'Are you sure you want to exit?';
             const confirmText = document.getElementById('localizedExitConfirmButton')?.value || 'Exit';
