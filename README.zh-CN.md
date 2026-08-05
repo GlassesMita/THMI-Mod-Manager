@@ -4,6 +4,9 @@
 ![Language](https://img.shields.io/badge/Language-C%23-cf6fff?style=flat-square)
 ![Framework](https://img.shields.io/badge/Framework-.NET%2010%20WPF-9fa0db?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20x64-00b600?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager)
+
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
 **本项目使用 GNU 通用公共许可证第三版**
 
