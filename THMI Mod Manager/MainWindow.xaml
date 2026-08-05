@@ -1,0 +1,59 @@
+<Window x:Class="THMI_Mod_Manager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="THMI Mod Manager" Width="1200" Height="780" MinWidth="940" MinHeight="620"
+        Background="{DynamicResource CanvasBrush}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+            <DockPanel LastChildFill="True">
+                <Border DockPanel.Dock="Top" Height="72" Padding="20,14" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel>
+                        <TextBlock Text="THMI Mod Manager" Foreground="{DynamicResource TextBrush}" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="Touhou Mystia Izakaya" Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Margin="0,3,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border DockPanel.Dock="Bottom" Padding="16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="4,0,0,8">
+                            <Ellipse Width="9" Height="9" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="SteamStatusText" Text="正在检查 Steam..." Foreground="{DynamicResource MutedTextBrush}" FontSize="12" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Button x:Name="SidebarLaunchButton" Content="启动游戏" Style="{StaticResource PrimaryButton}" Click="SidebarLaunchButton_Click" HorizontalAlignment="Stretch" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+                <StackPanel Margin="8,10">
+                    <TextBlock x:Name="NavGroupMainTitle" Text="主菜单" Style="{StaticResource NavGroupTitle}" />
+                    <RadioButton x:Name="NavHomeRadio" Style="{StaticResource NavButton}" Tag="主页" Click="ShowHome_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE80F;"/><TextBlock x:Name="NavHomeText" Text="首页"/></StackPanel></RadioButton>
+                    <RadioButton x:Name="NavModsRadio" Style="{StaticResource NavButton}" Tag="模组" Click="ShowMods_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE943;"/><TextBlock x:Name="NavModsText" Text="模组"/></StackPanel></RadioButton>
+                    <RadioButton x:Name="NavExploreRadio" Style="{StaticResource NavButton}" Tag="浏览" Click="ShowExplore_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE721;"/><TextBlock x:Name="NavExploreText" Text="探索"/></StackPanel></RadioButton>
+                    <TextBlock x:Name="NavGroupManageTitle" Text="管理" Style="{StaticResource NavGroupTitle}" />
+                    <RadioButton x:Name="NavSettingsRadio" Style="{StaticResource NavButton}" Tag="设置" Click="ShowSettings_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE713;"/><TextBlock x:Name="NavSettingsText" Text="设置"/></StackPanel></RadioButton>
+                    <RadioButton x:Name="NavAboutRadio" Style="{StaticResource NavButton}" Tag="关于" Click="ShowAbout_Click" PreviewMouseRightButtonUp="ShowShellAbout_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE946;"/><TextBlock x:Name="NavAboutText" Text="关于"/></StackPanel></RadioButton>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="56" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,0">
+                <DockPanel VerticalAlignment="Center">
+                </DockPanel>
+            </Border>
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ContentControl x:Name="PageContent" Margin="30,24" />
+            </ScrollViewer>
+            <Border Grid.Row="3" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="30,10">
+                <TextBlock x:Name="StatusText" Foreground="{DynamicResource MutedTextBrush}" TextWrapping="Wrap" FontSize="12" />
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

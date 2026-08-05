@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using THMI_Mod_Manager.Services;
 
 namespace THMI_Mod_Manager.Controllers
 {
@@ -10,6 +11,13 @@ namespace THMI_Mod_Manager.Controllers
     [Route("api/filebrowser")]
     public class FileBrowserController : ControllerBase
     {
+        private readonly AppConfigManager _appConfig;
+
+        public FileBrowserController(AppConfigManager appConfig)
+        {
+            _appConfig = appConfig;
+        }
+
         [HttpGet("appdirectory")]
         public IActionResult GetAppDirectory()
         {
@@ -56,7 +64,7 @@ namespace THMI_Mod_Manager.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
+                if (string.IsNullOrEmpty(path) || !IsAllowedPath(path) || !Directory.Exists(path))
                 {
                     return BadRequest(new { success = false, message = "Invalid directory path" });
                 }
@@ -99,6 +107,23 @@ namespace THMI_Mod_Manager.Controllers
             {
                 return BadRequest(new { success = false, message = ex.Message });
             }
+        }
+
+        private bool IsAllowedPath(string path)
+        {
+            var requestedPath = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var gamePath = _appConfig.Get("[Game]GamePath", "");
+            var allowedRoots = new[]
+            {
+                AppContext.BaseDirectory,
+                gamePath,
+                string.IsNullOrWhiteSpace(gamePath) ? null : Path.Combine(gamePath, "BepInEx", "plugins")
+            };
+
+            return allowedRoots
+                .Where(root => !string.IsNullOrWhiteSpace(root))
+                .Select(root => Path.GetFullPath(root!).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar)
+                .Any(root => requestedPath.StartsWith(root, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

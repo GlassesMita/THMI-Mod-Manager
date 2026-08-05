@@ -260,40 +260,9 @@ namespace THMI_Mod_Manager.Services
 
         private string GetPluginsPath()
         {
-            var gamePath = _appConfig.Get("[Game]GamePath", "");
-            
-            if (!string.IsNullOrEmpty(gamePath))
-            {
-                var pluginsPath = Path.Combine(gamePath, "BepInEx", "plugins");
-                if (Directory.Exists(pluginsPath))
-                {
-                    Logger.LogInfo($"Using game plugins path: {pluginsPath}");
-                    return pluginsPath;
-                }
-            }
-
-            var possiblePaths = new[]
-            {
-                Path.Combine(AppContext.BaseDirectory, "BepInEx", "plugins"),
-                Path.Combine(Directory.GetCurrentDirectory(), "BepInEx", "plugins"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "BepInEx", "plugins"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "BepInEx", "plugins"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "BepInEx", "plugins"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "BepInEx", "plugins")
-            };
-
-            foreach (var path in possiblePaths)
-            {
-                var fullPath = Path.GetFullPath(path);
-                if (Directory.Exists(fullPath))
-                {
-                    Logger.LogInfo($"Using workspace plugins path: {fullPath}");
-                    return fullPath;
-                }
-            }
-            
-            Logger.LogWarning("BepInEx/plugins directory not found in any location");
-            return possiblePaths[0];
+            var pluginsPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "BepInEx", "plugins"));
+            Logger.LogInfo($"Using application plugins path: {pluginsPath}");
+            return pluginsPath;
         }
 
         public bool DeleteMod(string filePath)

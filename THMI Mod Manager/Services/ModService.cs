@@ -40,8 +40,8 @@ namespace THMI_Mod_Manager.Services
 
             try
             {
-                var dllFiles = Directory.GetFiles(pluginsPath, "*.dll", SearchOption.TopDirectoryOnly);
-                var disabledFiles = Directory.GetFiles(pluginsPath, "*.dll.disabled", SearchOption.TopDirectoryOnly);
+                var dllFiles = Directory.GetFiles(pluginsPath, "*.dll", SearchOption.AllDirectories);
+                var disabledFiles = Directory.GetFiles(pluginsPath, "*.dll.disabled", SearchOption.AllDirectories);
                 var allFiles = dllFiles.Concat(disabledFiles).ToArray();
 
                 if (!HasEverLoadedMods)
@@ -54,10 +54,10 @@ namespace THMI_Mod_Manager.Services
                     foreach (var dllFile in allFiles)
                     {
                         var modInfo = ExtractModInfo(dllFile);
-                        mods.Add(modInfo);
 
                         if (modInfo.IsValid)
                         {
+                            mods.Add(modInfo);
                             validCount++;
                             Logger.LogInfo($"Successfully loaded mod: {modInfo.Name}...");
                         }
@@ -81,9 +81,13 @@ namespace THMI_Mod_Manager.Services
                     foreach (var dllFile in allFiles)
                     {
                         var modInfo = ExtractModInfo(dllFile);
-                        mods.Add(modInfo);
 
-                        if (!modInfo.IsValid)
+                        if (modInfo.IsValid)
+                        {
+                            mods.Add(modInfo);
+                            validCount++;
+                        }
+                        else
                         {
                             invalidCount++;
                         }
@@ -237,46 +241,15 @@ namespace THMI_Mod_Manager.Services
 
         /// <summary>
         /// Get the plugins directory path / 获取插件目录路径
-        /// First checks game path from config, then falls back to common locations
-        /// / 首先检查配置中的游戏路径，然后回退到常见位置
+        /// Always resolves to ./BepInEx/plugins below the running application directory.
+        /// / 始终解析为应用运行目录下的 ./BepInEx/plugins。
         /// </summary>
         /// <returns>Full path to the plugins directory / 插件目录的完整路径</returns>
         private string GetPluginsPath()
         {
-            var gamePath = _appConfig.Get("[Game]GamePath", "");
-            
-            if (!string.IsNullOrEmpty(gamePath))
-            {
-                var pluginsPath = Path.Combine(gamePath, "BepInEx", "plugins");
-                if (Directory.Exists(pluginsPath))
-                {
-                    Logger.LogInfo($"Using game plugins path: {pluginsPath}");
-                    return pluginsPath;
-                }
-            }
-
-            var possiblePaths = new[]
-            {
-                Path.Combine(AppContext.BaseDirectory, "BepInEx", "plugins"),
-                Path.Combine(Directory.GetCurrentDirectory(), "BepInEx", "plugins"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "BepInEx", "plugins"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "BepInEx", "plugins"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "BepInEx", "plugins"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "BepInEx", "plugins")
-            };
-
-            foreach (var path in possiblePaths)
-            {
-                var fullPath = Path.GetFullPath(path);
-                if (Directory.Exists(fullPath))
-                {
-                    Logger.LogInfo($"Using workspace plugins path: {fullPath}");
-                    return fullPath;
-                }
-            }
-            
-            Logger.LogWarning("BepInEx/plugins directory not found in any location");
-            return possiblePaths[0];
+            var pluginsPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "BepInEx", "plugins"));
+            Logger.LogInfo($"Using application plugins path: {pluginsPath}");
+            return pluginsPath;
         }
 
         /// <summary>
@@ -537,7 +510,7 @@ namespace THMI_Mod_Manager.Services
                 // If still not found, try searching for both enabled and disabled versions
                 if (fileName.EndsWith(".disabled"))
                 {
-                    var enabledFiles = Directory.GetFiles(pluginsPath, fileName.Substring(0, fileName.Length - ".disabled".Length), SearchOption.TopDirectoryOnly);
+                    var enabledFiles = Directory.GetFiles(pluginsPath, fileName.Substring(0, fileName.Length - ".disabled".Length), SearchOption.AllDirectories);
                     if (enabledFiles.Length > 0)
                     {
                         return enabledFiles[0];
@@ -545,7 +518,7 @@ namespace THMI_Mod_Manager.Services
                 }
                 else
                 {
-                    var disabledFiles = Directory.GetFiles(pluginsPath, fileName + ".disabled", SearchOption.TopDirectoryOnly);
+                    var disabledFiles = Directory.GetFiles(pluginsPath, fileName + ".disabled", SearchOption.AllDirectories);
                     if (disabledFiles.Length > 0)
                     {
                         return disabledFiles[0];

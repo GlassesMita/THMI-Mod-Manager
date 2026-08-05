@@ -9,9 +9,9 @@ namespace THMI_Mod_Manager.Services
         private readonly string _localizationPath;
         private readonly List<LocaleInfo> _locales = new();
 
-        public LocalizationManager(IWebHostEnvironment env)
+        public LocalizationManager(string? contentRootPath = null)
         {
-            _localizationPath = Path.Combine(env.ContentRootPath, "Localization");
+            _localizationPath = Path.Combine(contentRootPath ?? AppContext.BaseDirectory, "Localization");
             Load();
         }
 

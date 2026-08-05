@@ -21,6 +21,11 @@ Status=
 LauncherPath=
 ModifyTitle=true
 
+[Server]
+# Set Port to Random to select a free TCP port on each startup.
+Port=5000
+AllowRemoteSession=False
+
 [Updates]
 CheckForUpdates=True
 UpdateCheckType=GitHub

@@ -1,0 +1,163 @@
+<Application x:Class="THMI_Mod_Manager.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             StartupUri="MainWindow.xaml"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- WPF UI Fluent 主题与控件样式 -->
+                <ui:ThemesDictionary Theme="Light" />
+                <ui:ControlsDictionary />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- 主题色（独立，由 ApplyHotReloadSettings 管理，不随深浅主题切换） -->
+            <SolidColorBrush x:Key="AccentBrush" Color="#C670FF" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#AF4EE8" />
+            <!-- 主题色软背景（约 12% 透明度，用于导航选中态，由 ApplyHotReloadSettings 同步） -->
+            <SolidColorBrush x:Key="AccentSoftBrush" Color="#1FC670FF" />
+            <!-- 导航项悬停底色（由 SyncFluentBrushes 从 Fluent 色板同步） -->
+            <SolidColorBrush x:Key="NavHoverBrush" Color="#12000000" />
+
+            <!-- 语义画刷（初值浅色；由 ApplyTheme 在启动与主题切换时同步为 Fluent 色板） -->
+            <SolidColorBrush x:Key="CanvasBrush" Color="#F8F9FA" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="SidebarBrush" Color="#F2F3F5" />
+            <SolidColorBrush x:Key="BorderBrush" Color="#C8CCD1" />
+            <SolidColorBrush x:Key="TextBrush" Color="#202122" />
+            <SolidColorBrush x:Key="MutedTextBrush" Color="#72777D" />
+            <SolidColorBrush x:Key="SuccessBrush" Color="#14866D" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#D73333" />
+            <SolidColorBrush x:Key="WarningBrush" Color="#AC6600" />
+
+            <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+            <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+            <!-- 主按钮：继承 WPF UI 隐式 Button 样式，仅覆盖配色 -->
+            <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}" />
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Opacity" Value="0.85" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- 危险按钮 -->
+            <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Opacity" Value="0.85" />
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Opacity" Value="0.7" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- 卡片容器 -->
+            <Style x:Key="CardBorder" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+            </Style>
+
+            <!-- 分区标题 -->
+            <Style x:Key="SectionTitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            </Style>
+
+            <!-- 次要文本 -->
+            <Style x:Key="MutedText" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+
+            <!-- 徽标文本 -->
+            <Style x:Key="BadgeText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+
+            <!-- 窗口默认字体（继承 Fluent 控件样式，仅覆盖字体） -->
+            <Style TargetType="Window">
+                <Setter Property="FontFamily" Value="{DynamicResource AppFont}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+            </Style>
+
+            <!-- 侧边栏导航按钮：参照 WPF UI Gallery 导航项——图标 + 文本、选中时主题色软背景高亮 + 左侧指示条 -->
+            <Style x:Key="NavButton" TargetType="RadioButton">
+                <Setter Property="GroupName" Value="SidebarNav" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="Margin" Value="0,2" />
+                <Setter Property="Padding" Value="12,9" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <Grid>
+                                <Border x:Name="HoverLayer" CornerRadius="6" Background="{TemplateBinding Background}" />
+                                <Rectangle x:Name="Indicator" Width="3" Height="16" RadiusX="1.5" RadiusY="1.5"
+                                           Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Left"
+                                           VerticalAlignment="Center" Visibility="Collapsed" />
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center" />
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="HoverLayer" Property="Background" Value="{DynamicResource NavHoverBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="HoverLayer" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                    <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
+                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- 侧边栏图标 -->
+            <Style x:Key="NavIcon" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{DynamicResource IconFont}" />
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="Width" Value="28" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type RadioButton}}}" />
+            </Style>
+
+            <!-- 侧边栏分组标题 -->
+            <Style x:Key="NavGroupTitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                <Setter Property="Margin" Value="14,14,14,6" />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

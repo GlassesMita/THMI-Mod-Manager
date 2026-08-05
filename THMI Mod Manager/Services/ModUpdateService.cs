@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -627,33 +628,9 @@ namespace THMI_Mod_Manager.Services
 
         private string GetPluginsPath()
         {
-            var gamePath = _appConfig.Get("[Game]GamePath", "");
-            
-            if (!string.IsNullOrEmpty(gamePath))
-            {
-                var pluginsPath = Path.Combine(gamePath, "BepInEx", "plugins");
-                if (Directory.Exists(pluginsPath))
-                {
-                    return pluginsPath;
-                }
-            }
-
-            var possiblePaths = new[]
-            {
-                Path.Combine(AppContext.BaseDirectory, "BepInEx", "plugins"),
-                Path.Combine(Directory.GetCurrentDirectory(), "BepInEx", "plugins"),
-            };
-
-            foreach (var path in possiblePaths)
-            {
-                var fullPath = Path.GetFullPath(path);
-                if (Directory.Exists(fullPath))
-                {
-                    return fullPath;
-                }
-            }
-            
-            return possiblePaths[0];
+            var pluginsPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "BepInEx", "plugins"));
+            Logger.LogInfo($"Using application plugins path: {pluginsPath}");
+            return pluginsPath;
         }
     }
 

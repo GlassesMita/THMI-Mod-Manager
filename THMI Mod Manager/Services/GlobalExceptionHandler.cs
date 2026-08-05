@@ -410,6 +410,10 @@ namespace THMI_Mod_Manager.Services
                 sb.AppendLine("================================================================================");
 
                 File.WriteAllText(logFilePath, sb.ToString());
+
+                // WPF exceptions should also be visible in the normal application log.
+                var latestLogPath = Path.Combine(logDirectory, "Latest.Log");
+                File.AppendAllText(latestLogPath, $"[E][{DateTime.Now:yyyy/MM/dd HH:mm:ss.ffff}] Unhandled exception: {exception}\r\n");
             }
             catch
             {

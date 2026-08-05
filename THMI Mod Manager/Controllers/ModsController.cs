@@ -297,12 +297,28 @@ namespace THMI_Mod_Manager.Controllers
                     return BadRequest(new { success = false, message = "文件路径不能为空" });
                 }
 
-                if (!System.IO.File.Exists(request.FilePath))
+                var sourcePath = Path.GetFullPath(request.FilePath);
+                var allowedRoots = new[]
+                {
+                    AppContext.BaseDirectory,
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+                };
+                var isAllowedPath = allowedRoots
+                    .Where(root => !string.IsNullOrWhiteSpace(root))
+                    .Select(root => Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar)
+                    .Any(root => sourcePath.StartsWith(root, StringComparison.OrdinalIgnoreCase));
+
+                if (!isAllowedPath || !string.Equals(Path.GetExtension(sourcePath), ".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { success = false, message = "仅允许从用户目录或应用目录安装 ZIP 文件" });
+                }
+
+                if (!System.IO.File.Exists(sourcePath))
                 {
                     return BadRequest(new { success = false, message = "文件不存在" });
                 }
 
-                bool installed = _modService.InstallMod(request.FilePath);
+                bool installed = _modService.InstallMod(sourcePath);
 
                 if (installed)
                 {

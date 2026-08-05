@@ -442,83 +442,184 @@ builder.Services.AddHostedService<THMI_Mod_Manager.Services.SessionTimeMonitor>(
 // Register WhatsNewController HttpClient
 builder.Services.AddHttpClient<THMI_Mod_Manager.Controllers.WhatsNewController>();
 
-// 检查端口是否可用
-bool IsPortAvailable(int port)
+// 监听配置必须来自成品配置文件，避免发布环境意外暴露或使用未知端口。
+var appConfigPath = Path.Combine(builder.Environment.ContentRootPath, "AppConfig.Schale");
+var configuredPort = ReadAppConfigValue(appConfigPath, "Server", "Port");
+var portToUse = configuredPort?.Equals("Random", StringComparison.OrdinalIgnoreCase) == true
+    ? GetAvailableRandomPort()
+    : ParseConfiguredPort(configuredPort, appConfigPath);
+
+var allowRemoteSession = bool.TryParse(
+    ReadAppConfigValue(appConfigPath, "Server", "AllowRemoteSession"),
+    out var parsedAllowRemoteSession) && parsedAllowRemoteSession;
+var listenAddress = allowRemoteSession ? "0.0.0.0" : "127.0.0.1";
+ConsoleOutput($"Kestrel listening port: {portToUse}");
+Logger.LogInfo($"Kestrel listening port selected: {portToUse}");
+builder.WebHost.UseUrls($"http://{listenAddress}:{portToUse}");
+
+int ParseConfiguredPort(string? configuredPort, string configPath)
+{
+    if (!int.TryParse(configuredPort, out var port) || port is < 1 or > 65535)
+    {
+        throw new InvalidOperationException(
+            $"[Server]Port must be Random or an integer between 1 and 65535 in {configPath}.");
+    }
+
+    return port;
+}
+
+int GetAvailableRandomPort()
+{
+    while (true)
+    {
+        var candidatePort = System.Security.Cryptography.RandomNumberGenerator.GetInt32(1, 65536);
+
+        if (IsTcpPortAvailable(candidatePort))
+        {
+            Logger.LogInfo($"Random Kestrel port selected: {candidatePort}");
+            return candidatePort;
+        }
+
+        var portOwner = GetTcpPortOwner(candidatePort);
+        var message = portOwner == null
+            ? $"Random port {candidatePort} is occupied; selecting another port."
+            : $"Random port {candidatePort} is occupied by {portOwner}; selecting another port.";
+        ConsoleOutput(message);
+        Logger.LogWarning(message);
+    }
+}
+
+bool IsTcpPortAvailable(int port)
 {
     try
     {
         using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Any, port);
         listener.Start();
-        listener.Stop();
         return true;
     }
-    catch
+    catch (System.Net.Sockets.SocketException)
     {
         return false;
     }
 }
 
-// 获取可用的端口号
-int GetAvailablePort(int preferredPort, int minPort = 5000, int maxPort = 65535)
+string? GetTcpPortOwner(int port)
 {
-    // 首先尝试首选端口
-    if (IsPortAvailable(preferredPort))
+    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        return null;
+
+    try
     {
-        return preferredPort;
-    }
-    
-    // 首选端口被占用，随机选择一个可用端口
-    var random = new Random();
-    int attempts = 0;
-    int maxAttempts = 100;
-    
-    while (attempts < maxAttempts)
-    {
-        int randomPort = random.Next(minPort, maxPort + 1);
-        if (IsPortAvailable(randomPort))
+        using var process = Process.Start(new ProcessStartInfo
         {
-            return randomPort;
-        }
-        attempts++;
-    }
-    
-    // 如果随机尝试失败，尝试从minPort开始顺序查找
-    for (int port = minPort; port <= maxPort; port++)
-    {
-        if (IsPortAvailable(port))
+            FileName = "netstat.exe",
+            Arguments = "-ano -p tcp",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true
+        });
+        if (process == null)
+            return null;
+
+        var output = process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+        foreach (var line in output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
         {
-            return port;
+            var columns = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (columns.Length < 5 || !columns[0].Equals("TCP", StringComparison.OrdinalIgnoreCase) ||
+                !columns[3].Equals("LISTENING", StringComparison.OrdinalIgnoreCase) ||
+                !int.TryParse(columns[^1], out var processId) || !EndpointUsesPort(columns[1], port))
+            {
+                continue;
+            }
+
+            try
+            {
+                using var ownerProcess = Process.GetProcessById(processId);
+                return $"process {ownerProcess.ProcessName} (PID {processId})";
+            }
+            catch (ArgumentException)
+            {
+                return $"process PID {processId}";
+            }
         }
     }
-    
-    // 如果所有端口都被占用，返回首选端口（让应用自己处理错误）
-    return preferredPort;
+    catch (Exception ex)
+    {
+        Logger.LogWarning($"Unable to identify the process using port {port}: {ex.Message}");
+    }
+
+    return null;
 }
 
-// 设置应用URL
-var configuration = builder.Configuration;
-var configuredUrls = configuration["urls"] ?? configuration["Urls"];
-int portToUse = 5000;
-
-if (!string.IsNullOrEmpty(configuredUrls))
+bool EndpointUsesPort(string endpoint, int port)
 {
-    // 如果配置了URL，尝试解析端口
-    var url = configuredUrls.Split(';').FirstOrDefault() ?? "http://localhost:5000";
-    var uri = new Uri(url);
-    portToUse = uri.Port;
-    
-    // 如果端口是80或0，使用5000作为默认值
-    if (portToUse == 80 || portToUse == 0)
-    {
-        portToUse = 5000;
-    }
+    var separatorIndex = endpoint.LastIndexOf(':');
+    return separatorIndex >= 0 &&
+           int.TryParse(endpoint[(separatorIndex + 1)..], out var endpointPort) &&
+           endpointPort == port;
 }
 
-// 检查端口是否可用，如果不可用则随机选择一个
-int availablePort = GetAvailablePort(portToUse);
-builder.WebHost.UseUrls($"http://localhost:{availablePort}");
+string? ReadAppConfigValue(string filePath, string sectionName, string keyName)
+{
+    if (!File.Exists(filePath))
+        return null;
+
+    var currentSection = string.Empty;
+    foreach (var rawLine in File.ReadAllLines(filePath, Encoding.UTF8))
+    {
+        var line = rawLine.Trim();
+        if (line.Length == 0 || line.StartsWith('#') || line.StartsWith(';'))
+            continue;
+
+        if (line.StartsWith('[') && line.EndsWith(']'))
+        {
+            currentSection = line[1..^1].Trim();
+            continue;
+        }
+
+        var separator = line.IndexOf('=');
+        if (separator > 0 && currentSection.Equals(sectionName, StringComparison.OrdinalIgnoreCase) &&
+            line[..separator].Trim().Equals(keyName, StringComparison.OrdinalIgnoreCase))
+        {
+            return line[(separator + 1)..].Trim();
+        }
+    }
+
+    return null;
+}
 
 var app = builder.Build();
+
+var sessionToken = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+app.Use(async (context, next) =>
+{
+    const string cookieName = "THMI.Session";
+    var isApiRequest = context.Request.Path.StartsWithSegments("/api");
+    var hasValidSession = context.Request.Cookies.TryGetValue(cookieName, out var suppliedToken) &&
+                          string.Equals(suppliedToken, sessionToken, StringComparison.Ordinal);
+
+    if (isApiRequest && !hasValidSession)
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsJsonAsync(new { success = false, message = "管理会话无效或已过期" });
+        return;
+    }
+
+    if (!hasValidSession && !context.Response.HasStarted)
+    {
+        context.Response.Cookies.Append(cookieName, sessionToken, new CookieOptions
+        {
+            HttpOnly = true,
+            SameSite = SameSiteMode.Strict,
+            Secure = false,
+            IsEssential = true,
+            Path = "/"
+        });
+    }
+
+    await next();
+});
 
 // Configure localization options by scanning the Localization folder for *.ini files
 var localizationPath = Path.Combine(app.Environment.ContentRootPath, "Localization");
@@ -601,7 +702,7 @@ lifetime.ApplicationStarted.Register(() =>
         // 从服务器特性获取实际使用的端口
         var serverFeature = app.Services.GetRequiredService<IServer>();
         var addresses = serverFeature.Features.Get<IServerAddressesFeature>();
-        var port = 5000;
+        var port = portToUse;
         
         if (addresses != null && addresses.Addresses.Any())
         {
@@ -615,7 +716,9 @@ lifetime.ApplicationStarted.Register(() =>
         
         // 从本地化文件读取消息（使用预加载的消息，避免重复读取）
         string finalRunningMessage = runningMessage.Replace("{port}", port.ToString());
-        string finalBrowserOpenedMessage = browserOpenedMessage.Replace("{url}", $"http://localhost:{port}");
+        var browserHost = allowRemoteSession ? "127.0.0.1" : listenAddress;
+        var localManagementUrl = $"http://{browserHost}:{port}/";
+        string finalBrowserOpenedMessage = browserOpenedMessage.Replace("{url}", localManagementUrl);
         
         // 先输出欢迎消息（如果存在）
         if (!string.IsNullOrEmpty(welcomeMessage))
@@ -625,7 +728,7 @@ lifetime.ApplicationStarted.Register(() =>
         }
         
         ConsoleOutput(finalRunningMessage);
-        Logger.LogInfo($"Application running on localhost:{port}");
+        Logger.LogInfo($"Application listening on {listenAddress}:{port}");
 
         // ===================== 关键修改2：判断--no-newtab参数，优先级最高 =====================
         if (!noNewTab) // 仅当未传入--no-newtab时，才执行打开浏览器逻辑
@@ -634,32 +737,32 @@ lifetime.ApplicationStarted.Register(() =>
 
             if (openDebugPage)
             {
-                urlsToOpen.Add($"http://localhost:{port}/DebugPage");
+                urlsToOpen.Add($"http://{browserHost}:{port}/DebugPage");
                 ConsoleOutput($"Opening debug page");
                 Logger.LogInfo($"Opening debug page");
 
                 if (!string.IsNullOrEmpty(openPage) && openPage.ToLower() != "debugpage")
                 {
-                    urlsToOpen.Add($"http://localhost:{port}/{openPage}");
+                    urlsToOpen.Add($"http://{browserHost}:{port}/{openPage}");
                     ConsoleOutput($"Opening specified page: {openPage}");
                     Logger.LogInfo($"Opening specified page: {openPage}");
                 }
             }
             else if (!string.IsNullOrEmpty(openPage))
             {
-                urlsToOpen.Add($"http://localhost:{port}/{openPage}");
+                urlsToOpen.Add($"http://{browserHost}:{port}/{openPage}");
                 ConsoleOutput($"Opening specified page: {openPage}");
                 Logger.LogInfo($"Opening specified page: {openPage}");
             }
             else if (!string.IsNullOrEmpty(updateVersion))
             {
-                urlsToOpen.Add($"http://localhost:{port}/WhatsNew?version={updateVersion}");
+                urlsToOpen.Add($"http://{browserHost}:{port}/WhatsNew?version={Uri.EscapeDataString(updateVersion)}");
                 ConsoleOutput($"Opening What's New page for version: {updateVersion}");
                 Logger.LogInfo($"Opening What's New page for version: {updateVersion}");
             }
             else
             {
-                urlsToOpen.Add($"http://localhost:{port}");
+                urlsToOpen.Add(localManagementUrl);
             }
 
             foreach (var url in urlsToOpen)

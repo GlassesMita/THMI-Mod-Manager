@@ -1,7 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- 基础配置 -->
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <OutputType>WinExe</OutputType>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>THMI_Mod_Manager</RootNamespace>
@@ -32,17 +34,6 @@
     <BuildAll>false</BuildAll>
     <!-- 定义所有目标平台（可按需增删） -->
     <TargetRuntimes>win-x86;win-x64;linux-x64;osx-x64;osx-arm64</TargetRuntimes>
-    
-    <!-- 动态路径配置（基础路径由-o传入，自动拼接架构目录） -->
-    <BaseOutputPath Condition=" '$(PublishDir)' != '' ">$(PublishDir)</BaseOutputPath>
-    <PublishOutputPath>$(BaseOutputPath)\$(RuntimeIdentifier.ToLower())\</PublishOutputPath>
-    <ZipOutputPath>$(BaseOutputPath)</ZipOutputPath>
-    
-    <!-- ZIP打包命名规则：<项目名>_<架构>_<版本>.zip -->
-    <ProjectName>THMI_Mod_Manager</ProjectName>
-    <PublishZipFileName>$(ProjectName)_$(RuntimeIdentifier.ToLower())_$(Version).zip</PublishZipFileName>
-    <PublishZipFullPath>$(ZipOutputPath)$(PublishZipFileName)</PublishZipFullPath>
-    
     <PublishSingleFile>false</PublishSingleFile>
     <!-- 自包含部署配置：当传入 SelfContained=true 参数时启用 -->
     <SelfContained Condition="$(SelfContained) == '' Or $(SelfContained) == 'false'">false</SelfContained>
@@ -55,12 +46,6 @@
     <!-- 注意：PublishTrimmed=false 会禁用"裁剪未使用的代码"功能 -->
     <!-- 这会防止 ASP.NET Core MVC 的重要类型被错误移除 -->
     <PublishTrimmed>false</PublishTrimmed>
-  </PropertyGroup>
-
-  <!-- 动态路径配置（用于 publish 时指定输出路径） -->
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
-    <!-- 发布到指定路径，不使用硬编码的 OutDir -->
-    <PublishDir Condition=" '$(PublishDir)' == '' ">$(BaseOutputPath)</PublishDir>
   </PropertyGroup>
 
   <!-- 游戏目录构建配置：使用 -p:GameDir="路径" 指定游戏目录，构建到游戏目录 -->
@@ -81,6 +66,13 @@
     <Content Remove="appsettings.Development.json" />
     <Content Remove="package.json" />
     <Content Remove="web.config" />
+    <Compile Remove="Controllers\**\*.cs" />
+    <Compile Remove="Middleware\**\*.cs" />
+    <Compile Remove="Pages\**\*.cs" />
+    <Compile Remove="ViewComponents\**\*.cs" />
+    <Compile Remove="Program.cs" />
+    <Compile Remove="Services\IniFileStringLocalizerFactory.cs" />
+    <Compile Remove="Services\SessionTimeMonitor.cs" />
     <!-- 可选：剔除调试/文档文件 -->
     <!-- <Content Remove="*.pdb" /> -->
     <!-- <Content Remove="*.xml" /> -->
@@ -89,20 +81,14 @@
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.44.0" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.5" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
 
   <!-- 强制保留必要文件 -->
   <ItemGroup>
-    <Content Update="wwwroot\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <None Update="Localization\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
-  <!-- 发布后删除 staticwebassets.endpoints.json 以减小包体积 -->
-  <Target Name="RemoveStaticWebAssetsEndpoints" AfterTargets="Publish">
-    <Delete Files="$(PublishOutputPath)*.staticwebassets.endpoints.json" />
-  </Target>
 </Project>

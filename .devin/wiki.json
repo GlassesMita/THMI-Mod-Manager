@@ -7,22 +7,22 @@
       "content": "免费声明：本项目免费提供。如果你是付费获得本软件，请立即申请退款并给卖家差评。本软件是一个独立的第三方工具。"
     },
     {
-      "content": "THMI Mod Manager 是一款专为《东方夜雀食堂》游戏设计的 Mod 管理工具，提供直观的用户界面来管理游戏模组，支持启用、禁用、删除等操作"
+      "content": "THMI Mod Manager 是一款专为《东方夜雀食堂》（Touhou Mystia Izakaya）游戏设计的 Windows 桌面 Mod 管理器，提供直观的用户界面来管理游戏模组，支持启用、禁用、删除、安装等操作，并集成游戏启动、主题切换、多语言等能力"
     },
     {
-      "content": "基于最新 GitHub 仓库的代码和文档以及发行版，完整概述 THMI Mod Manager 的功能、特性和使用方法"
+      "content": "基于最新 GitHub 仓库的代码和文档，完整概述 THMI Mod Manager 的功能、特性和使用方法"
     },
     {
-      "content": "应用基于 .NET 10.0 ASP.NET Core 构建，采用 Razor Pages 技术，支持多语言本地化（可手动进行新语言的添加），并提供完善的设置管理系统"
+      "content": "技术栈：应用是基于 .NET 10.0（net10.0-windows）构建的原生 WPF 桌面应用，UI 框架为 WPF-UI 4.3.0（Fluent 风格），配置基于 INI 格式（AppConfig.Schale），本地化基于 Localization 目录下的 INI 文件。应用不含任何 Web 服务、不依赖浏览器，全部功能本地运行"
+    },
+    {
+      "content": "项目结构说明：仓库中仍存在 Controllers/、Middleware/、Pages/、ViewComponents/ 等历史目录及 Program.cs，但 THMI Mod Manager.csproj 已通过 Compile Remove 排除这些文件，它们不参与编译，当前实际构建产物为纯 WPF 桌面应用（入口为 App.xaml + MainWindow.xaml）"
     },
     {
       "content": "软件使用说明：本工具仅支持正版游戏使用。强烈建议用户使用合法授权的游戏版本，盗版软件不受任何技术支持。使用本 Mod 管理器即表示您同意仅将其与正版游戏安装配合使用，并尊重知识产权"
     },
     {
       "content": "本地化调试说明：在调试本地化功能时，本地化文件的文件名不一定要严格遵守标准命名规范，可以临时使用任意文件名进行测试和调试。但在正式发布时，仍建议遵循标准的文件名命名规则以确保兼容性"
-    },
-    {
-      "content": "注意：此文档包含一些隐藏的彩蛋和功能，需要用户自行探索发现，不得在文档中明确说明"
     }
   ],
   "pages": [
@@ -31,10 +31,13 @@
       "purpose": "介绍 THMI Mod Manager 的整体功能、核心特性、技术架构和设计理念，帮助用户快速了解应用的定位",
       "page_notes": [
         {
-          "content": "重点介绍项目作为 Touhou Mystia Izakaya Mod 管理器的核心定位"
+          "content": "重点介绍项目作为《东方夜雀食堂》Mod 管理器的核心定位，是一个原生 Windows WPF 桌面应用"
         },
         {
-          "content": "概述支持的操作系统环境（Windows 10/11）和 .NET 10.0 运行时要求；如果用户在 Windows 10 x64 以下版本上运行（不包括 Windows 10），需要在系统环境变量内添加 `DOTNET_EnableWriteXorExecute=0` 和 `DOTNET_GCName=clrgc.dll`，然后重新启动，否则可能导致内存异常高占用。"
+          "content": "概述支持的操作系统环境（Windows 10/11）和 .NET 10.0 运行时要求；如果用户在 Windows 10 x64 以下版本上运行，需要在系统环境变量内添加 `DOTNET_EnableWriteXorExecute=0` 和 `DOTNET_GCName=clrgc.dll`，然后重新启动，否则可能导致内存异常高占用"
+        },
+        {
+          "content": "技术栈：.NET 10.0（net10.0-windows）原生 WPF 桌面应用，UI 框架为 WPF-UI 4.3.0（Fluent 风格），配置与本地化均基于 INI 格式，无任何 Web 后端或浏览器依赖"
         }
       ]
     },
@@ -52,23 +55,20 @@
     },
     {
       "title": "安装要求",
-      "purpose": "详细说明程序运行所需的硬件配置、软件环境和外部依赖，帮助用户确认系统兼容性并解决安装问题",
+      "purpose": "详细说明程序运行所需的软件环境、外部依赖和部署位置，帮助用户确认系统兼容性并解决安装问题",
       "parent": "快速开始",
       "page_notes": [
         {
-          "content": "列出最低和推荐的硬件配置（最低推荐：支持 SSE2 指令集 CPU 、内存 - 512MB、磁盘空间 - 128MB以上（如果用户试图编译自包含 Runtime 的版本，需要 128MB 磁盘空间。其中至少 100MB 空间用于存储 .NET 10 运行时 DLL，应用本体并不会占用这么多，除非用户使用 PublishSingleFile 开关来编译，这样所有的运行时都会被编译进本体可执行文件内））"
+          "content": "推荐 Windows 10 x64 22H2 及以上版本；最低支持 Windows 7 x64 SP1 但体验不佳；不支持任何 32 位 Windows 系统和旧版 Windows（如 Windows XP 等）"
         },
         {
-          "content": "解释为什么完全不支持 Linux 和 macOS 系统，以及相关的技术限制和原因；解释为什么推荐使用 Windows 10/11 系统，同时说明 **最低支持 Windows 7 x64 SP1 系统，标注其可能体验不佳，不支持任何 32 位 Windows 系统和旧版 Windows（如 Windows XP、Windows 95、Windows 98、Windows Millenium Edition 等）系统，以及 Linux 和 macOS 系统 **。"
+          "content": "运行依赖 .NET 10 桌面运行时（自包含发布则无需额外安装）"
         },
         {
-          "content": "说明 .NET 10.0 运行时依赖和安装方式"
+          "content": "解释为什么需要在 Windows 10 x64 以下版本上添加环境变量 `DOTNET_EnableWriteXorExecute=0` 和 `DOTNET_GCName=clrgc.dll`；所有 Windows 10/11 系统无需添加"
         },
         {
-          "content": "解释为什么需要在 Windows 10 x64 以下版本（如 Windows 8.1、Windows 7 等）上添加环境变量 `DOTNET_EnableWriteXorExecute=0` 和 `DOTNET_GCName=clrgc.dll`，以及说明在所有版本的 Windows 10/11 系统上无需添加这些环境变量，不需要说明原因"
-        },
-        {
-          "content": "描述游戏目录配置要求和权限设置，说明修改标题的权限机制：当 Mod 管理器的权限大于等于目标进程的权限时，Mod 管理器才能修改目标进程的标题，否则无法修改。"
+          "content": "说明应用推荐部署在游戏安装目录内运行（首页会自动检测同目录下的 Touhou Mystia Izakaya.exe），也可在设置中配置外部启动程序"
         },
         {
           "content": "解释使用 Steam 客户端启动游戏的要求和注意事项"
@@ -76,18 +76,21 @@
       ]
     },
     {
-      "title": "首次启动与设置向导",
-      "purpose": "详细介绍首次启动时的设置向导界面，包括语言选择、主题设置、游戏路径配置等初始化步骤",
+      "title": "首次启动与界面导航",
+      "purpose": "介绍首次启动后的主界面布局、侧边栏导航结构以及各页面入口",
       "parent": "快速开始",
       "page_notes": [
         {
-          "content": "说明向导界面每个步骤的作用和操作方法"
+          "content": "主窗口为 WPF 桌面窗口，左侧为侧边栏导航，右侧为内容区与底部状态栏"
         },
         {
-          "content": "解释游戏路径自动检测和手动设置的区别"
+          "content": "侧边栏分两组：主菜单（首页/模组/探索）与管理（设置/关于），导航项为 RadioButton 样式，选中高亮"
         },
         {
-          "content": "说明设置保存和后续修改的途径"
+          "content": "侧边栏底部显示 Steam 状态与快速启动/停止按钮；内容区底部状态栏实时显示当前操作状态与提示信息"
+        },
+        {
+          "content": "说明设置保存和后续修改的途径（设置页保存后立即热重载）"
         }
       ]
     },
@@ -105,117 +108,89 @@
     },
     {
       "title": "设置与配置",
-      "purpose": "详细介绍所有可用设置选项的用途、配置方法和注意事项，包括语言、主题、光标、启动模式、日期时间格式和开发者选项",
+      "purpose": "详细介绍所有可用设置选项的用途、配置方法和注意事项，包括语言、主题、启动模式、更新、通知、窗口标题和 BepInEx 配置",
       "parent": "用户指南",
       "page_notes": [
         {
           "content": "说明语言设置的即时生效机制和翻译贡献途径"
         },
         {
-          "content": "描述主题切换的视觉效果和自定义选项"
-        },
-        {
-          "content": "解释光标类型选择的兼容性影响、图标的实现方式"
+          "content": "描述主题切换的视觉效果（浅色/深色/跟随系统），主题色独立于深浅主题，不随主题切换"
         },
         {
           "content": "介绍游戏启动模式（Steam 集成/外部程序）的配置方法"
         },
         {
-          "content": "说明日期时间格式的本地化显示"
+          "content": "说明更新检查策略（开启/关闭、启动时/每周/每月）"
         },
         {
-          "content": "说明 BepInEx.cfg 文件的配置方法和注意事项。配置文件自动识别，也无手动选择功能。"
+          "content": "说明通知开关和窗口标题（为游戏窗口添加 Modded 前缀）设置"
+        },
+        {
+          "content": "说明 BepInEx.cfg 文件的配置方法和注意事项。配置文件自动识别，无手动选择功能"
+        },
+        {
+          "content": "所有设置写入应用目录下的 AppConfig.Schale 文件（INI 格式），保存后立即热重载生效"
         }
       ]
     },
     {
       "title": "启动游戏",
-      "purpose": "详细解释游戏启动功能，包括 Steam 启动模式与外部启动器的区别、游戏状态实时监控、停止游戏操作和自定义窗口标题功能",
+      "purpose": "详细解释游戏启动功能，包括 Steam 启动模式与外部启动器的区别、游戏状态实时监控、停止游戏操作和会话计时",
       "parent": "用户指南",
       "page_notes": [
         {
           "content": "说明启动按钮的视觉状态变化（空闲/启动中/运行中/错误）"
         },
         {
-          "content": "描述 Steam 集成的成就同步和状态显示功能"
+          "content": "描述 Steam 集成的启动方式（steam://rungameid/1584090 URL 协议）"
         },
         {
-          "content": "解释外部启动器的配置方法和自定义参数支持"
+          "content": "解释外部启动器的配置方法（[Game]LauncherPath 指定可执行文件路径）"
         },
         {
-          "content": "说明进程监控的状态检测频率和异常处理"
+          "content": "说明进程监控的状态检测（按进程名 Touhou Mystia Izakaya 检测，GetProcessesByName）"
         },
         {
-          "content": "介绍窗口标题自定义的评分算法和自动修改机制"
+          "content": "介绍会话计时功能（SessionTimeService，自动记录游戏运行时长）"
         }
       ]
     },
     {
       "title": "Mod 管理",
-      "purpose": "全面描述 Mod 管理功能的操作方法和使用技巧，包括 Mod 的启用、禁用、删除、排序以及批量操作支持",
+      "purpose": "全面描述 Mod 管理功能的操作方法和使用技巧，包括 Mod 的启用、禁用、删除、安装 ZIP、排序以及冲突检测",
       "parent": "用户指南",
       "page_notes": [
         {
-          "content": "说明 Mod 列表的展示方式和排序规则"
+          "content": "说明 Mod 列表的展示方式（卡片式，含名称/版本/作者/状态徽章）和排序规则（按名称/安装时间）"
         },
         {
-          "content": "描述启用/禁用操作的即时生效机制"
+          "content": "描述启用/禁用操作的即时生效机制，游戏运行期间禁止修改"
         },
         {
-          "content": "解释 Mod 依赖关系检测和冲突提示（基于 Manifest.toml 文件内定义的 UniqueID = \"\" 和 IncompatibleWith = [] 字段）"
+          "content": "解释 Mod 冲突检测（基于 Manifest.toml 文件内定义的 UniqueID 和 IncompatibleWith 字段，使用 Tommy 库解析 TOML），冲突时可选择强制启用"
         },
         {
           "content": "说明删除操作的确认机制（无恢复途径）"
         },
         {
-          "content": "介绍 Mod 配置文件的编辑方式（在 WebUI 内直接修改 CFG 文件，保存后启动游戏生效）"
+          "content": "介绍 Mod 安装（ZIP 一键安装）与更新检查（联网比对版本）功能"
         }
       ]
     },
     {
       "title": "更新与通知",
-      "purpose": "详细说明应用的自动更新检查系统、手动更新触发方式、通知配置选项和更新日志查看功能",
+      "purpose": "详细说明应用的自动更新检查系统、更新频率配置和通知选项",
       "parent": "用户指南",
       "page_notes": [
         {
-          "content": "解释自动更新检查的时间间隔和触发条件"
+          "content": "解释自动更新检查的时间间隔和触发条件（启动时/每周/每月）"
         },
         {
-          "content": "描述更新通知的展示方式（横幅/浏览器通知/设置页徽章）"
+          "content": "说明更新检查基于 GitHub API（UpdateCheckService）与语义化版本比较（SemanticVersion）"
         },
         {
-          "content": "说明更新下载和安装的完整流程"
-        },
-        {
-          "content": "介绍更新日志的查看和历史版本追溯"
-        },
-        {
-          "content": "解释自动更新配置选项（开启/关闭/仅检查）"
-        }
-      ]
-    },
-    {
-      "title": "网络状态指示器",
-      "purpose": "详细介绍应用程序顶部状态栏中的网络状态指示器，包括以太网和 WiFi 连接检测、信号强度显示和 Internet 连接验证功能",
-      "parent": "用户指南",
-      "page_notes": [
-        {
-          "content": "说明网络状态图标的含义和显示规则（以太网优先于 WiFi）"
-        },
-        {
-          "content": "描述 WiFi 信号强度的四级分类（强/较强/较弱/弱）及其对应的图标"
-        },
-        {
-          "content": "解释 Internet 连接检测机制，包括多 URL 验证和超时处理"
-        },
-        {
-          "content": "说明 Tooltip 显示的连接信息格式（单网络显示名称，双网络显示「以太网 / SSID」格式）"
-        },
-        {
-          "content": "介绍虚拟网络适配器的自动过滤逻辑，避免 VPN/Hyper-V 等虚拟接口误判"
-        },
-        {
-          "content": "解释后端 API 的数据结构和前端 JavaScript 的更新逻辑"
+          "content": "说明通知开关控制更新与事件通知"
         }
       ]
     },
@@ -225,75 +200,53 @@
       "parent": "用户指南",
       "page_notes": [
         {
-          "content": "说明日志文件的存储位置（位于 ./Logs/ 目录下的 Latest.log 文件。如果遇到 Kernel Panic，会自动将日志转储到 KernelPanic_{yyyyMMdd_HHmmss}.log 文件，基于 GlobalExceptionHandler.cs。）"
+          "content": "说明日志文件的存储位置（位于 ./Logs/ 目录下的 Latest.Log 文件。如果遇到 Kernel Panic，会自动将日志转储到 KernelPanic_{yyyyMMdd_HHmmss}.log 文件，基于 GlobalExceptionHandler.cs）"
         },
         {
-          "content": "说明内核恐慌的触发条件和处理机制，以及控制台和日志输出的格式。本地日志会被存储在 KernelPanic_{yyyyMMdd_HHmmss}.log 文件中。"
+          "content": "说明内核恐慌的触发条件和处理机制：应用启动时初始化 GlobalExceptionHandler（App.OnStartup），DispatcherUnhandledException 事件捕获未处理异常，写入日志并弹窗提示"
         },
         {
-          "content": "说明日志记录的触发条件和级别"
+          "content": "说明日志记录的触发条件和级别（Logger.cs 提供 Log/LogError/LogWarning/LogInfo/LogMod 等方法）"
         },
         {
-          "content": "描述日志记录的存储位置和格式"
-        },
-        {
-          "content": "解释日志记录的查看和分析方法（日志可被 AI 分析工具读取和解析，且注入了提示词，便于 LLM 分析。）"
-        }
-      ]
-    },
-    {
-      "title": "调试面板",
-      "purpose": "全面记录调试面板的各项功能，包括系统信息查看、API 接口测试、配置管理和日志分析工具",
-      "parent": "用户指南",
-      "page_notes": [
-        {
-          "content": "说明系统信息展示的各个指标含义"
-        },
-        {
-          "content": "描述 API 测试工具的使用方法和可用端点"
-        },
-        {
-          "content": "解释配置管理的编辑和导出功能"
-        },
-        {
-          "content": "介绍日志查看器的过滤和搜索功能"
-        },
-        {
-          "content": "注意：调试面板包含一些仅供开发者使用的高级功能，如内存状态监控和性能分析工具"
+          "content": "解释日志记录的查看和分析方法（应用内置日志查看页面可直接浏览 Latest.Log）"
         }
       ]
     },
     {
       "title": "架构概览",
-      "purpose": "提供应用程序整体架构的高层概述，包括前端技术栈、后端框架和前后端通信模式，帮助开发者理解系统设计",
+      "purpose": "提供应用程序整体架构的高层概述，包括 WPF 前端、服务层与配置系统，帮助开发者理解系统设计",
       "page_notes": [
         {
-          "content": "说明 Razor Pages 与 MVC 模式的结合使用"
+          "content": "说明原生 WPF 桌面架构：MainWindow.xaml 负责布局与样式，MainWindow.xaml.cs 负责页面构建与交互逻辑"
         },
         {
-          "content": "描述前端 JavaScript 模块的组织方式"
+          "content": "描述服务层组织方式（Services 目录：配置、本地化、Mod、启动器、日志、更新、会话计时等）"
         },
         {
-          "content": "解释客户端-服务器通信的 RESTful API 设计"
+          "content": "解释配置与本地化均基于 INI 格式（AppConfig.Schale 与 Localization 目录）"
+        },
+        {
+          "content": "说明主题系统：WPF-UI 的 ApplicationThemeManager 切换词典，配合自定义语义画刷（CanvasBrush/SurfaceBrush/TextBrush 等）保证深浅主题对比度"
         }
       ]
     },
     {
       "title": "应用启动流程",
-      "purpose": "详细说明应用程序从启动到就绪的完整序列，包括命令行参数解析、权限检查、环境验证和初始化过程",
+      "purpose": "详细说明应用程序从启动到就绪的完整序列，包括全局异常处理、主题应用、本地化和导航初始化",
       "parent": "架构概览",
       "page_notes": [
         {
-          "content": "说明支持的命令行参数及其用途"
+          "content": "说明 App.OnStartup 中的全局异常处理初始化（GlobalExceptionHandler.Initialize + DispatcherUnhandledException）"
         },
         {
-          "content": "说明参数的解析机制。现在可以使用的参数：--no-newtab，--no-console，--version，--open=\"<Page>\"（打开指定页面在新标签页）"
+          "content": "说明 MainWindow 构造函数中的初始化顺序：服务创建 → 订阅 ApplicationThemeManager.Changed → SystemThemeWatcher.Watch → ApplyTheme → ApplySidebarLocalization → SystemInfoLogger.LogApplicationStartup → ShowHome"
         },
         {
-          "content": "描述管理员权限检测和 UAC 提升流程"
+          "content": "解释主题初始化：读取 [App]Theme 配置（system/light/dark），system 模式下跟随系统主题变化"
         },
         {
-          "content": "解释配置文件加载和环境检测机制"
+          "content": "说明配置文件加载（AppConfig.Schale，不存在时自动创建）和本地化加载（Localization 目录 INI）"
         },
         {
           "content": "描述各服务的初始化顺序和依赖关系"
@@ -302,77 +255,42 @@
     },
     {
       "title": "服务架构",
-      "purpose": "详细解释 ASP.NET Core 依赖注入容器中注册的各个服务、它们的作用域生命周期和服务间的依赖关系",
+      "purpose": "详细解释 Services 目录中各个服务的功能职责、初始化方式和相互依赖关系",
       "parent": "架构概览",
       "page_notes": [
         {
-          "content": "列出核心服务的功能说明和注入方式"
+          "content": "列出核心服务的功能说明：AppConfigManager（配置读写）、LocalizationManager（本地化）、ModService（Mod 扫描与操作）、ModUpdateService（Mod 更新检查）、GameLauncherService（游戏启动）、SessionTimeService（会话计时）、Logger/ModLogger（日志）、UpdateCheckService（应用更新检查）、SemanticVersion（版本比较）、SystemInfoLogger（启动信息）、GlobalExceptionHandler（异常处理）"
         },
         {
-          "content": "解释 Singleton、Scoped 和 Transient 作用域的使用场景"
+          "content": "说明服务以简单实例化方式在 MainWindow 中组合，无 DI 容器"
         },
         {
-          "content": "描述服务配置选项的绑定和验证机制"
+          "content": "描述服务间的依赖关系和数据流转"
+        },
+        {
+          "content": "注意：仓库中 ModServiceOptimized.cs 为优化版 Mod 服务的对照实现，当前 MainWindow 使用 ModService"
         }
       ]
     },
     {
-      "title": "中间件管道",
-      "purpose": "记录 ASP.NET Core 中间件管道的配置顺序和作用，包括本地化中间件、设置向导检查、请求日志和安全头设置",
+      "title": "主题系统",
+      "purpose": "深入说明基于 WPF-UI 的主题切换机制与自定义语义画刷系统，包括深浅主题、跟随系统和主题色",
       "parent": "架构概览",
       "page_notes": [
         {
-          "content": "说明中间件的执行顺序和影响"
+          "content": "说明 WPF-UI 4.3.0 的主题切换机制：ApplicationThemeManager.Apply 通过 ResourceDictionaryManager 替换 pack URI 主题词典"
         },
         {
-          "content": "描述本地化中间件的语言检测逻辑"
+          "content": "解释 system 模式的解析：通过 ApplicationThemeManager.GetSystemTheme 读取系统主题并映射到 Light/Dark，避免映射为 Unknown（Unknown 会导致词典切换被跳过）"
         },
         {
-          "content": "解释设置向导拦截器的工作原理"
+          "content": "描述自管语义画刷（ApplySemanticBrushes）：深色/浅色两套不透明调色板直接写入 Application.Current.Resources，保证任意主题下背景与文字对比度"
         },
         {
-          "content": "介绍响应头安全配置的内容"
-        }
-      ]
-    },
-    {
-      "title": "前端架构",
-      "purpose": "描述 Razor Pages 页面结构、客户端 JavaScript 模块组织和基于轮询的后端通信机制，以及状态管理方案",
-      "parent": "架构概览",
-      "page_notes": [
-        {
-          "content": "说明页面视图组件的划分和组织方式"
+          "content": "说明主题色（AccentBrush 等）独立于深浅主题，通过 [App]ThemeColor 配置，不随主题切换"
         },
         {
-          "content": "描述 JavaScript 模块的加载和初始化流程"
-        },
-        {
-          "content": "解释轮询机制的实现和优化策略"
-        },
-        {
-          "content": "说明客户端状态管理的实现方式"
-        },
-        {
-          "content": "注意：前端包含一些隐藏的交互效果和动画细节"
-        }
-      ]
-    },
-    {
-      "title": "后端 API 层",
-      "purpose": "记录 RESTful API 端点的设计规范、控制器结构、请求/响应数据模型和身份验证机制",
-      "parent": "架构概览",
-      "page_notes": [
-        {
-          "content": "列出所有 API 端点的路径、方法和功能说明"
-        },
-        {
-          "content": "描述请求参数验证和错误响应格式"
-        },
-        {
-          "content": "解释防跨站请求伪造（CSRF）保护机制"
-        },
-        {
-          "content": "说明 API 版本管理策略"
+          "content": "解释跟随系统主题的实时响应（订阅 ApplicationThemeManager.Changed 事件）"
         }
       ]
     },
@@ -390,96 +308,96 @@
     },
     {
       "title": "游戏启动系统",
-      "purpose": "全面记录游戏启动系统的技术实现，包括 Steam API 集成、外部启动器支持、进程监控和窗口标题自动修改功能",
+      "purpose": "全面记录游戏启动系统的技术实现，包括 Steam URL 集成、外部启动器支持、进程监控和会话计时",
       "parent": "核心系统",
       "page_notes": [
         {
-          "content": "描述 Steam 启动的认证流程和状态同步"
+          "content": "描述 Steam 启动方式：通过 steam://rungameid/1584090 URL 协议调用系统默认处理器启动游戏"
         },
         {
-          "content": "解释外部启动器的进程创建和参数传递"
+          "content": "解释外部启动器的进程创建（ProcessStartInfo + UseShellExecute）和参数传递"
         },
         {
-          "content": "说明进程监控的心跳检测机制"
+          "content": "说明进程监控的检测机制（GetProcessesByName 检测 Touhou Mystia Izakaya 进程）"
         },
         {
-          "content": "介绍窗口标题修改的 Win32 API 调用"
+          "content": "介绍会话计时（SessionTimeService）与游戏启动/停止的联动"
         },
         {
-          "content": "注意：启动系统包含一些特殊的处理逻辑，如启动失败重试和错误恢复机制"
+          "content": "说明启动模式配置（[Game]LaunchMode：steam_launch/external_program）与外部程序路径（[Game]LauncherPath）"
         }
       ]
     },
     {
       "title": "设置管理系统",
-      "purpose": "详细说明设置的持久化存储方案、加载策略、保存机制和客户端-服务器同步策略",
+      "purpose": "详细说明设置的持久化存储方案、加载策略、保存机制和热重载同步策略",
       "parent": "核心系统",
       "page_notes": [
         {
-          "content": "解释配置文件（./AppConfig.Schale，本质上为 INI 文件）的存储位置和格式。本项目的设置管理系统基于 INI 文件，用户可以在该文件中手动修改设置值，也可以通过应用界面进行设置。但永远不会是 JSON 格式。"
+          "content": "解释配置文件（./AppConfig.Schale，本质上为 INI 文件）的存储位置和格式。本项目的设置管理系统基于 INI 文件，用户可以在该文件中手动修改设置值，也可以通过应用界面进行修改。永远不会是 JSON 格式"
         },
         {
-          "content": "描述设置加载的初始化流程"
+          "content": "描述设置加载的初始化流程（AppConfigManager 构造函数中 Load，不存在时自动创建空文件）"
         },
         {
-          "content": "说明即时保存和批量保存的区别"
+          "content": "说明即时保存和批量保存的区别（设置页保存后 Reload + 热重载 ApplyHotReloadSettings/ApplyTheme/ApplySidebarLocalization）"
         },
         {
           "content": "介绍设置验证和默认值回退机制"
+        },
+        {
+          "content": "说明 AppConfigManager 的线程安全设计（ReaderWriterLockSlim）"
         }
       ]
     },
     {
       "title": "本地化系统",
-      "purpose": "详细说明基于 INI 文件的多语言本地化实现，包括文化检测、回退链机制、复数形式处理和特殊占位符支持",
+      "purpose": "详细说明基于 INI 文件的多语言本地化实现，包括文化检测、回退链机制和语言列表",
       "parent": "核心系统",
       "page_notes": [
         {
-          "content": "说明 INI 文件的解析和缓存机制"
+          "content": "说明 INI 文件的解析和缓存机制（LocalizationManager 扫描 Localization 目录 *.ini，从 [Lang]Name= 读取友好名称）"
         },
         {
-          "content": "描述语言回退的优先级规则"
+          "content": "描述语言回退的优先级规则（目标语言键缺失时回退默认值）"
         },
         {
-          "content": "解释复数形式的处理逻辑"
-        },
-        {
-          "content": "介绍占位符替换和格式化方法"
+          "content": "说明支持的语言列表（en_GB/en_US/fr_FR/it_IT/ja_JP/pt_BR/ru_RU/zh_HANS/zh_HANT/zh_MEMES/zh_PSEUDO）"
         }
       ]
     },
     {
       "title": "更新系统",
-      "purpose": "记录基于 GitHub API 的更新检查、版本比对、更新包下载和热更新应用机制的技术实现",
+      "purpose": "记录基于 GitHub API 的更新检查、版本比对和更新机制的技术实现",
       "parent": "核心系统",
       "page_notes": [
         {
-          "content": "说明 GitHub API 的调用频率限制处理"
+          "content": "说明 GitHub API 的调用方式和最新版本获取（UpdateCheckService）"
         },
         {
-          "content": "描述版本号比较算法的实现"
+          "content": "描述版本号比较算法的实现（SemanticVersion 语义化版本比较）"
+        },
+        {
+          "content": "说明更新检查频率配置（启动时/每周/每月）与自动更新开关（[Updates]CheckForUpdates/[Updates]UpdateFrequency）"
         }
       ]
     },
     {
       "title": "会话时间跟踪",
-      "purpose": "解释混合客户端-服务器架构的会话时间跟踪系统的实现，包括数据采集、状态同步和持久化存储",
+      "purpose": "解释会话时间跟踪系统的实现，包括开始/停止计时、状态同步和游戏联动",
       "parent": "核心系统",
       "page_notes": [
         {
-          "content": "描述客户端时间戳采集的精度和频率"
+          "content": "描述会话时间戳采集的机制（SessionTimeService 维护 SessionStartTime 与累计时长）"
         },
         {
-          "content": "说明服务器端数据聚合和验证逻辑"
+          "content": "解释会话计时与游戏启动/停止的联动（启动游戏开始计时，停止游戏结束计时）"
         },
         {
-          "content": "解释会话状态实时显示的更新机制"
+          "content": "说明会话状态实时显示的更新机制（首页指标卡片展示本次计时）"
         },
         {
-          "content": "介绍数据持久化存储和历史记录查询"
-        },
-        {
-          "content": "注意：时间跟踪系统包含一些隐藏的统计功能，如使用习惯分析和偏好推荐"
+          "content": "说明会话时间为内存态数据，不持久化，应用退出后重置"
         }
       ]
     },
@@ -497,83 +415,36 @@
     },
     {
       "title": "窗口标题修改",
-      "purpose": "详细说明窗口标题自定义功能的技术实现，包括评分算法、重试逻辑、Win32 API 调用和所需的系统权限",
+      "purpose": "说明窗口标题自定义功能的设置项与配置，包括 [Game]ModifyTitle 配置的作用",
       "parent": "高级主题",
       "page_notes": [
         {
-          "content": "描述评分算法的计算方式和影响因素"
+          "content": "说明为游戏窗口标题添加 Modded 前缀的设置选项（[Game]ModifyTitle，设置页勾选项）"
         },
         {
-          "content": "解释重试策略和失败处理机制"
+          "content": "说明该设置仅保存配置值，实际 Win32 窗口标题修改逻辑在历史 LauncherController 中，当前 WPF 版本尚未接线该功能"
         },
         {
-          "content": "说明 Win32 API（FindWindow、SetWindowText）的使用方式"
-        },
-        {
-          "content": "描述管理员权限要求和使用场景"
-        },
-        {
-          "content": "注意：标题修改功能有特殊的触发条件，如需要连续运行一定时间或完成特定操作"
+          "content": "描述权限机制：当 Mod 管理器的权限大于等于目标进程的权限时才能修改标题，否则无法修改"
         }
       ]
     },
     {
       "title": "权限管理",
-      "purpose": "详细解释应用程序的权限检测机制、UAC 集成、实现无接触提升和权限相关的最佳实践",
+      "purpose": "详细解释应用程序的权限检测机制、UAC 集成和权限相关的最佳实践",
       "parent": "高级主题",
       "page_notes": [
         {
-          "content": "说明 Windows 权限级别的检测方法"
+          "content": "说明 Windows 权限级别的检测方法（PermissionHelper）"
         },
         {
           "content": "描述 UAC 对话框的触发时机和用户交互"
         },
         {
-          "content": "解释程序集清单中的 requestedExecutionLevel 设置"
+          "content": "解释程序集清单 app.manifest 中的 requestedExecutionLevel 设置"
         },
         {
           "content": "介绍权限提升失败时的降级处理策略"
-        }
-      ]
-    },
-    {
-      "title": "CVE 检测与安全",
-      "purpose": "记录安全检测系统的实现，包括 CVE-2025-59489 漏洞检测、Unity Player 版本检查和安全警告显示机制",
-      "parent": "高级主题",
-      "page_notes": [
-        {
-          "content": "说明已知漏洞数据库的更新和维护机制"
-        },
-        {
-          "content": "描述版本检测的精确匹配逻辑"
-        },
-        {
-          "content": "解释安全警告的严重性分级"
-        },
-        {
-          "content": "介绍建议的缓解措施和升级路径"
-        },
-        {
-          "content": "注意：安全检测系统包含一些隐藏的检查项和启发式分析方法"
-        }
-      ]
-    },
-    {
-      "title": "后端连接与错误恢复",
-      "purpose": "解释后端健康检查系统的设计、连接丢失检测机制和自动恢复策略，包括重试算法和降级处理",
-      "parent": "高级主题",
-      "page_notes": [
-        {
-          "content": "描述心跳检测的时间间隔和超时阈值"
-        },
-        {
-          "content": "解释连接状态的判定和状态转换"
-        },
-        {
-          "content": "说明指数退避重试算法的实现"
-        },
-        {
-          "content": "介绍降级模式下的功能限制和恢复通知"
         }
       ]
     },
@@ -595,10 +466,10 @@
       "parent": "国际化支持",
       "page_notes": [
         {
-          "content": "本地化文件的命名方式和格式（.ini 或 .toml，但本质上还是基于 ini 格式，虽然内置的解析器可以将 toml 文件当 ini 解析）"
+          "content": "本地化文件的命名方式和格式（Localization 目录下的 .ini 文件，文件名即语言代码，如 en_US.ini）"
         },
         {
-          "content": "说明语言代码的命名规范（理论上任何文件名都可以作为语言代码，但是必须包含 [Lang]Name= 格式的键值对，例如 [Lang]Name=English (US)、[Lang]Name=中文（简体） 等）"
+          "content": "说明语言代码的命名规范和友好名称（必须包含 [Lang]Name= 格式的键值对，例如 [Lang]Name=English (US)、[Lang]Name=中文（简体） 等）"
         },
         {
           "content": "在调试本地化功能时，本地化文件的文件名不一定要严格遵守标准命名规范，可以临时使用任意文件名进行测试。但在正式发布时，仍建议遵循标准的文件名命名规则以确保兼容性"
@@ -617,13 +488,10 @@
           "content": "描述翻译风格指南和质量要求"
         },
         {
-          "content": "解释复数形式和占位符的处理方法"
+          "content": "解释占位符的处理方法"
         },
         {
           "content": "介绍翻译测试和验证的步骤"
-        },
-        {
-          "content": "注意：翻译系统支持一些特殊的本地化特性，如上下文相关的翻译变体"
         }
       ]
     }
@@ -672,7 +540,7 @@
       "content": "界面中的一些特殊效果和交互方式是给细心用户的惊喜，建议用户留意界面细节"
     },
     {
-      "content": "文档应突出项目的技术特点，如 Codex CSS 样式、.NET 10.0 架构和多语言支持等"
+      "content": "文档应突出项目的技术特点，如 .NET 10.0 WPF 原生桌面架构、WPF-UI Fluent 风格、INI 配置与多语言支持等"
     }
   ]
 }

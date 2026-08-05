@@ -15,16 +15,11 @@ namespace THMI_Mod_Manager.Services
         private readonly ReaderWriterLockSlim _lock = new();
         private readonly Dictionary<string, Dictionary<string, string>> _data = new(StringComparer.OrdinalIgnoreCase);
 
-        private readonly IConfiguration _config;
-    private readonly IServiceProvider _serviceProvider;
-
-    public AppConfigManager(IWebHostEnvironment env, IConfiguration configuration, IServiceProvider serviceProvider)
-    {
-        _config = configuration;
-        _serviceProvider = serviceProvider;
-        _filePath = Path.Combine(env.ContentRootPath, "AppConfig.Schale");
-        Load();
-    }
+        public AppConfigManager(string? contentRootPath = null)
+        {
+            _filePath = Path.Combine(contentRootPath ?? AppContext.BaseDirectory, "AppConfig.Schale");
+            Load();
+        }
 
         private void Load()
         {

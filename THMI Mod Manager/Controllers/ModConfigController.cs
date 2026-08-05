@@ -96,7 +96,11 @@ namespace THMI_Mod_Manager.Controllers
                     return BadRequest(new { success = false, message = "Game path not found" });
                 }
 
-                var configPath = Path.Combine(gamePath, "BepInEx", "config", fileName);
+                var configPath = GetConfigPath(gamePath, fileName);
+                if (configPath == null)
+                {
+                    return BadRequest(new { success = false, message = "Invalid config file name" });
+                }
                 if (!System.IO.File.Exists(configPath))
                 {
                     return NotFound(new { success = false, message = "Config file not found" });
@@ -130,15 +134,12 @@ namespace THMI_Mod_Manager.Controllers
                     return BadRequest(new { success = false, message = "Game path not found" });
                 }
 
-                var configPath = Path.Combine(gamePath, "BepInEx", "config", request.FileName);
-                
-                // Create directory if it doesn't exist
-                var configDir = Path.GetDirectoryName(configPath);
-                if (configDir != null && !Directory.Exists(configDir))
+                var configPath = GetConfigPath(gamePath, request.FileName);
+                if (configPath == null)
                 {
-                    Directory.CreateDirectory(configDir);
+                    return BadRequest(new { success = false, message = "Invalid config file name" });
                 }
-
+                
                 System.IO.File.WriteAllText(configPath, request.Content);
 
                 Logger.LogInfo($"Config file saved: {configPath}");
@@ -150,6 +151,22 @@ namespace THMI_Mod_Manager.Controllers
                 Logger.LogException(ex, $"Error saving config file: {request.FileName}");
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
+        }
+
+        private static string? GetConfigPath(string gamePath, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName) ||
+                !string.Equals(Path.GetFileName(fileName), fileName, StringComparison.Ordinal) ||
+                !string.Equals(Path.GetExtension(fileName), ".cfg", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var configRoot = Path.GetFullPath(Path.Combine(gamePath, "BepInEx", "config"));
+            var requestedPath = Path.GetFullPath(Path.Combine(configRoot, fileName));
+            return requestedPath.StartsWith(configRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                ? requestedPath
+                : null;
         }
 
         private List<ConfigSection> ParseConfigContent(string content)
