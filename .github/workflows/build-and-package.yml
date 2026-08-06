@@ -47,10 +47,10 @@ jobs:
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "Detected version: $version"
 
-      # 执行构建（dotnet publish 默认非增量构建，无需 --no-incremental）
+      # 执行构建（直接发布解决方案，dotnet publish 默认非增量构建，无需 --no-incremental）
       - name: Build project
         run: |
-          dotnet publish "THMI Mod Manager/THMI Mod Manager.csproj" `
+          dotnet publish "THMI Mod Manager.sln" `
             --configuration Release `
             --runtime ${{ inputs.runtime || 'win-x64' }}
 
@@ -64,8 +64,8 @@ jobs:
           $projectName = "THMI_Mod_Manager"
           $zipFileName = "${projectName}_${runtime}_${version}_MasterBranch.zip"
 
-          # dotnet publish 的默认输出路径
-          $publishDir = "THMI Mod Manager/bin/Release/net10.0/${runtime}/publish/"
+          # dotnet publish 的默认输出路径（TargetFramework 为 net10.0-windows）
+          $publishDir = "THMI Mod Manager/bin/Release/net10.0-windows/${runtime}/publish/"
 
           # 确保输出目录存在
           if (-Not (Test-Path $publishDir)) {

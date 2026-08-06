@@ -39,13 +39,6 @@
     <SelfContained Condition="$(SelfContained) == '' Or $(SelfContained) == 'false'">false</SelfContained>
     <SelfContained Condition="$(SelfContained) == 'true'">true</SelfContained>
     
-    <!-- 静态资源优化配置：减小 staticwebassets.endpoints.json 文件大小 -->
-    <StaticWebAssetsBuildMediaFile>false</StaticWebAssetsBuildMediaFile>
-    
-    <!-- 禁用裁剪器 - 对于 ASP.NET Core MVC 项目最安全的选择 -->
-    <!-- 注意：PublishTrimmed=false 会禁用"裁剪未使用的代码"功能 -->
-    <!-- 这会防止 ASP.NET Core MVC 的重要类型被错误移除 -->
-    <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
 
   <!-- 游戏目录构建配置：使用 -p:GameDir="路径" 指定游戏目录，构建到游戏目录 -->
@@ -61,25 +54,7 @@
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
 
-  <!-- 全局文件排除规则 -->
   <ItemGroup>
-    <Content Remove="appsettings.Development.json" />
-    <Content Remove="package.json" />
-    <Content Remove="web.config" />
-    <Compile Remove="Controllers\**\*.cs" />
-    <Compile Remove="Middleware\**\*.cs" />
-    <Compile Remove="Pages\**\*.cs" />
-    <Compile Remove="ViewComponents\**\*.cs" />
-    <Compile Remove="Program.cs" />
-    <Compile Remove="Services\IniFileStringLocalizerFactory.cs" />
-    <Compile Remove="Services\SessionTimeMonitor.cs" />
-    <!-- 可选：剔除调试/文档文件 -->
-    <!-- <Content Remove="*.pdb" /> -->
-    <!-- <Content Remove="*.xml" /> -->
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Markdig" Version="0.44.0" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.5" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
