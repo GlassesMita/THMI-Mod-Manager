@@ -14,6 +14,9 @@ namespace THMI_Mod_Manager.Services
         private readonly string _filePath;
         private readonly ReaderWriterLockSlim _lock = new();
         private readonly Dictionary<string, Dictionary<string, string>> _data = new(StringComparer.OrdinalIgnoreCase);
+        private readonly object _localizationCacheLock = new();
+        private readonly Dictionary<string, (DateTime Timestamp, Dictionary<string, string> Values)> _localizationCache = new(StringComparer.OrdinalIgnoreCase);
+        private string? _localizationCachePath;
 
         public AppConfigManager(string? contentRootPath = null)
         {
@@ -378,42 +381,8 @@ namespace THMI_Mod_Manager.Services
             }
         }
         
-        // Load localization resources from files
-        var cache = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-        var localizationFiles = Directory.GetFiles(basePath, "*.ini");
-        
-        foreach (var file in localizationFiles)
-        {
-            var cultureName = Path.GetFileNameWithoutExtension(file);
-            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            string? currentSection = null;
-            
-            foreach (var rawLine in File.ReadAllLines(file, Encoding.UTF8))
-            {
-                var line = rawLine.Trim();
-                if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith(";"))
-                    continue;
-                
-                // Section header [SectionName]
-                if (line.StartsWith("[") && line.EndsWith("]"))
-                {
-                    currentSection = line.Substring(1, line.Length - 2).Trim();
-                    continue;
-                }
-                    
-                var idx = line.IndexOf('=');
-                if (idx <= 0) continue;
-                    
-                var k = line.Substring(0, idx).Trim();
-                var v = line.Substring(idx + 1).Trim();
-                
-                // Store with section prefix if in a section
-                var storeKey = string.IsNullOrEmpty(currentSection) ? k : $"{currentSection}:{k}";
-                dict[storeKey] = v;
-            }
-            
-            cache[cultureName] = dict;
-        }
+        // Load localization resources from files (cached by file timestamp / 按文件时间戳缓存解析结果)
+        var cache = LoadLocalizationCache(basePath);
         
         // Try to get localized value with multiple fallback strategies
         // 1. Try exact match (e.g., zh_CN)
@@ -444,6 +413,68 @@ namespace THMI_Mod_Manager.Services
         // 6. Return default value or key as fallback
         return defaultValue ?? key;
     }
+
+        private Dictionary<string, Dictionary<string, string>> LoadLocalizationCache(string basePath)
+        {
+            lock (_localizationCacheLock)
+            {
+                if (!string.Equals(_localizationCachePath, basePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _localizationCache.Clear();
+                    _localizationCachePath = basePath;
+                }
+
+                var result = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+                foreach (var file in Directory.GetFiles(basePath, "*.ini"))
+                {
+                    var cultureName = Path.GetFileNameWithoutExtension(file);
+                    var timestamp = File.GetLastWriteTimeUtc(file);
+                    if (_localizationCache.TryGetValue(file, out var cached) && cached.Timestamp == timestamp)
+                    {
+                        result[cultureName] = cached.Values;
+                        continue;
+                    }
+
+                    var dict = ParseLocalizationFile(file);
+                    _localizationCache[file] = (timestamp, dict);
+                    result[cultureName] = dict;
+                }
+
+                return result;
+            }
+        }
+
+        private static Dictionary<string, string> ParseLocalizationFile(string file)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string? currentSection = null;
+
+            foreach (var rawLine in File.ReadAllLines(file, Encoding.UTF8))
+            {
+                var line = rawLine.Trim();
+                if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith(";"))
+                    continue;
+
+                // Section header [SectionName]
+                if (line.StartsWith("[") && line.EndsWith("]"))
+                {
+                    currentSection = line.Substring(1, line.Length - 2).Trim();
+                    continue;
+                }
+
+                var idx = line.IndexOf('=');
+                if (idx <= 0) continue;
+
+                var k = line.Substring(0, idx).Trim();
+                var v = line.Substring(idx + 1).Trim();
+
+                // Store with section prefix if in a section
+                var storeKey = string.IsNullOrEmpty(currentSection) ? k : $"{currentSection}:{k}";
+                dict[storeKey] = v;
+            }
+
+            return dict;
+        }
 
         public void Dispose()
         {

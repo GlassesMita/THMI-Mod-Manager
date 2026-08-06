@@ -12,7 +12,13 @@ namespace THMI_Mod_Manager.Services
     public class ModService
     {
         private readonly AppConfigManager _appConfig;
-        private static bool HasEverLoadedMods = false;
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ModMetaCacheEntry> _manifestCache = new(StringComparer.OrdinalIgnoreCase);
+
+        private sealed class ModMetaCacheEntry
+        {
+            public DateTime ManifestTimestamp { get; init; }
+            public required ModInfo Info { get; init; }
+        }
 
         /// <summary>
         /// Constructor / 构造函数
@@ -27,7 +33,7 @@ namespace THMI_Mod_Manager.Services
         /// Load all mods from the plugins directory / 从插件目录加载所有模组
         /// </summary>
         /// <returns>List of ModInfo objects / ModInfo对象列表</returns>
-        public List<ModInfo> LoadMods()
+        public List<ModInfo> LoadMods(CancellationToken cancellationToken = default)
         {
             var mods = new List<ModInfo>();
             var pluginsPath = GetPluginsPath();
@@ -40,61 +46,43 @@ namespace THMI_Mod_Manager.Services
 
             try
             {
-                var dllFiles = Directory.GetFiles(pluginsPath, "*.dll", SearchOption.AllDirectories);
-                var disabledFiles = Directory.GetFiles(pluginsPath, "*.dll.disabled", SearchOption.AllDirectories);
-                var allFiles = dllFiles.Concat(disabledFiles).ToArray();
-
-                if (!HasEverLoadedMods)
+                var allFiles = new List<string>();
+                foreach (var file in Directory.EnumerateFiles(pluginsPath, "*", SearchOption.AllDirectories))
                 {
-                    Logger.LogEx($"Found {dllFiles.Length} DLL files and {disabledFiles.Length} disabled files in {pluginsPath}");
-
-                    int validCount = 0;
-                    int invalidCount = 0;
-
-                    foreach (var dllFile in allFiles)
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var fileName = Path.GetFileName(file);
+                    if (fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
+                        fileName.EndsWith(".dll.disabled", StringComparison.OrdinalIgnoreCase))
                     {
-                        var modInfo = ExtractModInfo(dllFile);
-
-                        if (modInfo.IsValid)
-                        {
-                            mods.Add(modInfo);
-                            validCount++;
-                            Logger.LogInfo($"Successfully loaded mod: {modInfo.Name}...");
-                        }
-                        else
-                        {
-                            invalidCount++;
-                            Logger.LogWarning($"Failed to load mod: {modInfo.FileName}: {modInfo.ErrorMessage}");
-                        }
+                        allFiles.Add(file);
                     }
-
-                    Logger.LogInfo($"Mod loading completed: {validCount} loaded, {invalidCount} failed");
-                    HasEverLoadedMods = true;
                 }
-                else
+
+                var failed = new List<string>();
+                foreach (var dllFile in allFiles)
                 {
-                    Logger.LogEx($"Refreshing mods: found {allFiles.Length} mod files");
-
-                    int validCount = 0;
-                    int invalidCount = 0;
-
-                    foreach (var dllFile in allFiles)
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var modInfo = ExtractModInfo(dllFile);
+                    if (modInfo.IsValid)
                     {
-                        var modInfo = ExtractModInfo(dllFile);
-
-                        if (modInfo.IsValid)
-                        {
-                            mods.Add(modInfo);
-                            validCount++;
-                        }
-                        else
-                        {
-                            invalidCount++;
-                        }
+                        mods.Add(modInfo);
                     }
-
-                    Logger.LogEx($"Mod refresh completed: {validCount} loaded, {invalidCount} failed");
+                    else
+                    {
+                        failed.Add($"{modInfo.FileName}: {modInfo.ErrorMessage}");
+                    }
                 }
+
+                Logger.LogInfo($"Mod scan completed: {allFiles.Count} files, {mods.Count} valid, {failed.Count} failed");
+                if (failed.Count > 0)
+                {
+                    var shown = failed.Take(10).ToList();
+                    Logger.LogWarning($"Failed mods: {string.Join(" | ", shown)}{(failed.Count > shown.Count ? $" (+{failed.Count - shown.Count} more)" : string.Empty)}");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.LogInfo("Mod scan cancelled");
             }
             catch (Exception ex)
             {
@@ -113,15 +101,19 @@ namespace THMI_Mod_Manager.Services
         /// <returns>ModInfo object with extracted information / 包含提取信息的ModInfo对象</returns>
         public ModInfo ExtractModInfo(string dllPath)
         {
+            var stats = GetFileStats(dllPath, (0, DateTime.MinValue, DateTime.MinValue));
             var modInfo = new ModInfo
             {
                 FilePath = dllPath,
                 FileName = Path.GetFileName(dllPath),
-                FileSize = new FileInfo(dllPath).Length,
-                LastModified = File.GetLastWriteTime(dllPath),
-                InstallTime = File.GetCreationTime(dllPath),
+                FileSize = stats.size,
+                LastModified = stats.modified,
+                InstallTime = stats.created,
                 IsValid = false
             };
+
+            string manifestPath = string.Empty;
+            var manifestTimestamp = DateTime.MinValue;
 
             try
             {
@@ -132,8 +124,21 @@ namespace THMI_Mod_Manager.Services
                 var dllDirectory = Path.GetDirectoryName(dllPath) ?? string.Empty;
                 var modFolder = Path.Combine(dllDirectory, modFolderName);
                 
-                var manifestPath = Path.Combine(modFolder, "Manifest.toml");
-                
+                manifestPath = Path.Combine(modFolder, "Manifest.toml");
+                manifestTimestamp = File.Exists(manifestPath) ? File.GetLastWriteTimeUtc(manifestPath) : DateTime.MinValue;
+
+                if (_manifestCache.TryGetValue(manifestPath, out var cached) && cached.ManifestTimestamp == manifestTimestamp)
+                {
+                    var fresh = CloneModInfo(cached.Info);
+                    fresh.FilePath = dllPath;
+                    fresh.FileName = Path.GetFileName(dllPath);
+                    var freshStats = GetFileStats(dllPath, (cached.Info.FileSize, cached.Info.LastModified, cached.Info.InstallTime));
+                    fresh.FileSize = freshStats.size;
+                    fresh.LastModified = freshStats.modified;
+                    fresh.InstallTime = freshStats.created;
+                    return fresh;
+                }
+
                 if (File.Exists(manifestPath))
                 {
                     using var reader = new StreamReader(manifestPath);
@@ -236,7 +241,65 @@ namespace THMI_Mod_Manager.Services
                 modInfo.Name = fileName;
             }
 
+            if (modInfo.IsValid && !string.IsNullOrEmpty(manifestPath))
+            {
+                _manifestCache[manifestPath] = new ModMetaCacheEntry
+                {
+                    ManifestTimestamp = manifestTimestamp,
+                    Info = CloneModInfo(modInfo)
+                };
+            }
+
             return modInfo;
+        }
+
+        private static (long size, DateTime modified, DateTime created) GetFileStats(string path, (long size, DateTime modified, DateTime created) fallback)
+        {
+            try
+            {
+                var info = new FileInfo(path);
+                return (info.Length, info.LastWriteTime, info.CreationTime);
+            }
+            catch (IOException)
+            {
+                return fallback;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return fallback;
+            }
+        }
+
+        private static ModInfo CloneModInfo(ModInfo source)
+        {
+            var clone = new ModInfo
+            {
+                Name = source.Name,
+                Version = source.Version,
+                VersionCode = source.VersionCode,
+                Author = source.Author,
+                UniqueId = source.UniqueId,
+                Description = source.Description,
+                ModLink = source.ModLink,
+                UpdateUrl = source.UpdateUrl,
+                FilePath = source.FilePath,
+                FileName = source.FileName,
+                FileSize = source.FileSize,
+                LastModified = source.LastModified,
+                IsValid = source.IsValid,
+                ErrorMessage = source.ErrorMessage,
+                InstallTime = source.InstallTime,
+                HasUpdateAvailable = source.HasUpdateAvailable,
+                LatestVersion = source.LatestVersion,
+                DownloadUrl = source.DownloadUrl,
+                FileSizeBytes = source.FileSizeBytes,
+                ReleaseNotes = source.ReleaseNotes,
+                ChangelogUrl = source.ChangelogUrl,
+                ReleaseHtmlUrl = source.ReleaseHtmlUrl,
+                DownloadSha256 = source.DownloadSha256
+            };
+            clone.IncompatibleWith.AddRange(source.IncompatibleWith);
+            return clone;
         }
 
         /// <summary>
@@ -255,24 +318,32 @@ namespace THMI_Mod_Manager.Services
         /// <summary>
         /// Delete a mod file / 删除模组文件
         /// </summary>
-        /// <param name="filePath">Full path to the mod file / 模组文件的完整路径</param>
+        /// <param name="fileName">Mod file name only / 仅允许模组文件名</param>
         /// <returns>True if deletion was successful / 删除是否成功</returns>
-        public bool DeleteMod(string filePath)
+        public bool DeleteMod(string fileName)
         {
             try
             {
-                if (File.Exists(filePath))
+                if (!ModPackageSafety.IsSafeFileName(fileName))
+                {
+                    Logger.LogWarning($"Rejected unsafe mod file name for deletion: {fileName}");
+                    return false;
+                }
+
+                var filePath = FindModFileByName(fileName);
+                if (filePath is not null && ModPackageSafety.IsWithinDirectory(filePath, GetPluginsPath()))
                 {
                     File.Delete(filePath);
                     Logger.LogInfo($"Successfully deleted mod: {filePath}");
                     return true;
                 }
-                Logger.LogWarning($"Mod file not found: {filePath}");
+
+                Logger.LogWarning($"Mod file not found: {fileName}");
                 return false;
             }
             catch (Exception ex)
             {
-                Logger.LogException($"Error deleting mod: {filePath}", ex);
+                Logger.LogException($"Error deleting mod: {fileName}", ex);
                 return false;
             }
         }
@@ -468,6 +539,12 @@ namespace THMI_Mod_Manager.Services
         /// <returns>Full path if found, null otherwise / 如果找到则返回完整路径，否则返回null</returns>
         private string? FindModFileByName(string fileName)
         {
+            if (!ModPackageSafety.IsSafeFileName(fileName))
+            {
+                Logger.LogWarning($"Rejected unsafe mod file name: {fileName}");
+                return null;
+            }
+
             var pluginsPath = GetPluginsPath();
 
             // First, try to find the exact file name in the plugins directory
@@ -573,7 +650,7 @@ namespace THMI_Mod_Manager.Services
                     
                     using (var archive = ZipFile.OpenRead(zipFilePath))
                     {
-                        archive.ExtractToDirectory(tempExtractPath, true);
+                        ModPackageSafety.ExtractZipSafely(zipFilePath, tempExtractPath);
                         Logger.LogInfo($"Extracted zip file to: {tempExtractPath}");
                     }
 
@@ -586,6 +663,12 @@ namespace THMI_Mod_Manager.Services
                     if (dllFiles.Length == 0)
                     {
                         Logger.LogError("No DLL files found in zip archive");
+                        return false;
+                    }
+
+                    if (dllFiles.Any(dllFile => !ModPackageSafety.IsPortableExecutable(dllFile)))
+                    {
+                        Logger.LogError("Zip archive contains an invalid DLL payload");
                         return false;
                     }
 

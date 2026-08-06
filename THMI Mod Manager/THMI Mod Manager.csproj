@@ -34,10 +34,16 @@
     <BuildAll>false</BuildAll>
     <!-- 定义所有目标平台（可按需增删） -->
     <TargetRuntimes>win-x86;win-x64;linux-x64;osx-x64;osx-arm64</TargetRuntimes>
-    <PublishSingleFile>false</PublishSingleFile>
+    <!-- 单文件发布：除运行时外的所有托管代码（含 WPF-UI/AvalonEdit 依赖）打进单个 exe -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <!-- 关键防坑：内容文件（AppConfig.Schale/Localization）继续复制到 exe 旁而非打进包运行时解压。
+         若为 true，运行时解压到临时目录，AppContext.BaseDirectory 将指向临时目录，破坏现有路径识别。 -->
+    <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
     <!-- 自包含部署配置：当传入 SelfContained=true 参数时启用 -->
     <SelfContained Condition="$(SelfContained) == '' Or $(SelfContained) == 'false'">false</SelfContained>
     <SelfContained Condition="$(SelfContained) == 'true'">true</SelfContained>
+    <!-- 单文件时不启用裁剪：WPF 反射场景（反射创建异常类型等）需保留元数据 -->
+    <PublishTrimmed>false</PublishTrimmed>
     
   </PropertyGroup>
 
@@ -55,12 +61,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.5" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
 
   <!-- 强制保留必要文件 -->
   <ItemGroup>
+    <None Update="AppConfig.Schale">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Localization\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

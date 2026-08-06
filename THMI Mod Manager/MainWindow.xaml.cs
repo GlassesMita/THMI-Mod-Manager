@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -23,6 +25,8 @@ public partial class MainWindow : Window
     private readonly GameLauncherService _launcher;
     private StackPanel? _modsPanel;
     private string _modSortOrder = "name";
+    private CancellationTokenSource? _modsRefreshCts;
+    private bool _isCheckingUpdates;
 
     public MainWindow()
     {
@@ -30,13 +34,10 @@ public partial class MainWindow : Window
         _modService = new ModService(_appConfig);
         _modUpdateService = new ModUpdateService(_appConfig, new HttpClient());
         _launcher = new GameLauncherService(_appConfig, _sessionTime);
-        // system 模式下跟随系统主题变化（仅重同步语义画刷，词典切换由 SystemThemeWatcher 完成）
-        ApplicationThemeManager.Changed += (_, _) =>
-        {
-            if ((_appConfig.Get("[App]Theme", "system") ?? "system").Equals("system", StringComparison.OrdinalIgnoreCase))
-                ApplyTheme();
-        };
-        SystemThemeWatcher.Watch(this);
+        // 自管主题：不使用 SystemThemeWatcher —— 其首次 Watch 会把主题强制切到系统主题，
+        // 并在系统广播主题消息时再次覆盖，导致固定 light/dark 模式在重启后被污染为深色。
+        // 改为监听系统主题变化，仅在 system 模式下重算主题；固定模式完全不受系统干扰。
+        SystemEvents.UserPreferenceChanged += OnSystemPreferenceChanged;
         ApplyTheme();
         ApplySidebarLocalization();
         new SystemInfoLogger(_appConfig, AppContext.BaseDirectory).LogApplicationStartup();
@@ -50,7 +51,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// 右键设置按钮：弹出 WinUI 3 风格输入框（ContentDialog）
     /// 输入异常类型（完整名称），确认后触发全局异常处理程序
-    /// - UI 线程 → DispatcherUnhandledException → 弹控制台显示详情（主窗口冻结）→ 按键后 MessageBox
+    /// - UI 线程 → DispatcherUnhandledException → 弹控制台显示详情（主窗口冻结）→ 按键后关闭控制台恢复主窗口
     /// - 后台线程 → AppDomain.UnhandledException → 弹控制台显示详情 → 按键后进程退出
     /// </summary>
     private async void ShowSettingsContextMenu_Click(object sender, System.Windows.Input.MouseButtonEventArgs eventArgs)
@@ -228,19 +229,33 @@ public partial class MainWindow : Window
         RefreshMods();
     }
 
-    private void RefreshMods()
+    private async void RefreshMods()
     {
         if (_modsPanel is null) return;
-        var mods = _modService.LoadMods();
-        mods = _modSortOrder == "date"
-            ? mods.OrderByDescending(mod => mod.InstallTime).ToList()
-            : mods.OrderBy(mod => mod.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
-        _modsPanel.Children.Clear();
-        if (mods.Count > 0)
+        _modsRefreshCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _modsRefreshCts = cts;
+        var panel = _modsPanel;
+        StatusText.Text = "正在加载 Mod...";
+        try
         {
-            foreach (var mod in mods) _modsPanel.Children.Add(CreateModCard(mod));
+            var mods = await Task.Run(() => _modService.LoadMods(cts.Token), cts.Token);
+            if (cts.IsCancellationRequested || panel != _modsPanel) return;
+            mods = _modSortOrder == "date"
+                ? mods.OrderByDescending(mod => mod.InstallTime).ToList()
+                : mods.OrderBy(mod => mod.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+            panel.Children.Clear();
+            if (mods.Count > 0)
+            {
+                foreach (var mod in mods) panel.Children.Add(CreateModCard(mod));
+            }
+            StatusText.Text = mods.Count == 0 ? "BepInEx/plugins 目录及其子目录中没有找到 Mod。" : $"已加载 {mods.Count} 个 Mod。";
         }
-        StatusText.Text = mods.Count == 0 ? "BepInEx/plugins 目录及其子目录中没有找到 Mod。" : $"已加载 {mods.Count} 个 Mod。";
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            if (panel == _modsPanel) StatusText.Text = $"加载 Mod 失败: {ex.Message}";
+        }
     }
 
     private void ToggleSelectedMod()
@@ -248,7 +263,7 @@ public partial class MainWindow : Window
         throw new NotSupportedException("模组操作已改为卡片上的直接操作。");
     }
 
-    private void ToggleMod(ModInfo mod)
+    private async void ToggleMod(ModInfo mod)
     {
         if (_launcher.IsRunning)
         {
@@ -256,13 +271,27 @@ public partial class MainWindow : Window
             return;
         }
 
-        var result = _modService.ToggleMod(mod.FileName);
+        var result = await Task.Run(() => _modService.ToggleMod(mod.FileName));
         if (!result.Success && result.ConflictingMods.Count > 0)
         {
-            var conflicts = string.Join(Environment.NewLine, result.ConflictingMods.Select(conflict => $"- {conflict.Name} {conflict.Version}"));
-            if (MessageBox.Show($"{result.ErrorMessage}\n\n冲突 Mod：\n{conflicts}\n\n是否禁用冲突项并强制启用？", "Mod 冲突", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            var content = new StackPanel { MaxWidth = 480 };
+            content.Children.Add(new TextBlock { Text = result.ErrorMessage, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
+            content.Children.Add(new TextBlock { Text = "冲突 Mod：", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) });
+            foreach (var conflict in result.ConflictingMods)
+                content.Children.Add(new TextBlock { Text = $"- {conflict.Name} {conflict.Version}", TextWrapping = TextWrapping.Wrap, Foreground = (System.Windows.Media.Brush)FindResource("DangerBrush"), Margin = new Thickness(12, 0, 0, 2) });
+            content.Children.Add(new TextBlock { Text = "是否禁用冲突项并强制启用？", Margin = new Thickness(0, 12, 0, 0) });
+
+            var dialog = new Wpf.Ui.Controls.ContentDialog(RootDialogHost)
             {
-                result = _modService.ForceEnableMod(mod.FileName);
+                Title = "Mod 冲突",
+                Content = content,
+                PrimaryButtonText = "强制启用",
+                CloseButtonText = "取消",
+                DefaultButton = Wpf.Ui.Controls.ContentDialogButton.Close,
+            };
+            if (await dialog.ShowAsync() == Wpf.Ui.Controls.ContentDialogResult.Primary)
+            {
+                result = await Task.Run(() => _modService.ForceEnableMod(mod.FileName));
             }
         }
 
@@ -281,20 +310,40 @@ public partial class MainWindow : Window
 
     private async Task CheckModUpdatesAsync()
     {
+        if (_isCheckingUpdates)
+        {
+            StatusText.Text = "更新检查正在进行中，请稍候。";
+            return;
+        }
+
+        _isCheckingUpdates = true;
         try
         {
             StatusText.Text = "正在检查模组更新...";
-            var mods = await _modUpdateService.CheckForModUpdatesAsync(_modService.LoadMods());
-            StatusText.Text = $"检查完成，发现 {mods.Count(mod => mod.HasUpdateAvailable)} 个可更新模组。";
+            var mods = await Task.Run(() => _modService.LoadMods());
+            mods = await _modUpdateService.CheckForModUpdatesAsync(mods);
+            var updatableCount = mods.Count(mod => mod.HasUpdateAvailable);
+            StatusText.Text = $"检查完成，发现 {updatableCount} 个可更新模组。";
+            if (updatableCount > 0 && GetConfigBool("[Notifications]Enable", false))
+            {
+                ToastService.Show(
+                    _appConfig.GetLocalized("Notifications:UpdateFoundTitle", "发现模组更新"),
+                    string.Format(_appConfig.GetLocalized("Notifications:UpdateFoundMessage", "发现 {0} 个可更新模组。"), updatableCount));
+            }
             if (_modsPanel is not null)
             {
                 _modsPanel.Children.Clear();
                 foreach (var mod in mods) _modsPanel.Children.Add(CreateModCard(mod));
             }
         }
+        catch (OperationCanceledException) { }
         catch (Exception exception)
         {
             StatusText.Text = $"检查更新失败: {exception.Message}";
+        }
+        finally
+        {
+            _isCheckingUpdates = false;
         }
     }
 
@@ -326,13 +375,32 @@ public partial class MainWindow : Window
         var updateFrequency = CreateCombo(new[] { ("startup", _appConfig.GetLocalized("Updates:FrequencyStartup", "启动时")), ("weekly", _appConfig.GetLocalized("Updates:FrequencyWeekly", "每周")), ("monthly", _appConfig.GetLocalized("Updates:FrequencyMonthly", "每月")) }, _appConfig.Get("[Updates]UpdateFrequency", "startup"));
         panel.Children.Add(CreateSettingsCard(_appConfig.GetLocalized("Settings:SectionUpdates", "更新"), _appConfig.GetLocalized("Settings:SectionUpdatesDesc", "设置更新检查策略。"), autoCheckUpdates, _appConfig.GetLocalized("Updates:UpdateFrequencyLabel", "检查频率"), updateFrequency));
 
-        // 通知
-        var enableNotifications = new CheckBox { Content = _appConfig.GetLocalized("Notifications:EnableNotifications", "启用通知"), IsChecked = GetConfigBool("[Notifications]Enable", false), Margin = new Thickness(0, 0, 0, 8) };
-        panel.Children.Add(CreateSettingsCard(_appConfig.GetLocalized("Settings:SectionNotifications", "通知"), _appConfig.GetLocalized("Settings:SectionNotificationsDesc", "接收更新与事件通知。"), enableNotifications));
+        // 通知（Windows Toast 通知）
+        var enableNotifications = new CheckBox { Content = _appConfig.GetLocalized("Notifications:EnableNotifications", "启用 Windows Toast 通知"), IsChecked = GetConfigBool("[Notifications]Enable", false), Margin = new Thickness(0, 0, 0, 8) };
+        var testNotification = CreateButton(_appConfig.GetLocalized("Notifications:Test", "发送测试通知"), (_, _) => SendTestNotification());
+        var notifyRow = new DockPanel();
+        DockPanel.SetDock(testNotification, Dock.Right);
+        notifyRow.Children.Add(testNotification);
+        notifyRow.Children.Add(enableNotifications);
+        var notifyBody = new StackPanel { Margin = new Thickness(20) };
+        notifyBody.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Settings:SectionNotifications", "通知"), Style = (Style)FindResource("SectionTitle") });
+        notifyBody.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Settings:SectionNotificationsDesc", "通过 Windows Toast 接收更新与事件通知。"), Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 5, 0, 14) });
+        notifyBody.Children.Add(notifyRow);
+        var notifyCard = CreateCard();
+        notifyCard.Child = notifyBody;
+        notifyCard.Margin = new Thickness(0, 0, 0, 16);
+        panel.Children.Add(notifyCard);
 
         // 窗口标题
         var modifyTitle = new CheckBox { Content = _appConfig.GetLocalized("Settings:ModifyTitleDescription", "给游戏窗口标题添加 'Modded' 前缀"), IsChecked = GetConfigBool("[Game]ModifyTitle", true), Margin = new Thickness(0, 0, 0, 8) };
         panel.Children.Add(CreateSettingsCard(_appConfig.GetLocalized("Settings:SectionTitle", "窗口标题"), _appConfig.GetLocalized("Settings:SectionTitleDesc", "游戏运行时应用窗口标题设置。"), modifyTitle));
+
+        // 配置文件编辑器
+        var openEditor = CreateButton("打开配置文件编辑器", (_, _) => new EditorWindow().ShowDialog());
+        panel.Children.Add(CreateSettingsCard("配置文件", "使用内置编辑器查看和修改 AppConfig.Schale 等配置文件。", "配置文件编辑器", openEditor));
+
+        // 异常日志
+        panel.Children.Add(BuildExceptionLogsCard());
 
         // BepInEx 配置
         panel.Children.Add(BuildBepInExSettingsCard());
@@ -367,9 +435,35 @@ public partial class MainWindow : Window
         SetPageShell("日志");
         var logPath = Logger.GetLogFilePath() ?? Path.Combine(AppContext.BaseDirectory, "Logs", "Latest.Log");
         var card = CreateCard();
-        card.Child = new TextBox { Text = File.Exists(logPath) ? File.ReadAllText(logPath) : "尚无日志文件。", IsReadOnly = true, TextWrapping = TextWrapping.NoWrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(16), BorderThickness = new Thickness(0), FontFamily = new System.Windows.Media.FontFamily("Cascadia Mono"), FontSize = 12, MinHeight = 420 };
+        card.Child = new TextBox { Text = ReadLogTail(logPath), IsReadOnly = true, TextWrapping = TextWrapping.NoWrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(16), BorderThickness = new Thickness(0), FontFamily = new System.Windows.Media.FontFamily("Cascadia Mono"), FontSize = 12, MinHeight = 420 };
         PageContent.Content = card;
         StatusText.Text = logPath;
+    }
+
+    /// <summary>只读取日志文件末尾（默认 256 KB），避免一次性载入整个日志造成内存峰值与 UI 卡顿。</summary>
+    private static string ReadLogTail(string logPath, int maxBytes = 256 * 1024)
+    {
+        try
+        {
+            var info = new FileInfo(logPath);
+            if (!info.Exists || info.Length == 0) return "尚无日志文件。";
+            using var stream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var start = Math.Max(0, info.Length - maxBytes);
+            stream.Seek(start, SeekOrigin.Begin);
+            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            var text = reader.ReadToEnd();
+            if (start > 0)
+            {
+                var newline = text.IndexOf('\n');
+                if (newline >= 0) text = text[(newline + 1)..];
+                text = "…（仅显示日志末尾，完整内容请查看文件）\n" + text;
+            }
+            return text;
+        }
+        catch (Exception exception)
+        {
+            return $"无法读取日志：{exception.Message}";
+        }
     }
 
     private void ShowAbout()
@@ -480,7 +574,7 @@ public partial class MainWindow : Window
         var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         var detailsButton = CreateButton("详细信息", (_, _) => ToggleModDetails(mod, card));
         var toggleButton = CreateButton(mod.IsDisabled ? "启用" : "禁用", (_, _) => ToggleMod(mod), mod.IsDisabled ? "PrimaryButton" : null);
-        var deleteButton = CreateButton("删除", (_, _) => { if (MessageBox.Show($"删除 {mod.Name}？", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes) { _modService.DeleteMod(mod.FilePath); RefreshMods(); } }, "DangerButton");
+        var deleteButton = CreateButton("删除", (_, _) => { if (MessageBox.Show($"删除 {mod.Name}？", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes) { _modService.DeleteMod(mod.FileName); RefreshMods(); } }, "DangerButton");
         toggleButton.IsEnabled = !_launcher.IsRunning;
         deleteButton.IsEnabled = !_launcher.IsRunning;
         actions.Children.Add(detailsButton);
@@ -600,7 +694,160 @@ public partial class MainWindow : Window
         card.Child = body; card.Margin = new Thickness(0, 0, 0, 16); return card;
     }
 
+    /// <summary>发送一条 Windows Toast 测试通知（不依赖开关状态，用于验证功能）。</summary>
+    private void SendTestNotification()
+    {
+        ToastService.Show(
+            _appConfig.GetLocalized("Notifications:TestTitle", "THMI Mod Manager"),
+            _appConfig.GetLocalized("Notifications:TestMessage", "这是一条测试通知，说明 Windows Toast 通知工作正常。"));
+        StatusText.Text = _appConfig.GetLocalized("Notifications:TestSent", "已发送测试通知。");
+    }
+
     private bool GetConfigBool(string key, bool defaultValue) => bool.TryParse(_appConfig.Get(key, defaultValue.ToString()), out var value) ? value : defaultValue;
+
+    /// <summary>
+    /// 异常日志管理卡片：列出 Logs\KernelPanic_*.log，支持只读打开、复制到剪贴板与删除。
+    /// </summary>
+    private Border BuildExceptionLogsCard()
+    {
+        var logDir = Path.Combine(AppContext.BaseDirectory, "Logs");
+        var card = CreateCard();
+        var body = new StackPanel { Margin = new Thickness(20) };
+        body.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Settings:SectionExceptionLogs", "异常日志"), Style = (Style)FindResource("SectionTitle") });
+        body.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Settings:SectionExceptionLogsDesc", "查看应用运行期间记录的异常日志，可打开（只读）、复制到剪贴板或删除。"), Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 5, 0, 14) });
+
+        var countText = new TextBlock { Style = (Style)FindResource("MutedText"), VerticalAlignment = VerticalAlignment.Center };
+        var listPanel = new StackPanel();
+
+        var refreshButton = CreateButton(_appConfig.GetLocalized("Settings:ExceptionLogsRefresh", "刷新"), (_, _) => RefreshExceptionLogList(logDir, listPanel, countText));
+        var deleteAllButton = CreateButton(_appConfig.GetLocalized("Settings:ExceptionLogsDeleteAll", "全部清除"), (_, _) => DeleteAllExceptionLogs(logDir, listPanel, countText), "DangerButton");
+
+        var toolbar = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
+        DockPanel.SetDock(deleteAllButton, Dock.Right);
+        DockPanel.SetDock(refreshButton, Dock.Right);
+        toolbar.Children.Add(deleteAllButton);
+        toolbar.Children.Add(refreshButton);
+        toolbar.Children.Add(countText);
+        body.Children.Add(toolbar);
+
+        body.Children.Add(listPanel);
+        RefreshExceptionLogList(logDir, listPanel, countText);
+
+        card.Child = body;
+        card.Margin = new Thickness(0, 0, 0, 16);
+        return card;
+    }
+
+    /// <summary>刷新异常日志列表（重建子项并更新计数）。</summary>
+    private void RefreshExceptionLogList(string logDir, StackPanel listPanel, TextBlock countText)
+    {
+        listPanel.Children.Clear();
+        var files = Directory.Exists(logDir)
+            ? Directory.GetFiles(logDir, "KernelPanic_*.log").OrderByDescending(p => p).ToList()
+            : new List<string>();
+        countText.Text = string.Format(_appConfig.GetLocalized("Settings:ExceptionLogsCount", "共 {0} 条异常日志"), files.Count);
+
+        if (files.Count == 0)
+        {
+            listPanel.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Settings:ExceptionLogsEmpty", "暂无异常日志。"), Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 6, 0, 0) });
+            return;
+        }
+
+        foreach (var file in files)
+            listPanel.Children.Add(CreateExceptionLogRow(file, () => RefreshExceptionLogList(logDir, listPanel, countText)));
+    }
+
+    /// <summary>渲染单个异常日志行：时间 + 文件名 + 打开（只读）/ 复制 / 删除。</summary>
+    private Grid CreateExceptionLogRow(string path, Action refresh)
+    {
+        var row = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var info = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        info.Children.Add(new TextBlock { Text = FormatLogTime(path), FontWeight = FontWeights.SemiBold });
+        info.Children.Add(new TextBlock { Text = Path.GetFileName(path), Style = (Style)FindResource("MutedText"), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis });
+
+        var openButton = CreateButton(_appConfig.GetLocalized("Settings:ExceptionLogsOpen", "打开"), (_, _) => new EditorWindow(path, readOnly: true).ShowDialog(), "PrimaryButton");
+        var copyButton = CreateButton(_appConfig.GetLocalized("Settings:ExceptionLogsCopy", "复制"), (_, _) => CopyExceptionLog(path));
+        var deleteButton = CreateButton(_appConfig.GetLocalized("Settings:ExceptionLogsDelete", "删除"), (_, _) => DeleteExceptionLog(path, refresh), "DangerButton");
+
+        openButton.Margin = new Thickness(8, 0, 0, 0);
+        copyButton.Margin = new Thickness(8, 0, 0, 0);
+        deleteButton.Margin = new Thickness(8, 0, 0, 0);
+        Grid.SetColumn(info, 0);
+        Grid.SetColumn(openButton, 1);
+        Grid.SetColumn(copyButton, 2);
+        Grid.SetColumn(deleteButton, 3);
+        row.Children.Add(info);
+        row.Children.Add(openButton);
+        row.Children.Add(copyButton);
+        row.Children.Add(deleteButton);
+        return row;
+    }
+
+    /// <summary>从 KernelPanic_yyyyMMdd_HHmmss.log 文件名解析时间，失败则回退文件修改时间。</summary>
+    private static string FormatLogTime(string path)
+    {
+        var parts = Path.GetFileNameWithoutExtension(path).Split('_');
+        if (parts.Length >= 3 && parts[^2].Length == 8 && parts[^1].Length == 6
+            && DateTime.TryParseExact(parts[^2] + parts[^1], "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var time))
+            return time.ToString("yyyy-MM-dd HH:mm:ss");
+        return File.GetLastWriteTime(path).ToString("yyyy-MM-dd HH:mm:ss");
+    }
+
+    /// <summary>复制异常日志全文到剪贴板。</summary>
+    private void CopyExceptionLog(string path)
+    {
+        try
+        {
+            Clipboard.SetText(File.ReadAllText(path));
+            StatusText.Text = _appConfig.GetLocalized("Settings:ExceptionLogsCopied", "已复制到剪贴板。");
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(this, string.Format(_appConfig.GetLocalized("Settings:ExceptionLogsCopyFailed", "复制到剪贴板失败：{0}"), exception.Message),
+                _appConfig.GetLocalized("Settings:ExceptionLogsErrorTitle", "异常日志"), MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>删除单个异常日志（带确认）。</summary>
+    private void DeleteExceptionLog(string path, Action refresh)
+    {
+        if (MessageBox.Show(this, string.Format(_appConfig.GetLocalized("Settings:ExceptionLogsDeleteConfirm", "确定要删除 {0} 吗？"), Path.GetFileName(path)),
+                _appConfig.GetLocalized("Settings:ExceptionLogsDelete", "删除"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+        try
+        {
+            File.Delete(path);
+            StatusText.Text = string.Format(_appConfig.GetLocalized("Settings:ExceptionLogsDeleted", "已删除：{0}"), Path.GetFileName(path));
+            refresh();
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(this, string.Format(_appConfig.GetLocalized("Settings:ExceptionLogsDeleteFailed", "删除失败：{0}"), exception.Message),
+                _appConfig.GetLocalized("Settings:ExceptionLogsErrorTitle", "异常日志"), MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>删除全部异常日志（带确认）。</summary>
+    private void DeleteAllExceptionLogs(string logDir, StackPanel listPanel, TextBlock countText)
+    {
+        var files = Directory.Exists(logDir) ? Directory.GetFiles(logDir, "KernelPanic_*.log") : Array.Empty<string>();
+        if (files.Length == 0) return;
+        if (MessageBox.Show(this, string.Format(_appConfig.GetLocalized("Settings:ExceptionLogsDeleteAllConfirm", "确定要删除全部 {0} 条异常日志吗？"), files.Length),
+                _appConfig.GetLocalized("Settings:ExceptionLogsDeleteAll", "全部清除"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+        foreach (var file in files)
+        {
+            try { File.Delete(file); }
+            catch { /* 单个失败不阻断整体 */ }
+        }
+        StatusText.Text = _appConfig.GetLocalized("Settings:ExceptionLogsDeletedAll", "已清除全部异常日志。");
+        RefreshExceptionLogList(logDir, listPanel, countText);
+    }
 
     private void BrowseFile(TextBox target, string filter)
     {
@@ -737,6 +984,20 @@ public partial class MainWindow : Window
 
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 14, 0, 0) };
         buttons.Children.Add(CreateButton(_appConfig.GetLocalized("Common:Save", "保存"), (_, _) => SaveBepInExSettings(bepInExPath, bepInExControls), "PrimaryButton"));
+        buttons.Children.Add(CreateButton(_appConfig.GetLocalized("Settings:BepInExOpenEditor", "编辑配置文件"), (_, _) =>
+        {
+            // 直接编辑自动检测到的 BepInEx/config/BepInEx.cfg；保存后局部刷新设置页面重新读取
+            var path = DetectBepInExConfigPath();
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                StatusText.Text = _appConfig.GetLocalized("Settings:BepInExInvalidPath", "BepInEx 配置文件路径无效或文件不存在");
+                return;
+            }
+            var editor = new EditorWindow(path);
+            editor.ShowDialog();
+            if (editor.Saved)
+                ShowSettings();
+        }));
         buttons.Children.Add(CreateButton(_appConfig.GetLocalized("Common:Reset", "恢复默认值"), (_, _) =>
         {
             foreach (var (item, control) in bepInExControls)
@@ -831,12 +1092,12 @@ public partial class MainWindow : Window
     private void ApplyTheme()
     {
         var theme = (_appConfig.Get("[App]Theme", "system") ?? "system").ToLowerInvariant();
-        // system：跟随 Windows 当前主题（不再映射为 Unknown，否则 Apply 直接跳过词典切换）
+        // system：跟随 Windows 当前主题（直接读注册表，不依赖 WPF-UI 缓存，保证实时）
         var isDark = theme switch
         {
             "dark" => true,
             "light" => false,
-            _ => ApplicationThemeManager.GetSystemTheme() is SystemTheme.Dark or SystemTheme.CapturedMotion or SystemTheme.Glow
+            _ => IsSystemDark()
         };
         var appTheme = isDark ? ApplicationTheme.Dark : ApplicationTheme.Light;
 
@@ -844,7 +1105,40 @@ public partial class MainWindow : Window
         if (ApplicationThemeManager.GetAppTheme() != appTheme)
             ApplicationThemeManager.Apply(appTheme, WindowBackdropType.None, true);
 
+        Logger.LogInfo($"Applying theme: config={theme}, isDark={isDark}");
         ApplySemanticBrushes(isDark);
+    }
+
+    /// <summary>
+    /// 系统主题（深浅）变化时触发：仅 system 模式重算主题；固定 light/dark 模式不受影响。
+    /// 深浅切换时 Windows 广播 ImmersiveColorSet，SystemEvents 映射为 General/Color/VisualStyle 类别。
+    /// </summary>
+    private void OnSystemPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
+    {
+        if (e.Category is not (UserPreferenceCategory.General or UserPreferenceCategory.Color or UserPreferenceCategory.VisualStyle))
+            return;
+
+        Dispatcher.BeginInvoke(() =>
+        {
+            if ((_appConfig.Get("[App]Theme", "system") ?? "system").Equals("system", StringComparison.OrdinalIgnoreCase))
+                ApplyTheme();
+        });
+    }
+
+    /// <summary>读取 Windows 深浅主题设置（AppsUseLightTheme：0 = 深色）。</summary>
+    private static bool IsSystemDark()
+    {
+        try
+        {
+            var value = Registry.GetValue(
+                @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+                "AppsUseLightTheme", 1);
+            return value is int i && i == 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>

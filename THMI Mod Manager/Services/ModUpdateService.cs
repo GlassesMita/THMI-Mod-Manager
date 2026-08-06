@@ -1,5 +1,7 @@
 using System.IO.Compression;
+using System.Collections.Concurrent;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -13,7 +15,11 @@ namespace THMI_Mod_Manager.Services
         private readonly AppConfigManager _appConfig;
         private readonly HttpClient _httpClient;
         private const string ThunderStoreApiUrl = "https://thunderstore.io/c/touhou-mystia-izakaya/p/{packageId}";
-        private static readonly Dictionary<string, UpdateProgress> _updateProgress = new();
+        private static readonly ConcurrentDictionary<string, UpdateProgress> _updateProgress = new();
+        private static readonly HashSet<string> AllowedDownloadHosts = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "github.com", "api.github.com", "objects.githubusercontent.com", "github-releases.githubusercontent.com", "thunderstore.io"
+        };
 
         public ModUpdateService(AppConfigManager appConfig, HttpClient httpClient)
         {
@@ -38,15 +44,15 @@ namespace THMI_Mod_Manager.Services
             };
         }
 
-        public async Task<List<ModInfo>> CheckForModUpdatesAsync(List<ModInfo> mods)
+        public async Task<List<ModInfo>> CheckForModUpdatesAsync(List<ModInfo> mods, CancellationToken cancellationToken = default)
         {
-            var updatedMods = new List<ModInfo>();
-
-            foreach (var mod in mods)
+            using var concurrency = new SemaphoreSlim(4);
+            var updates = mods.Select(async mod =>
             {
+                await concurrency.WaitAsync(cancellationToken);
                 try
                 {
-                    var latestVersion = await GetLatestModVersionAsync(mod);
+                    var latestVersion = await GetLatestModVersionAsync(mod, cancellationToken);
                     if (latestVersion != null)
                     {
                         mod.LatestVersion = latestVersion.VersionString;
@@ -54,29 +60,35 @@ namespace THMI_Mod_Manager.Services
                         mod.FileSizeBytes = latestVersion.FileSizeBytes;
                         mod.ReleaseNotes = latestVersion.ReleaseNotes;
                         mod.ReleaseHtmlUrl = latestVersion.ReleaseHtmlUrl;
+                        mod.DownloadSha256 = latestVersion.Sha256;
                         mod.HasUpdateAvailable = IsVersionNewer(mod.Version, latestVersion.VersionString);
-                        
-                        Logger.LogInfo($"Mod {mod.Name}: current={mod.Version}, latest={latestVersion.VersionString}, update available={mod.HasUpdateAvailable}");
                     }
                     else
                     {
-                        Logger.LogInfo($"Mod {mod.Name}: no update info available");
                         mod.HasUpdateAvailable = false;
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
                     Logger.LogWarning(ex, $"Failed to check update for mod {mod.Name}");
                     mod.HasUpdateAvailable = false;
                 }
+                finally
+                {
+                    concurrency.Release();
+                }
 
-                updatedMods.Add(mod);
-            }
+                return mod;
+            });
 
-            return updatedMods;
+            return (await Task.WhenAll(updates)).ToList();
         }
 
-        public async Task<ModUpdateCheckResult?> GetLatestModVersionAsync(ModInfo mod)
+        public async Task<ModUpdateCheckResult?> GetLatestModVersionAsync(ModInfo mod, CancellationToken cancellationToken = default)
         {
             var updateUrl = mod.UpdateUrl ?? mod.ModLink;
             
@@ -92,15 +104,17 @@ namespace THMI_Mod_Manager.Services
                 Logger.LogInfo($"Mod {mod.Name}: raw URL = '{updateUrl}', clean URL = '{cleanUrl}'");
                 
                 var uri = new Uri(cleanUrl);
+                if (uri.Scheme != Uri.UriSchemeHttps || !AllowedDownloadHosts.Contains(uri.Host))
+                    return null;
                 
                 if (uri.Host.Equals("thunderstore.io", StringComparison.OrdinalIgnoreCase))
                 {
-                    return await CheckThunderStoreUpdateAsync(cleanUrl);
+                    return await CheckThunderStoreUpdateAsync(cleanUrl, cancellationToken);
                 }
                 else if (uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) || 
                          uri.Host.Equals("api.github.com", StringComparison.OrdinalIgnoreCase))
                 {
-                    return await CheckGitHubUpdateAsync(cleanUrl, mod.Name);
+                    return await CheckGitHubUpdateAsync(cleanUrl, mod.Name, cancellationToken);
                 }
                 else
                 {
@@ -155,7 +169,7 @@ namespace THMI_Mod_Manager.Services
             }
         }
 
-        private async Task<ModUpdateCheckResult?> CheckThunderStoreUpdateAsync(string updateUrl)
+        private async Task<ModUpdateCheckResult?> CheckThunderStoreUpdateAsync(string updateUrl, CancellationToken cancellationToken)
         {
             try
             {
@@ -166,7 +180,7 @@ namespace THMI_Mod_Manager.Services
                 }
 
                 var apiUrl = $"https://thunderstore.io/api/experimental/package/{packageId}/";
-                var response = await _httpClient.GetAsync(apiUrl);
+                var response = await _httpClient.GetAsync(apiUrl, cancellationToken);
                 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -199,7 +213,7 @@ namespace THMI_Mod_Manager.Services
             }
         }
 
-        private async Task<ModUpdateCheckResult?> CheckGitHubUpdateAsync(string updateUrl, string? modName = null)
+        private async Task<ModUpdateCheckResult?> CheckGitHubUpdateAsync(string updateUrl, string? modName, CancellationToken cancellationToken)
         {
             try
             {
@@ -231,7 +245,7 @@ namespace THMI_Mod_Manager.Services
                     Logger.LogInfo($"Constructed API URL: {releaseUrl}");
                 }
                 
-                var response = await _httpClient.GetAsync(releaseUrl);
+                var response = await _httpClient.GetAsync(releaseUrl, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
                     Logger.LogWarning($"GitHub API returned HTTP {(int)response.StatusCode}");
@@ -257,6 +271,7 @@ namespace THMI_Mod_Manager.Services
                             VersionString = release.TagName.TrimStart('v'),
                             DownloadUrl = dllAsset.BrowserDownloadUrl,
                             FileSizeBytes = dllAsset.Size,
+                            Sha256 = NormalizeSha256(dllAsset.Digest),
                             ReleaseNotes = release.Body,
                             ReleaseHtmlUrl = release.HtmlUrl
                         };
@@ -288,6 +303,7 @@ namespace THMI_Mod_Manager.Services
                 return false;
             }
 
+            string? tempPath = null;
             try
             {
                 Logger.LogInfo($"Starting update for mod: {mod.Name}");
@@ -299,7 +315,14 @@ namespace THMI_Mod_Manager.Services
                 var modFolder = Path.Combine(pluginsPath, modFolderName);
                 var manifestPath = Path.Combine(modFolder, "Manifest.toml");
 
-                var tempPath = Path.Combine(Path.GetTempPath(), $"THMI_Mod_Update_{Guid.NewGuid():N}");
+                if (!Uri.TryCreate(mod.DownloadUrl, UriKind.Absolute, out var downloadUri)
+                    || downloadUri.Scheme != Uri.UriSchemeHttps || !AllowedDownloadHosts.Contains(downloadUri.Host))
+                {
+                    Logger.LogWarning($"Rejected untrusted update URL: {mod.DownloadUrl}");
+                    return false;
+                }
+
+                tempPath = Path.Combine(Path.GetTempPath(), $"THMI_Mod_Update_{Guid.NewGuid():N}");
                 Directory.CreateDirectory(tempPath);
 
                 var zipPath = Path.Combine(tempPath, "mod.zip");
@@ -348,7 +371,11 @@ namespace THMI_Mod_Manager.Services
                     return false;
                 }
 
+                using (response)
+                {
                 var totalBytes = response.Content.Headers.ContentLength ?? 0;
+                if (totalBytes > ModPackageSafety.MaxDownloadBytes)
+                    throw new InvalidDataException($"Update exceeds {ModPackageSafety.MaxDownloadBytes} bytes.");
                 var bytesDownloaded = 0L;
                 
                 SetUpdateProgress(mod.FileName, 0, totalBytes, "下载中...");
@@ -365,6 +392,8 @@ namespace THMI_Mod_Manager.Services
                     {
                         await fileStream.WriteAsync(buffer, 0, bytesRead);
                         bytesDownloaded += bytesRead;
+                        if (bytesDownloaded > ModPackageSafety.MaxDownloadBytes)
+                            throw new InvalidDataException($"Update exceeds {ModPackageSafety.MaxDownloadBytes} bytes.");
                         
                         // Update progress every 100KB or when complete
                         if (bytesDownloaded % (100 * 1024) == 0 || bytesDownloaded == totalBytes)
@@ -379,6 +408,11 @@ namespace THMI_Mod_Manager.Services
                     SetUpdateProgress(mod.FileName, 0, 0, "下载流处理失败");
                     return false;
                 }
+
+                if (totalBytes > 0 && bytesDownloaded != totalBytes)
+                    throw new InvalidDataException("Downloaded update size does not match Content-Length.");
+                if (!string.IsNullOrEmpty(mod.DownloadSha256) && !VerifySha256(zipPath, mod.DownloadSha256))
+                    throw new InvalidDataException("Downloaded update SHA-256 does not match the published asset digest.");
                 
                 SetUpdateProgress(mod.FileName, totalBytes, totalBytes, "解压中...");
                 Logger.LogInfo($"Extracting to: {tempPath}");
@@ -389,9 +423,11 @@ namespace THMI_Mod_Manager.Services
                 if (isZipFile)
                 {
                     // File is a zip archive, extract it
-                    ZipFile.ExtractToDirectory(zipPath, tempPath, true);
+                    var extractedPath = Path.Combine(tempPath, "payload");
+                    Directory.CreateDirectory(extractedPath);
+                    ModPackageSafety.ExtractZipSafely(zipPath, extractedPath);
                     // Look for DLL files in the extracted content
-                    var dllFiles = Directory.GetFiles(tempPath, "*.dll", SearchOption.AllDirectories);
+                    var dllFiles = Directory.GetFiles(extractedPath, "*.dll", SearchOption.AllDirectories);
                     if (dllFiles.Length == 0)
                     {
                         Logger.LogError("No DLL files found in update package");
@@ -400,25 +436,7 @@ namespace THMI_Mod_Manager.Services
                         return false;
                     }
 
-                    foreach (var dllFile in dllFiles)
-                    {
-                        var dllFileNameOnly = Path.GetFileName(dllFile);
-                        var destDllPath = Path.Combine(pluginsPath, dllFileNameOnly);
-                        
-                        if (File.Exists(destDllPath))
-                        {
-                            var backupPath = destDllPath + ".backup";
-                            if (File.Exists(backupPath))
-                            {
-                                File.Delete(backupPath);
-                            }
-                            File.Move(destDllPath, backupPath);
-                            Logger.LogInfo($"Backed up existing DLL: {destDllPath}");
-                        }
-
-                        File.Copy(dllFile, destDllPath, true);
-                        Logger.LogInfo($"Updated DLL: {dllFileNameOnly}");
-                    }
+                    ApplyAtomicReplacements(dllFiles.Select(dllFile => (dllFile, Path.Combine(pluginsPath, Path.GetFileName(dllFile)))).ToList());
                 }
                 else
                 {
@@ -426,18 +444,7 @@ namespace THMI_Mod_Manager.Services
                     var dllFileNameOnly = Path.GetFileNameWithoutExtension(mod.FilePath) + ".dll";
                     var destDllPath = Path.Combine(pluginsPath, dllFileNameOnly);
                     
-                    if (File.Exists(destDllPath))
-                    {
-                        var backupPath = destDllPath + ".backup";
-                        if (File.Exists(backupPath))
-                        {
-                            File.Delete(backupPath);
-                        }
-                        File.Move(destDllPath, backupPath);
-                        Logger.LogInfo($"Backed up existing DLL: {destDllPath}");
-                    }
-
-                    File.Copy(zipPath, destDllPath, true);
+                    ApplyAtomicReplacements(new[] { (zipPath, destDllPath) });
                     Logger.LogInfo($"Updated DLL directly: {dllFileNameOnly}");
                 }
 
@@ -455,19 +462,81 @@ namespace THMI_Mod_Manager.Services
                     UpdateManifestVersion(manifestPath, mod.LatestVersion);
                 }
 
-                CleanupTempPath(tempPath);
-
                 SetUpdateProgress(mod.FileName, 0, 0, "更新完成");
-                _updateProgress.Remove(mod.FileName);
+                _updateProgress.TryRemove(mod.FileName, out _);
 
                 Logger.LogInfo($"Successfully updated mod: {mod.Name}");
                 return true;
+                }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, $"Failed to update mod {mod.Name}");
                 SetUpdateProgress(mod.FileName, 0, 0, "更新失败：" + ex.Message);
                 return false;
+            }
+            finally
+            {
+                if (tempPath is not null)
+                    CleanupTempPath(tempPath);
+            }
+        }
+
+        private static string? NormalizeSha256(string? digest)
+        {
+            const string prefix = "sha256:";
+            return digest?.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) == true ? digest[prefix.Length..] : null;
+        }
+
+        private static bool VerifySha256(string filePath, string expectedHash)
+        {
+            using var stream = File.OpenRead(filePath);
+            return string.Equals(Convert.ToHexString(SHA256.HashData(stream)), expectedHash, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ApplyAtomicReplacements(IEnumerable<(string Source, string Destination)> replacements)
+        {
+            var prepared = replacements.ToList();
+            var pluginsPath = Path.Combine(AppContext.BaseDirectory, "BepInEx", "plugins");
+            if (prepared.Count == 0 || prepared.Any(item => !ModPackageSafety.IsPortableExecutable(item.Source) || !ModPackageSafety.IsWithinDirectory(item.Destination, pluginsPath)))
+                throw new InvalidDataException("Update contains an invalid DLL or destination.");
+
+            var rollbackDirectory = Path.Combine(Path.GetTempPath(), $"THMI_Mod_Rollback_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(rollbackDirectory);
+            var replaced = new List<(string Destination, string? Backup)>();
+            try
+            {
+                foreach (var (source, destination) in prepared)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                    var candidate = Path.Combine(rollbackDirectory, Guid.NewGuid().ToString("N") + ".dll");
+                    File.Copy(source, candidate, true);
+                    if (File.Exists(destination))
+                    {
+                        var backup = Path.Combine(rollbackDirectory, Guid.NewGuid().ToString("N") + ".bak");
+                        File.Replace(candidate, destination, backup, true);
+                        replaced.Add((destination, backup));
+                    }
+                    else
+                    {
+                        File.Move(candidate, destination);
+                        replaced.Add((destination, null));
+                    }
+                }
+            }
+            catch
+            {
+                foreach (var (destination, backup) in replaced.AsEnumerable().Reverse())
+                {
+                    if (backup is null) File.Delete(destination);
+                    else File.Replace(backup, destination, null, true);
+                }
+                throw;
+            }
+            finally
+            {
+                if (Directory.Exists(rollbackDirectory))
+                    Directory.Delete(rollbackDirectory, true);
             }
         }
 
@@ -639,6 +708,7 @@ namespace THMI_Mod_Manager.Services
         public string VersionString { get; set; } = string.Empty;
         public string DownloadUrl { get; set; } = string.Empty;
         public long? FileSizeBytes { get; set; }
+        public string? Sha256 { get; set; }
         public string? ReleaseNotes { get; set; }
         public string? ReleaseHtmlUrl { get; set; }
     }
@@ -684,5 +754,8 @@ namespace THMI_Mod_Manager.Services
         
         [JsonPropertyName("size")]
         public long Size { get; set; }
+
+        [JsonPropertyName("digest")]
+        public string? Digest { get; set; }
     }
 }

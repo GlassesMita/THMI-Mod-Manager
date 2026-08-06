@@ -50,6 +50,8 @@ namespace THMI_Mod_Manager.Models
         public string? DownloadUrl { get; set; }
         /// <summary>File size of the update in bytes / 更新的文件大小（字节）</summary>
         public long? FileSizeBytes { get; set; }
+        /// <summary>SHA-256 digest published by the update provider / 更新提供方发布的 SHA-256 摘要</summary>
+        public string? DownloadSha256 { get; set; }
         /// <summary>Release notes for the latest version / 最新版本的发布说明</summary>
         public string? ReleaseNotes { get; set; }
         /// <summary>URL to the changelog / 更新日志URL</summary>
