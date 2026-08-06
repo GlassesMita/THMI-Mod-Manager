@@ -32,7 +32,7 @@
                     <RadioButton x:Name="NavModsRadio" Style="{StaticResource NavButton}" Tag="模组" Click="ShowMods_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE943;"/><TextBlock x:Name="NavModsText" Text="模组"/></StackPanel></RadioButton>
                     <RadioButton x:Name="NavExploreRadio" Style="{StaticResource NavButton}" Tag="浏览" Click="ShowExplore_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE721;"/><TextBlock x:Name="NavExploreText" Text="探索"/></StackPanel></RadioButton>
                     <TextBlock x:Name="NavGroupManageTitle" Text="管理" Style="{StaticResource NavGroupTitle}" />
-                    <RadioButton x:Name="NavSettingsRadio" Style="{StaticResource NavButton}" Tag="设置" Click="ShowSettings_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE713;"/><TextBlock x:Name="NavSettingsText" Text="设置"/></StackPanel></RadioButton>
+                    <RadioButton x:Name="NavSettingsRadio" Style="{StaticResource NavButton}" Tag="设置" Click="ShowSettings_Click" PreviewMouseRightButtonUp="ShowSettingsContextMenu_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE713;"/><TextBlock x:Name="NavSettingsText" Text="设置"/></StackPanel></RadioButton>
                     <RadioButton x:Name="NavAboutRadio" Style="{StaticResource NavButton}" Tag="关于" Click="ShowAbout_Click" PreviewMouseRightButtonUp="ShowShellAbout_Click"><StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource NavIcon}" Text="&#xE946;"/><TextBlock x:Name="NavAboutText" Text="关于"/></StackPanel></RadioButton>
                 </StackPanel>
             </DockPanel>
@@ -55,5 +55,6 @@
                 <TextBlock x:Name="StatusText" Foreground="{DynamicResource MutedTextBrush}" TextWrapping="Wrap" FontSize="12" />
             </Border>
         </Grid>
+        <ui:ContentDialogHost x:Name="RootDialogHost" Grid.ColumnSpan="2" />
     </Grid>
 </Window>

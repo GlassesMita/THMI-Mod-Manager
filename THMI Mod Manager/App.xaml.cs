@@ -15,6 +15,8 @@ public partial class App : Application
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs eventArgs)
     {
+        // 弹出控制台窗口显示异常详情；等待按键期间 UI 线程阻塞，主窗口暂时冻结
+        GlobalExceptionHandler.DisplayKernelPanicWithUI(eventArgs.Exception, waitForKey: true);
         Logger.LogException(eventArgs.Exception, "Unhandled WPF dispatcher exception");
         GlobalExceptionHandler.LogKernelPanic(eventArgs.Exception);
         MessageBox.Show(
@@ -22,6 +24,8 @@ public partial class App : Application
             "THMI Mod Manager",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
+        // 查看完毕后关闭控制台，恢复主窗口
+        GlobalExceptionHandler.CloseConsole();
         eventArgs.Handled = true;
     }
 }

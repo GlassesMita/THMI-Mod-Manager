@@ -11,6 +11,62 @@ namespace THMI_Mod_Manager.Services
     /// </summary>
     public static class GlobalExceptionHandler
     {
+        [DllImport("kernel32.dll")]
+        private static extern bool AllocConsole();
+
+        [DllImport("kernel32.dll")]
+        private static extern bool FreeConsole();
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetConsoleWindow();
+
+        [DllImport("kernel32.dll")]
+        private static extern bool SetConsoleOutputCP(uint codePage);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool SetConsoleCP(uint codePage);
+
+        /// <summary>
+        /// 创建 conhost 控制台（回退方案）：设置 UTF-8 代码页避免中文乱码
+        /// </summary>
+        public static void ShowConsole()
+        {
+            try
+            {
+                if (GetConsoleWindow() != IntPtr.Zero)
+                    return;
+
+                AllocConsole();
+                // 切换到 UTF-8 代码页，避免 conhost 默认 GBK 显示乱码
+                SetConsoleOutputCP(65001);
+                SetConsoleCP(65001);
+                Console.OutputEncoding = Encoding.UTF8;
+                var writer = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+                Console.SetOut(writer);
+                Console.SetError(writer);
+            }
+            catch
+            {
+                // 控制台创建失败时忽略，日志仍会写入文件
+            }
+        }
+
+        /// <summary>
+        /// 关闭进程拥有的控制台窗口（仅关闭由本进程创建的）
+        /// </summary>
+        public static void CloseConsole()
+        {
+            try
+            {
+                if (GetConsoleWindow() != IntPtr.Zero)
+                    FreeConsole();
+            }
+            catch
+            {
+                // 忽略关闭失败
+            }
+        }
+
         private static readonly Regex StackTracePathRegex = new Regex(@"in\s+[A-Za-z0-9_$.]+\s+in\s+[^:]+:\s*line\s+\d+", RegexOptions.Compiled);
 
         private static string CleanStackTrace(string? stackTrace)
@@ -96,6 +152,8 @@ namespace THMI_Mod_Manager.Services
         /// </summary>
         public static void DisplayKernelPanicWithUI(Exception exception, bool waitForKey = true)
         {
+            // 确保有控制台窗口用于显示异常详情
+            ShowConsole();
 
             // 设置标题（后台线程循环切换，不阻塞主线程）
             var titleThread = new System.Threading.Thread(() =>

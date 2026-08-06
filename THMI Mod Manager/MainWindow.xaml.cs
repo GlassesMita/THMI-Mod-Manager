@@ -46,6 +46,114 @@ public partial class MainWindow : Window
     private void ShowHome_Click(object sender, RoutedEventArgs eventArgs) => ShowHome();
     private void ShowMods_Click(object sender, RoutedEventArgs eventArgs) => ShowMods();
     private void ShowSettings_Click(object sender, RoutedEventArgs eventArgs) => ShowSettings();
+
+    /// <summary>
+    /// 右键设置按钮：弹出 WinUI 3 风格输入框（ContentDialog）
+    /// 输入异常类型（完整名称），确认后触发全局异常处理程序
+    /// - UI 线程 → DispatcherUnhandledException → 弹控制台显示详情（主窗口冻结）→ 按键后 MessageBox
+    /// - 后台线程 → AppDomain.UnhandledException → 弹控制台显示详情 → 按键后进程退出
+    /// </summary>
+    private async void ShowSettingsContextMenu_Click(object sender, System.Windows.Input.MouseButtonEventArgs eventArgs)
+    {
+        eventArgs.Handled = true;
+
+        var hintText = new TextBlock
+        {
+            Text = "输入异常类型（完整名称），确认后将触发全局异常处理程序：",
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 4),
+        };
+        hintText.SetResourceReference(TextBlock.ForegroundProperty, "MutedTextBrush");
+
+        var typeInput = new Wpf.Ui.Controls.TextBox
+        {
+            PlaceholderText = "例如：System.InvalidOperationException",
+            Text = "System.InvalidOperationException",
+            MinWidth = 340,
+        };
+
+        var backgroundToggle = new Wpf.Ui.Controls.ToggleSwitch
+        {
+            Content = "后台线程触发（弹出控制台后应用退出）",
+            Margin = new Thickness(0, 12, 0, 0),
+        };
+
+        var contentPanel = new StackPanel
+        {
+            Children = { hintText, typeInput, backgroundToggle },
+        };
+
+        var dialog = new Wpf.Ui.Controls.ContentDialog(RootDialogHost)
+        {
+            Title = "触发异常测试",
+            Content = contentPanel,
+            PrimaryButtonText = "触发异常",
+            CloseButtonText = "取消",
+            DefaultButton = Wpf.Ui.Controls.ContentDialogButton.Primary,
+        };
+
+        var result = await dialog.ShowAsync();
+        if (result != Wpf.Ui.Controls.ContentDialogResult.Primary)
+            return;
+
+        var exception = BuildException(typeInput.Text?.Trim());
+        if (backgroundToggle.IsChecked == true)
+            _ = Task.Run(() => throw exception);
+        else
+            throw exception;
+    }
+
+    /// <summary>
+    /// 按用户输入的异常类型名称创建异常实例；无法解析时回退到 InvalidOperationException
+    /// </summary>
+    private static Exception BuildException(string? typeName)
+    {
+        if (!string.IsNullOrWhiteSpace(typeName))
+        {
+            try
+            {
+                var type = ResolveExceptionType(typeName);
+                if (type is not null && typeof(Exception).IsAssignableFrom(type))
+                {
+                    var ctor = type.GetConstructor(new[] { typeof(string) });
+                    if (ctor is not null)
+                        return (Exception)ctor.Invoke(new object[] { $"手动触发异常：{typeName}" });
+                }
+            }
+            catch
+            {
+                // 类型无效时回退
+            }
+        }
+        return new InvalidOperationException($"手动触发：UI 线程异常测试（输入类型无效：{typeName}）");
+    }
+
+    /// <summary>
+    /// 按完整类型名解析异常类型。Type.GetType 在 .NET Core 下无法用简单名称
+    /// 解析 System.Private.CoreLib 中的类型，失败时扫描所有已加载程序集。
+    /// </summary>
+    private static System.Type? ResolveExceptionType(string typeName)
+    {
+        var type = System.Type.GetType(typeName);
+        if (type is not null)
+            return type;
+
+        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            try
+            {
+                type = asm.GetType(typeName);
+            }
+            catch
+            {
+                continue;
+            }
+            if (type is not null)
+                return type;
+        }
+        return null;
+    }
+
     private void ShowExplore_Click(object sender, RoutedEventArgs eventArgs) => ShowExplore();
     private void ShowLog_Click(object sender, RoutedEventArgs eventArgs) => ShowLog();
     private void ShowAbout_Click(object sender, RoutedEventArgs eventArgs) => ShowAbout();
