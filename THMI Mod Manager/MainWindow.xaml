@@ -56,5 +56,6 @@
             </Border>
         </Grid>
         <ui:ContentDialogHost x:Name="RootDialogHost" Grid.ColumnSpan="2" />
+        <ui:SnackbarPresenter x:Name="SettingsSnackbarPresenter" Grid.ColumnSpan="2" />
     </Grid>
 </Window>

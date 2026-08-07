@@ -360,9 +360,16 @@ public partial class MainWindow : Window
         language.SelectedValue = _appConfig.Get("[Localization]Language", "en_US");
         panel.Children.Add(CreateSettingsCard(_appConfig.GetLocalized("Settings:SectionLanguage", "语言与区域"), _appConfig.GetLocalized("Settings:SectionLanguageDesc", "选择界面文本使用的语言。"), _appConfig.GetLocalized("Settings:SelectLanguageLabel", "界面语言"), language));
 
-        // 外观（深浅主题；主题色独立，不随主题切换）
+        // 外观（深浅主题 + 高对比度开关；主题色独立，不随主题切换）
         var themeMode = CreateCombo(new[] { ("system", _appConfig.GetLocalized("Settings:ThemeSystem", "跟随系统")), ("light", _appConfig.GetLocalized("Settings:ThemeLight", "浅色")), ("dark", _appConfig.GetLocalized("Settings:ThemeDark", "深色")) }, _appConfig.Get("[App]Theme", "system"));
-        panel.Children.Add(CreateSettingsCard(_appConfig.GetLocalized("Settings:SectionAppearance", "外观"), _appConfig.GetLocalized("Settings:SectionAppearanceDesc", "选择应用深浅主题。主题色保持独立，不随主题切换。"), _appConfig.GetLocalized("Settings:ThemeLabel", "主题"), themeMode));
+        var highContrast = new Wpf.Ui.Controls.ToggleSwitch
+        {
+            OffContent = _appConfig.GetLocalized("Settings:HighContrastOff", "关闭"),
+            OnContent = _appConfig.GetLocalized("Settings:HighContrastOn", "开启"),
+            IsChecked = GetConfigBool("[App]HighContrast", false),
+            Margin = new Thickness(0, 4, 0, 14)
+        };
+        panel.Children.Add(CreateSettingsCard(_appConfig.GetLocalized("Settings:SectionAppearance", "外观"), _appConfig.GetLocalized("Settings:SectionAppearanceDesc", "选择应用深浅主题，可开启高对比度。主题色保持独立，不随主题切换。"), _appConfig.GetLocalized("Settings:ThemeLabel", "主题"), themeMode, _appConfig.GetLocalized("Settings:HighContrastLabel", "高对比度"), highContrast));
 
         // 启动设置
         var launchMode = CreateCombo(new[] { ("steam_launch", _appConfig.GetLocalized("Settings:LaunchModeSteam", "Steam 启动")), ("external_program", _appConfig.GetLocalized("Settings:LaunchModeExternal", "外部程序")) }, _appConfig.Get("[Game]LaunchMode", "steam_launch"));
@@ -396,8 +403,8 @@ public partial class MainWindow : Window
         panel.Children.Add(CreateSettingsCard(_appConfig.GetLocalized("Settings:SectionTitle", "窗口标题"), _appConfig.GetLocalized("Settings:SectionTitleDesc", "游戏运行时应用窗口标题设置。"), modifyTitle));
 
         // 配置文件编辑器
-        var openEditor = CreateButton("打开配置文件编辑器", (_, _) => new EditorWindow().ShowDialog());
-        panel.Children.Add(CreateSettingsCard("配置文件", "使用内置编辑器查看和修改 AppConfig.Schale 等配置文件。", "配置文件编辑器", openEditor));
+        var openEditor = CreateButton(_appConfig.GetLocalized("Settings:ConfigFileEditorOpen", "打开配置文件编辑器"), (_, _) => new EditorWindow().ShowDialog());
+        panel.Children.Add(CreateSettingsCard(_appConfig.GetLocalized("Settings:SectionConfigFile", "配置文件"), _appConfig.GetLocalized("Settings:SectionConfigFileDesc", "使用内置编辑器查看和修改 AppConfig.Schale 等配置文件。"), _appConfig.GetLocalized("Settings:ConfigFileEditorLabel", "配置文件编辑器"), openEditor));
 
         // 异常日志
         panel.Children.Add(BuildExceptionLogsCard());
@@ -409,21 +416,43 @@ public partial class MainWindow : Window
         var savePanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 4, 0, 0) };
         savePanel.Children.Add(CreateButton(_appConfig.GetLocalized("Common:Save", "保存设置"), (_, _) =>
         {
-            _appConfig.Set("[Localization]Language", language.SelectedValue?.ToString() ?? "en_US");
-            _appConfig.Set("[App]Theme", themeMode.SelectedValue?.ToString() ?? "system");
-            _appConfig.Set("[Game]LaunchMode", launchMode.SelectedValue?.ToString() ?? "steam_launch");
-            _appConfig.Set("[Game]LauncherPath", launchPath.Text ?? string.Empty);
-            _appConfig.Set("[Updates]CheckForUpdates", (autoCheckUpdates.IsChecked == true).ToString());
-            _appConfig.Set("[Updates]UpdateFrequency", updateFrequency.SelectedValue?.ToString() ?? "startup");
-            _appConfig.Set("[Notifications]Enable", (enableNotifications.IsChecked == true).ToString());
-            _appConfig.Set("[Game]ModifyTitle", (modifyTitle.IsChecked == true).ToString().ToLowerInvariant());
-            _appConfig.Reload();
-            Logger.LogInfo("Configuration reloaded successfully");
-            ApplyHotReloadSettings();
-            ApplyTheme();
-            ApplySidebarLocalization();
-            ShowSettings();
-            StatusText.Text = "设置已保存并立即生效。";
+            void ShowSnack(string title, string message, Wpf.Ui.Controls.ControlAppearance appearance)
+            {
+                new Wpf.Ui.Controls.Snackbar(SettingsSnackbarPresenter)
+                {
+                    Title = title,
+                    Content = message,
+                    Appearance = appearance,
+                    Timeout = TimeSpan.FromSeconds(3)
+                }.Show(true);
+            }
+
+            try
+            {
+                _appConfig.Set("[Localization]Language", language.SelectedValue?.ToString() ?? "en_US");
+                _appConfig.Set("[App]Theme", themeMode.SelectedValue?.ToString() ?? "system");
+                _appConfig.Set("[Game]LaunchMode", launchMode.SelectedValue?.ToString() ?? "steam_launch");
+                _appConfig.Set("[Game]LauncherPath", launchPath.Text ?? string.Empty);
+                _appConfig.Set("[Updates]CheckForUpdates", (autoCheckUpdates.IsChecked == true).ToString());
+                _appConfig.Set("[Updates]UpdateFrequency", updateFrequency.SelectedValue?.ToString() ?? "startup");
+                _appConfig.Set("[Notifications]Enable", (enableNotifications.IsChecked == true).ToString());
+                _appConfig.Set("[Game]ModifyTitle", (modifyTitle.IsChecked == true).ToString().ToLowerInvariant());
+                _appConfig.Set("[App]HighContrast", (highContrast.IsChecked == true).ToString());
+                _appConfig.Reload();
+                Logger.LogInfo("Configuration reloaded successfully");
+                ApplyHotReloadSettings();
+                ApplyTheme();
+                ApplySidebarLocalization();
+                ShowSettings();
+                StatusText.Text = "设置已保存并立即生效。";
+                ShowSnack("设置已保存", "设置已保存并立即生效。", Wpf.Ui.Controls.ControlAppearance.Success);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException("Failed to save settings", ex);
+                StatusText.Text = $"保存设置失败: {ex.Message}";
+                ShowSnack("保存失败", ex.Message, Wpf.Ui.Controls.ControlAppearance.Danger);
+            }
         }, "PrimaryButton"));
         panel.Children.Add(savePanel);
         PageContent.Content = panel;
@@ -878,7 +907,13 @@ public partial class MainWindow : Window
         }
     };
     private Border CreateCard() => new() { Style = (Style)FindResource("CardBorder") };
-    private static TextBlock CreateLabel(string text) => new() { Text = text, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) };
+    private static TextBlock CreateLabel(string text)
+    {
+        var label = new TextBlock { Text = text, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) };
+        // 动态引用 TextBrush：深色/高对比模式下自动适配，避免继承默认黑色
+        label.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+        return label;
+    }
     private Button CreateButton(string content, RoutedEventHandler handler, string? style = null) { var button = new Button { Content = content }; if (style is not null) button.Style = (Style)FindResource(style); button.Click += handler; return button; }
 
     private sealed record OptionItem(string Value, string Text);
@@ -966,7 +1001,9 @@ public partial class MainWindow : Window
                     }
                     else
                     {
-                        itemsPanel.Children.Add(new TextBlock { Text = labelText, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 3) });
+                        var itemLabel = new TextBlock { Text = labelText, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 3) };
+                        itemLabel.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+                        itemsPanel.Children.Add(itemLabel);
                         control = item.Type == "select"
                             ? CreateCombo(item.Options?.Select(o => (o, o)) ?? Array.Empty<(string, string)>(), value)
                             : new TextBox { Text = value, Margin = new Thickness(0, 0, 0, 6) };
@@ -1099,14 +1136,15 @@ public partial class MainWindow : Window
             "light" => false,
             _ => IsSystemDark()
         };
+        var highContrast = GetConfigBool("[App]HighContrast", false);
         var appTheme = isDark ? ApplicationTheme.Dark : ApplicationTheme.Light;
 
         // None backdrop：保持不透明背景，避免 Mica/亚克力与外部 DWM 玻璃叠加导致全透明
         if (ApplicationThemeManager.GetAppTheme() != appTheme)
             ApplicationThemeManager.Apply(appTheme, WindowBackdropType.None, true);
 
-        Logger.LogInfo($"Applying theme: config={theme}, isDark={isDark}");
-        ApplySemanticBrushes(isDark);
+        Logger.LogInfo($"Applying theme: config={theme}, isDark={isDark}, highContrast={highContrast}");
+        ApplySemanticBrushes(isDark, highContrast);
     }
 
     /// <summary>
@@ -1145,9 +1183,26 @@ public partial class MainWindow : Window
     /// 自管语义画刷（不透明，保证任意主题下背景/文字对比度）。
     /// 不再从 Fluent 词典同步——4.x 中部分键不存在（ApplicationPageBackgroundThemeBrush）
     /// 或为半透明叠加色（LayerFillColorAltBrush），会导致深色模式背景永远偏亮。
+    /// 高对比度模式在深浅主题下分别采用纯黑/纯白背景与纯白/纯黑文字。
     /// </summary>
-    private void ApplySemanticBrushes(bool isDark)
+    private void ApplySemanticBrushes(bool isDark, bool highContrast)
     {
+        if (highContrast)
+        {
+            // 高对比度：适用于浅色与深色模式（参照 Windows 高对比度黑/白主题语义）
+            Application.Current.Resources["CanvasBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromRgb(0x00, 0x00, 0x00) : System.Windows.Media.Color.FromRgb(0xFF, 0xFF, 0xFF));
+            Application.Current.Resources["SurfaceBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromRgb(0x00, 0x00, 0x00) : System.Windows.Media.Color.FromRgb(0xFF, 0xFF, 0xFF));
+            Application.Current.Resources["SidebarBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromRgb(0x00, 0x00, 0x00) : System.Windows.Media.Color.FromRgb(0xFF, 0xFF, 0xFF));
+            Application.Current.Resources["BorderBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromRgb(0xFF, 0xFF, 0xFF) : System.Windows.Media.Color.FromRgb(0x00, 0x00, 0x00));
+            Application.Current.Resources["TextBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromRgb(0xFF, 0xFF, 0xFF) : System.Windows.Media.Color.FromRgb(0x00, 0x00, 0x00));
+            Application.Current.Resources["MutedTextBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromRgb(0xFF, 0xFF, 0xFF) : System.Windows.Media.Color.FromRgb(0x00, 0x00, 0x00));
+            Application.Current.Resources["SuccessBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromRgb(0x4C, 0xFF, 0x9E) : System.Windows.Media.Color.FromRgb(0x00, 0x6B, 0x4F));
+            Application.Current.Resources["DangerBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromRgb(0xFF, 0x6B, 0x6B) : System.Windows.Media.Color.FromRgb(0xB0, 0x00, 0x20));
+            Application.Current.Resources["WarningBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromRgb(0xFF, 0xD5, 0x4A) : System.Windows.Media.Color.FromRgb(0x7A, 0x4E, 0x00));
+            Application.Current.Resources["NavHoverBrush"] = new System.Windows.Media.SolidColorBrush(isDark ? System.Windows.Media.Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF) : System.Windows.Media.Color.FromArgb(0x26, 0x00, 0x00, 0x00));
+            return;
+        }
+
         if (isDark)
         {
             Application.Current.Resources["CanvasBrush"] = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x17, 0x18, 0x1A));
