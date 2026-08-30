@@ -34,39 +34,6 @@
             <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI</FontFamily>
             <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
-            <!-- 主按钮：继承 WPF UI 隐式 Button 样式，仅覆盖配色 -->
-            <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                <Setter Property="FontWeight" Value="SemiBold" />
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
-                        <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}" />
-                    </Trigger>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Opacity" Value="0.85" />
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-
-            <!-- 危险按钮 -->
-            <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
-                <Setter Property="FontWeight" Value="SemiBold" />
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Opacity" Value="0.85" />
-                    </Trigger>
-                    <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Opacity" Value="0.7" />
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-
             <!-- 卡片容器 -->
             <Style x:Key="CardBorder" TargetType="Border">
                 <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
@@ -119,7 +86,7 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="RadioButton">
                             <Grid>
-                                <Border x:Name="HoverLayer" CornerRadius="6" Background="{TemplateBinding Background}" />
+                                <Border x:Name="HoverLayer" CornerRadius="6" Background="{TemplateBinding Background}" Opacity="0.7" />
                                 <Rectangle x:Name="Indicator" Width="3" Height="16" RadiusX="1.5" RadiusY="1.5"
                                            Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Left"
                                            VerticalAlignment="Center" Visibility="Collapsed" />
@@ -130,11 +97,41 @@
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter TargetName="HoverLayer" Property="Background" Value="{DynamicResource NavHoverBrush}" />
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="HoverLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="HoverLayer" Storyboard.TargetProperty="Opacity" To="0.7" Duration="0:0:0.12" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
                                 </Trigger>
                                 <Trigger Property="IsChecked" Value="True">
                                     <Setter TargetName="HoverLayer" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
                                     <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
                                     <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Indicator" Storyboard.TargetProperty="Height" To="24" Duration="0:0:0.18" />
+                                                <DoubleAnimation Storyboard.TargetName="HoverLayer" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="Indicator" Storyboard.TargetProperty="Height" To="16" Duration="0:0:0.18" />
+                                                <DoubleAnimation Storyboard.TargetName="HoverLayer" Storyboard.TargetProperty="Opacity" To="0.7" Duration="0:0:0.18" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>

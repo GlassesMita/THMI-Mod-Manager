@@ -11,6 +11,8 @@ using Microsoft.Win32;
 using THMI_Mod_Manager.Models;
 using THMI_Mod_Manager.Services;
 using Wpf.Ui.Appearance;
+using FluentButton = Wpf.Ui.Controls.Button;
+using FluentAppearance = Wpf.Ui.Controls.ControlAppearance;
 using WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType;
 
 namespace THMI_Mod_Manager;
@@ -27,6 +29,8 @@ public partial class MainWindow : Window
     private string _modSortOrder = "name";
     private CancellationTokenSource? _modsRefreshCts;
     private bool _isCheckingUpdates;
+    /// <summary>已打开的异常日志查看器（路径 → 窗口），避免同一日志重复打开多个窗口。</summary>
+    private readonly Dictionary<string, EditorWindow> _exceptionLogViewers = new(StringComparer.OrdinalIgnoreCase);
 
     public MainWindow()
     {
@@ -201,7 +205,7 @@ public partial class MainWindow : Window
             warning.Child = new TextBlock { Text = "未在应用目录找到 Touhou Mystia Izakaya.exe。请将管理器部署到游戏目录，或在设置中配置外部启动程序。", Margin = new Thickness(16), Foreground = (System.Windows.Media.Brush)FindResource("TextBrush"), TextWrapping = TextWrapping.Wrap };
             panel.Children.Add(warning);
         }
-        PageContent.Content = panel;
+        SetPageContent(panel);
         StatusText.Text = "WPF 桌面模式，不启动本地 Web 服务或浏览器。";
     }
 
@@ -225,7 +229,7 @@ public partial class MainWindow : Window
         panel.Children.Add(toolbarCard);
         _modsPanel = new StackPanel { Margin = new Thickness(0, 16, 0, 0) };
         panel.Children.Add(_modsPanel);
-        PageContent.Content = panel;
+        SetPageContent(panel);
         RefreshMods();
     }
 
@@ -385,6 +389,7 @@ public partial class MainWindow : Window
         // 通知（Windows Toast 通知）
         var enableNotifications = new CheckBox { Content = _appConfig.GetLocalized("Notifications:EnableNotifications", "启用 Windows Toast 通知"), IsChecked = GetConfigBool("[Notifications]Enable", false), Margin = new Thickness(0, 0, 0, 8) };
         var testNotification = CreateButton(_appConfig.GetLocalized("Notifications:Test", "发送测试通知"), (_, _) => SendTestNotification());
+        testNotification.Margin = new Thickness(8, 0, 0, 0);
         var notifyRow = new DockPanel();
         DockPanel.SetDock(testNotification, Dock.Right);
         notifyRow.Children.Add(testNotification);
@@ -414,7 +419,7 @@ public partial class MainWindow : Window
 
         // 保存（保存后热重载）
         var savePanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 4, 0, 0) };
-        savePanel.Children.Add(CreateButton(_appConfig.GetLocalized("Common:Save", "保存设置"), (_, _) =>
+        var saveButton = CreateButton(_appConfig.GetLocalized("Common:Save", "保存设置"), (_, _) =>
         {
             void ShowSnack(string title, string message, Wpf.Ui.Controls.ControlAppearance appearance)
             {
@@ -453,9 +458,11 @@ public partial class MainWindow : Window
                 StatusText.Text = $"保存设置失败: {ex.Message}";
                 ShowSnack("保存失败", ex.Message, Wpf.Ui.Controls.ControlAppearance.Danger);
             }
-        }, "PrimaryButton"));
+        }, "PrimaryButton");
+        saveButton.Margin = new Thickness(0);
+        savePanel.Children.Add(saveButton);
         panel.Children.Add(savePanel);
-        PageContent.Content = panel;
+        SetPageContent(panel);
         StatusText.Text = "配置直接写入 AppConfig.Schale。";
     }
 
@@ -465,7 +472,7 @@ public partial class MainWindow : Window
         var logPath = Logger.GetLogFilePath() ?? Path.Combine(AppContext.BaseDirectory, "Logs", "Latest.Log");
         var card = CreateCard();
         card.Child = new TextBox { Text = ReadLogTail(logPath), IsReadOnly = true, TextWrapping = TextWrapping.NoWrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(16), BorderThickness = new Thickness(0), FontFamily = new System.Windows.Media.FontFamily("Cascadia Mono"), FontSize = 12, MinHeight = 420 };
-        PageContent.Content = card;
+        SetPageContent(card);
         StatusText.Text = logPath;
     }
 
@@ -503,7 +510,7 @@ public partial class MainWindow : Window
         var card = CreateCard();
         card.MaxWidth = 720;
         card.Child = new StackPanel { Margin = new Thickness(28), Children = { new TextBlock { Text = "THMI Mod Manager", FontSize = 26, FontWeight = FontWeights.SemiBold, Foreground = (System.Windows.Media.Brush)FindResource("AccentBrush") }, new TextBlock { Text = $"版本 {version}", Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 8, 0, 22) }, new Separator(), new TextBlock { Text = "为 Touhou Mystia Izakaya 提供本地 Mod 管理、启动和配置功能的原生 WPF 桌面客户端。", Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 22, 0, 0) } } };
-        PageContent.Content = card;
+        SetPageContent(card);
         StatusText.Text = "GPL-3.0";
     }
 
@@ -535,7 +542,7 @@ public partial class MainWindow : Window
         content.Children.Add(new Border { Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#E7F3FF")), BorderBrush = (System.Windows.Media.Brush)FindResource("AccentBrush"), BorderThickness = new Thickness(4, 0, 0, 0), Padding = new Thickness(18), Child = new TextBlock { Text = _appConfig.GetLocalized("Explore:InfoText", "我们正在努力构建 Mod 生态系统，请关注后续更新。"), Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#004085")), TextWrapping = TextWrapping.Wrap } });
         card.Child = content;
         panel.Children.Add(card);
-        PageContent.Content = panel;
+        SetPageContent(panel);
         StatusText.Text = "Mod 浏览功能正在开发中。";
     }
 
@@ -551,6 +558,21 @@ public partial class MainWindow : Window
     /// <summary>
     /// 同步侧边栏选中态：仅当用户未直接点击对应导航项时也保证高亮一致。
     /// </summary>
+    private void SetPageContent(object content)
+    {
+        PageContent.BeginAnimation(UIElement.OpacityProperty, null);
+        PageContent.Opacity = 0;
+        PageContent.Content = content;
+
+        var fadeIn = new System.Windows.Media.Animation.DoubleAnimation
+        {
+            To = 1,
+            Duration = TimeSpan.FromMilliseconds(180),
+            EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+        };
+        PageContent.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+    }
+
     private static void ActivateNav(RadioButton button) => button.IsChecked = true;
 
 
@@ -674,7 +696,7 @@ public partial class MainWindow : Window
         card.Child = body; card.Margin = new Thickness(0, 0, 0, 16); return card;
     }
 
-    private Border CreateSettingsCard(string title, string description, string firstLabel, Control firstControl, Button browseButton)
+    private Border CreateSettingsCard(string title, string description, string firstLabel, Control firstControl, FluentButton browseButton)
     {
         var card = CreateCard();
         var body = new StackPanel { Margin = new Thickness(20) };
@@ -683,12 +705,13 @@ public partial class MainWindow : Window
         body.Children.Add(CreateLabel(firstLabel));
         var row = new DockPanel();
         DockPanel.SetDock(browseButton, Dock.Right);
+        browseButton.Margin = new Thickness(8, 0, 0, 0);
         row.Children.Add(browseButton); row.Children.Add(firstControl);
         body.Children.Add(row);
         card.Child = body; card.Margin = new Thickness(0, 0, 0, 16); return card;
     }
 
-    private Border CreateSettingsCard(string title, string description, string firstLabel, Control firstControl, string secondLabel, Control secondControl, Button browseButton)
+    private Border CreateSettingsCard(string title, string description, string firstLabel, Control firstControl, string secondLabel, Control secondControl, FluentButton browseButton)
     {
         var card = CreateSettingsCard(title, description, firstLabel, firstControl, secondLabel, secondControl);
         if (card.Child is StackPanel body)
@@ -696,6 +719,7 @@ public partial class MainWindow : Window
             body.Children.Remove(secondControl);
             var row = new DockPanel();
             DockPanel.SetDock(browseButton, Dock.Right);
+            browseButton.Margin = new Thickness(8, 0, 0, 0);
             row.Children.Add(browseButton); row.Children.Add(secondControl);
             body.Children.Add(row);
         }
@@ -754,6 +778,8 @@ public partial class MainWindow : Window
         var toolbar = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
         DockPanel.SetDock(deleteAllButton, Dock.Right);
         DockPanel.SetDock(refreshButton, Dock.Right);
+        deleteAllButton.Margin = new Thickness(0);
+        refreshButton.Margin = new Thickness(8, 0, 8, 0);
         toolbar.Children.Add(deleteAllButton);
         toolbar.Children.Add(refreshButton);
         toolbar.Children.Add(countText);
@@ -799,7 +825,7 @@ public partial class MainWindow : Window
         info.Children.Add(new TextBlock { Text = FormatLogTime(path), FontWeight = FontWeights.SemiBold });
         info.Children.Add(new TextBlock { Text = Path.GetFileName(path), Style = (Style)FindResource("MutedText"), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis });
 
-        var openButton = CreateButton(_appConfig.GetLocalized("Settings:ExceptionLogsOpen", "打开"), (_, _) => new EditorWindow(path, readOnly: true).ShowDialog(), "PrimaryButton");
+        var openButton = CreateButton(_appConfig.GetLocalized("Settings:ExceptionLogsOpen", "打开"), (_, _) => OpenExceptionLogViewer(path), "PrimaryButton");
         var copyButton = CreateButton(_appConfig.GetLocalized("Settings:ExceptionLogsCopy", "复制"), (_, _) => CopyExceptionLog(path));
         var deleteButton = CreateButton(_appConfig.GetLocalized("Settings:ExceptionLogsDelete", "删除"), (_, _) => DeleteExceptionLog(path, refresh), "DangerButton");
 
@@ -815,6 +841,32 @@ public partial class MainWindow : Window
         row.Children.Add(copyButton);
         row.Children.Add(deleteButton);
         return row;
+    }
+
+    /// <summary>
+    /// 以非模态方式打开异常日志查看器，主窗口可继续交互。
+    /// 同一日志只保留一个查看器窗口：已存在时激活并前置，而不是再开一个。
+    /// </summary>
+    private void OpenExceptionLogViewer(string path)
+    {
+        if (_exceptionLogViewers.TryGetValue(path, out var existing))
+        {
+            // 窗口可能已被用户关闭但尚未从字典移除（或正在关闭中）
+            if (existing.IsLoaded && !existing.IsVisible)
+                existing.Show();
+            if (existing.WindowState == WindowState.Minimized)
+                existing.WindowState = WindowState.Normal;
+            existing.Activate();
+            return;
+        }
+
+        var viewer = new EditorWindow(path, readOnly: true);
+        _exceptionLogViewers[path] = viewer;
+        viewer.Closed += (_, _) => _exceptionLogViewers.Remove(path);
+        // 非模态且不设置 Owner：Owned 窗口在 Z 序上永远位于所有者之上，
+        // 会导致查看器始终盖住主窗口、无法把主窗口带到前面交互。
+        // 独立顶层窗口允许主窗口与查看器自由切换前后。
+        viewer.Show();
     }
 
     /// <summary>从 KernelPanic_yyyyMMdd_HHmmss.log 文件名解析时间，失败则回退文件修改时间。</summary>
@@ -914,7 +966,22 @@ public partial class MainWindow : Window
         label.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
         return label;
     }
-    private Button CreateButton(string content, RoutedEventHandler handler, string? style = null) { var button = new Button { Content = content }; if (style is not null) button.Style = (Style)FindResource(style); button.Click += handler; return button; }
+    private FluentButton CreateButton(string content, RoutedEventHandler handler, string? style = null)
+    {
+        var button = new FluentButton
+        {
+            Content = content,
+            Margin = new Thickness(0, 0, 8, 0),
+            Appearance = style switch
+            {
+                "PrimaryButton" => FluentAppearance.Primary,
+                "DangerButton" => FluentAppearance.Danger,
+                _ => FluentAppearance.Secondary,
+            },
+        };
+        button.Click += handler;
+        return button;
+    }
 
     private sealed record OptionItem(string Value, string Text);
 
@@ -969,6 +1036,7 @@ public partial class MainWindow : Window
         body.Children.Add(CreateLabel(_appConfig.GetLocalized("Settings:BepInExConfigPath", "配置文件路径")));
         var pathRow = new DockPanel();
         DockPanel.SetDock(browseBepInEx, Dock.Right);
+        browseBepInEx.Margin = new Thickness(8, 0, 0, 0);
         pathRow.Children.Add(browseBepInEx);
         pathRow.Children.Add(bepInExPath);
         body.Children.Add(pathRow);
@@ -1124,6 +1192,7 @@ public partial class MainWindow : Window
             Application.Current.Resources["AccentSoftBrush"] = new System.Windows.Media.SolidColorBrush(
                 System.Windows.Media.Color.FromArgb(0x1F, accent.R, accent.G, accent.B));
         }
+        ApplyAccent();
     }
 
     private void ApplyTheme()
@@ -1145,6 +1214,14 @@ public partial class MainWindow : Window
 
         Logger.LogInfo($"Applying theme: config={theme}, isDark={isDark}, highContrast={highContrast}");
         ApplySemanticBrushes(isDark, highContrast);
+        ApplyAccent();
+    }
+
+    /// <summary>将 Fluent accent 资源同步为项目主题色，使 Primary 按钮等 Fluent 控件保持品牌色。</summary>
+    private void ApplyAccent()
+    {
+        if (TryParseColor(_appConfig.Get("[App]ThemeColor", "#c670ff"), out var accent))
+            ApplicationAccentColorManager.Apply(accent, ApplicationThemeManager.GetAppTheme());
     }
 
     /// <summary>
