@@ -20,7 +20,7 @@
                 <Border DockPanel.Dock="Bottom" Padding="16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="4,0,0,8">
-                            <Ellipse Width="9" Height="9" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
+                            <Ellipse x:Name="SteamStatusDot" Width="9" Height="9" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
                             <TextBlock x:Name="SteamStatusText" Text="正在检查 Steam..." Foreground="{DynamicResource MutedTextBrush}" FontSize="12" VerticalAlignment="Center" />
                         </StackPanel>
                         <ui:Button x:Name="SidebarLaunchButton" Content="启动游戏" Appearance="Primary" Click="SidebarLaunchButton_Click" HorizontalAlignment="Stretch" Margin="0,4,0,0" />

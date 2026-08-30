@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace THMI_Mod_Manager.Services;
@@ -19,6 +20,87 @@ public sealed class GameLauncherService
     }
 
     public bool IsRunning => Process.GetProcessesByName(ProcessName).Length > 0;
+
+    /// <summary>Steam 运行状态枚举：区分未运行 / 已运行（签名验证通过）/ 进程存在但签名异常。</summary>
+    public enum SteamStatus
+    {
+        NotRunning,
+        Running,
+        SignatureMismatch,
+    }
+
+    /// <summary>
+    /// 检测 Steam 客户端是否正在运行，并校验主进程的数字签名是否由 Valve Corp. 签发。
+    /// Steam 主进程名为 steam.exe；其 Web 助手 steamwebhelper.exe 也常驻运行，
+    /// 但仅凭 steamwebhelper.exe 无法区分客户端是否真正启动（可能残留后台进程），
+    /// 因此优先以 steam.exe 为准。两者都无则判定 Steam 未运行。
+    /// </summary>
+    public static SteamStatus GetSteamStatus()
+    {
+        try
+        {
+            Process? steam = null;
+            var found = false;
+            foreach (var name in new[] { "steam", "steamwebhelper" })
+            {
+                var processes = Process.GetProcessesByName(name);
+                if (processes.Length > 0)
+                {
+                    steam = processes[0];
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found || steam is null)
+                return SteamStatus.NotRunning;
+
+            try
+            {
+                var isValveSigned = IsSignedByValve(steam.MainModule?.FileName);
+                return isValveSigned ? SteamStatus.Running : SteamStatus.SignatureMismatch;
+            }
+            finally
+            {
+                steam.Dispose();
+            }
+        }
+        catch
+        {
+            // 进程枚举失败（权限/系统异常）时保守判定为未运行，避免抛出打断 UI
+            return SteamStatus.NotRunning;
+        }
+    }
+
+    /// <summary>
+    /// 校验指定可执行文件的 Authenticode 签名是否由 Valve Corp. 签发。
+    /// 使用 X509Certificate2 读取签名者，比对 Subject 中的组织字段。
+    /// </summary>
+    private static bool IsSignedByValve(string? executablePath)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath))
+                return false;
+
+            using var cert = X509Certificate2.CreateFromSignedFile(executablePath);
+            if (cert is null)
+                return false;
+
+            var subject = cert.Subject;
+            return subject.Contains("Valve", StringComparison.OrdinalIgnoreCase)
+                || subject.Contains("Valve Corp.", StringComparison.OrdinalIgnoreCase)
+                || subject.Contains("Valve Corporation", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            // 读取签名失败（未签名/签名损坏/权限不足）时视为签名校验不通过
+            return false;
+        }
+    }
+
+    /// <summary>兼容旧调用点：是否检测到 Steam 进程（不校验签名）。</summary>
+    public static bool IsSteamRunning() => GetSteamStatus() != SteamStatus.NotRunning;
 
     public string Launch()
     {

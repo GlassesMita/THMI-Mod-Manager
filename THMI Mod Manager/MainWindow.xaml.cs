@@ -31,6 +31,8 @@ public partial class MainWindow : Window
     private bool _isCheckingUpdates;
     /// <summary>已打开的异常日志查看器（路径 → 窗口），避免同一日志重复打开多个窗口。</summary>
     private readonly Dictionary<string, EditorWindow> _exceptionLogViewers = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>周期刷新 Steam 运行状态，保持侧边栏指示灯与文本实时准确。</summary>
+    private System.Windows.Threading.DispatcherTimer _steamStatusTimer = null!;
 
     public MainWindow()
     {
@@ -46,6 +48,36 @@ public partial class MainWindow : Window
         ApplySidebarLocalization();
         new SystemInfoLogger(_appConfig, AppContext.BaseDirectory).LogApplicationStartup();
         ShowHome();
+        InitializeSteamStatus();
+    }
+
+    /// <summary>初始化 Steam 状态检测：立即检查一次，随后每 5 秒定时刷新。</summary>
+    private void InitializeSteamStatus()
+    {
+        _steamStatusTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(5),
+        };
+        _steamStatusTimer.Tick += (_, _) => RefreshSteamStatus();
+        _steamStatusTimer.Start();
+        RefreshSteamStatus();
+    }
+
+    /// <summary>检测 Steam 是否运行并更新侧边栏指示灯（颜色）与状态文本。</summary>
+    private void RefreshSteamStatus()
+    {
+        var status = GameLauncherService.GetSteamStatus();
+        var (text, brush, dotBrush) = status switch
+        {
+            GameLauncherService.SteamStatus.Running
+                => (_appConfig.GetLocalized("Buttons:Steam:Running", "Steam 运行中"), "SuccessBrush", "SuccessBrush"),
+            GameLauncherService.SteamStatus.SignatureMismatch
+                => (_appConfig.GetLocalized("Buttons:Steam:SignatureMismatch", "Steam 签名异常"), "WarningBrush", "WarningBrush"),
+            _ => (_appConfig.GetLocalized("Buttons:Steam:NotRunning", "Steam 未运行"), "MutedTextBrush", "MutedTextBrush"),
+        };
+        SteamStatusText.Text = text;
+        SteamStatusText.Foreground = (System.Windows.Media.Brush)FindResource(brush);
+        SteamStatusDot.Fill = (System.Windows.Media.Brush)FindResource(dotBrush);
     }
 
     private void ShowHome_Click(object sender, RoutedEventArgs eventArgs) => ShowHome();
@@ -1318,7 +1350,9 @@ public partial class MainWindow : Window
         NavSettingsText.Text = _appConfig.GetLocalized("Sidebar:Settings", "设置");
         NavAboutText.Text = _appConfig.GetLocalized("Sidebar:About", "关于");
         SidebarLaunchButton.Content = _appConfig.GetLocalized("Buttons:Launch", "启动");
-        SteamStatusText.Text = _appConfig.GetLocalized("Buttons:Steam:Checking", "检查中...");
+        // Steam 状态文本由 RefreshSteamStatus 维护（含运行/未运行两种状态），
+        // 语言切换后重新刷新以应用新语言；指示灯颜色一并更新。
+        RefreshSteamStatus();
     }
 
     private static bool TryParseColor(string? hex, out System.Windows.Media.Color color)
