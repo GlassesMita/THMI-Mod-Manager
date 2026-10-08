@@ -5,8 +5,8 @@ namespace THMI_Mod_Manager.Services;
 internal static class ModPackageSafety
 {
     internal const long MaxDownloadBytes = 200L * 1024 * 1024;
-    private const int MaxArchiveEntries = 500;
-    private const long MaxArchiveEntryBytes = 100L * 1024 * 1024;
+    internal const int MaxArchiveEntries = 500;
+    internal const long MaxArchiveEntryBytes = 100L * 1024 * 1024;
     private const long MaxExtractedBytes = 500L * 1024 * 1024;
 
     internal static bool IsSafeFileName(string? value)
@@ -29,7 +29,7 @@ internal static class ModPackageSafety
 
     internal static void ExtractZipSafely(string archivePath, string destinationPath)
     {
-        using var archive = ZipFile.OpenRead(archivePath);
+        using var archive = OpenReadWithRetry(archivePath);
         if (archive.Entries.Count > MaxArchiveEntries)
             throw new InvalidDataException($"Archive contains more than {MaxArchiveEntries} entries.");
 
@@ -56,6 +56,35 @@ internal static class ModPackageSafety
             Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
             entry.ExtractToFile(targetPath, true);
         }
+    }
+
+    /// <summary>
+    /// 打开 zip 包（只读），对共享冲突做退避重试：
+    /// 文件可能被同进程其他句柄或外部程序（如杀毒软件）短暂独占，
+    /// 立即打开会抛 "being used by another process"（HRESULT 0x80070020/21）。
+    /// </summary>
+    internal static ZipArchive OpenReadWithRetry(string archivePath, int maxAttempts = 5, int delayMilliseconds = 1000)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return ZipFile.OpenRead(archivePath);
+            }
+            catch (IOException ex) when (IsFileLockException(ex) && attempt < maxAttempts)
+            {
+                Logger.LogWarning($"Archive is locked by another handle, retrying in {delayMilliseconds} ms: {archivePath}");
+                Thread.Sleep(delayMilliseconds);
+            }
+        }
+    }
+
+    /// <summary>Windows 共享冲突（ERROR_SHARING_VIOLATION / ERROR_LOCK_VIOLATION）。</summary>
+    private static bool IsFileLockException(IOException ex)
+    {
+        const int sharingViolation = unchecked((int)0x80070020);
+        const int lockViolation = unchecked((int)0x80070021);
+        return ex.HResult == sharingViolation || ex.HResult == lockViolation;
     }
 
     internal static bool IsPortableExecutable(string filePath)

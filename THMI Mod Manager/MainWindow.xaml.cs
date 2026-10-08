@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -25,10 +26,23 @@ public partial class MainWindow : Window
     private readonly ModService _modService;
     private readonly ModUpdateService _modUpdateService;
     private readonly GameLauncherService _launcher;
+    private readonly BepInExService _bepInExService;
     private StackPanel? _modsPanel;
     private string _modSortOrder = "name";
     private CancellationTokenSource? _modsRefreshCts;
     private bool _isCheckingUpdates;
+    /// <summary>BepInEx 安装任务进行中标记，防止重复下载安装。</summary>
+    private bool _isInstallingBepInEx;
+    /// <summary>启动检测的 BepInEx 缺失提示每次会话最多弹一次，避免反复打扰。</summary>
+    private bool _isBepInExPromptShown;
+    /// <summary>BepInEx 引导弹窗打开中标记：ContentDialog 重复 ShowAsync 会抛异常，需防止并发。</summary>
+    private bool _isBepInExDialogOpen;
+    /// <summary>BepInEx 安装进度弹窗及其内部控件：检测/下载/安装全程展示，完成或出错前不可关闭。</summary>
+    private Wpf.Ui.Controls.ContentDialog? _bepInExProgressDialog;
+    private Wpf.Ui.Controls.ProgressRing? _bepInExProgressRing;
+    /// <summary>原生 ProgressBar（WPF-UI 4.3.0 仅提供隐式样式，无独立控件类）。</summary>
+    private System.Windows.Controls.ProgressBar? _bepInExProgressBar;
+    private TextBlock? _bepInExProgressStatus;
     /// <summary>已打开的异常日志查看器（路径 → 窗口），避免同一日志重复打开多个窗口。</summary>
     private readonly Dictionary<string, EditorWindow> _exceptionLogViewers = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>周期刷新 Steam 运行状态，保持侧边栏指示灯与文本实时准确。</summary>
@@ -40,6 +54,7 @@ public partial class MainWindow : Window
         _modService = new ModService(_appConfig);
         _modUpdateService = new ModUpdateService(_appConfig, new HttpClient());
         _launcher = new GameLauncherService(_appConfig, _sessionTime);
+        _bepInExService = new BepInExService(_appConfig, new HttpClient());
         // 自管主题：不使用 SystemThemeWatcher —— 其首次 Watch 会把主题强制切到系统主题，
         // 并在系统广播主题消息时再次覆盖，导致固定 light/dark 模式在重启后被污染为深色。
         // 改为监听系统主题变化，仅在 system 模式下重算主题；固定模式完全不受系统干扰。
@@ -49,6 +64,8 @@ public partial class MainWindow : Window
         new SystemInfoLogger(_appConfig, AppContext.BaseDirectory).LogApplicationStartup();
         ShowHome();
         InitializeSteamStatus();
+        // 窗口加载完成后再探测 BepInEx：ContentDialog 依赖已加载的 DialogHost
+        Loaded += (_, _) => _ = RunBepInExStartupCheckAsync();
     }
 
     /// <summary>初始化 Steam 状态检测：立即检查一次，随后每 5 秒定时刷新。</summary>
@@ -83,6 +100,286 @@ public partial class MainWindow : Window
     private void ShowHome_Click(object sender, RoutedEventArgs eventArgs) => ShowHome();
     private void ShowMods_Click(object sender, RoutedEventArgs eventArgs) => ShowMods();
     private void ShowSettings_Click(object sender, RoutedEventArgs eventArgs) => ShowSettings();
+
+    /// <summary>
+    /// 启动时后台探测 BepInEx IL2CPP 与 ModInjector；
+    /// 缺失时弹窗引导下载最新版本（每次会话最多提示一次，可在设置中关闭自动检测）。
+    /// </summary>
+    private async Task RunBepInExStartupCheckAsync()
+    {
+        if (!GetConfigBool("[BepInEx]AutoCheck", true))
+            return;
+
+        try
+        {
+            var detection = await Task.Run(_bepInExService.Detect);
+            if (detection.State == BepInExInstallState.Complete)
+            {
+                Logger.LogInfo($"BepInEx IL2CPP detected: {detection.InstalledVersion ?? "unknown version"} ({detection.Architecture})");
+                return;
+            }
+
+            // await 后已回到 UI 线程，可直接弹窗
+            await ShowBepInExInstallDialog(detection, onlyOnce: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogException(ex, "BepInEx startup check failed");
+        }
+    }
+
+    /// <summary>
+    /// BepInEx IL2CPP 缺失 / ModInjector 缺失时弹窗引导下载安装。
+    /// onlyOnce 为 true 时（启动自动检测）每次会话最多提示一次；用户从卡片手动触发时为 false。
+    /// </summary>
+    private async Task ShowBepInExInstallDialog(BepInExDetectionResult detection, bool onlyOnce)
+    {
+        // 已完整安装时无引导意义（该弹窗仅服务于缺失/缺 ModInjector 两种状态）
+        if (detection.State == BepInExInstallState.Complete)
+            return;
+
+        if (_isBepInExDialogOpen)
+            return;
+
+        if (onlyOnce)
+        {
+            if (_isBepInExPromptShown)
+                return;
+            _isBepInExPromptShown = true;
+        }
+
+        var (title, message) = detection.State == BepInExInstallState.InjectorMissing
+            ? (_appConfig.GetLocalized("Settings:BepInExDialogInjectorTitle", "缺少 ModInjector"),
+               _appConfig.GetLocalized("Settings:BepInExDialogInjectorMessage", "已检测到 BepInEx IL2CPP，但缺少 ModInjector（winhttp.dll 或 doorstop_config.ini），Plugin DLL 将无法被注入游戏。是否下载最新版本并补全？"))
+            : (_appConfig.GetLocalized("Settings:BepInExDialogMissingTitle", "未检测到 BepInEx IL2CPP"),
+               _appConfig.GetLocalized("Settings:BepInExDialogMissingMessage", "未检测到 BepInEx IL2CPP 运行环境，Plugin DLL 将无法被注入游戏，已安装的 Mod 也不会生效。是否自动下载并安装最新版本？"));
+
+        var dialog = new Wpf.Ui.Controls.ContentDialog(RootDialogHost)
+        {
+            Title = title,
+            Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 460 },
+            PrimaryButtonText = _appConfig.GetLocalized("Settings:BepInExDialogDownload", "下载最新版本"),
+            SecondaryButtonText = _appConfig.GetLocalized("Settings:BepInExDialogOpenPage", "打开下载页"),
+            CloseButtonText = _appConfig.GetLocalized("Settings:BepInExDialogLater", "稍后再说"),
+            DefaultButton = Wpf.Ui.Controls.ContentDialogButton.Primary,
+        };
+
+        _isBepInExDialogOpen = true;
+        try
+        {
+            var result = await dialog.ShowAsync();
+            if (result == Wpf.Ui.Controls.ContentDialogResult.Primary)
+                await InstallBepInExAsync();
+            else if (result == Wpf.Ui.Controls.ContentDialogResult.Secondary)
+                OpenBepInExBuildsPage();
+        }
+        finally
+        {
+            _isBepInExDialogOpen = false;
+        }
+    }
+
+    /// <summary>
+    /// 获取最新版 BepInEx IL2CPP 构建并安装到游戏根目录。
+    /// 检测/下载/安装全程展示带 Loading 图标与 ProgressBar 的进度弹窗，
+    /// 弹窗无按钮且无 ESC/点击遮罩关闭途径，仅在安装成功或出错时关闭。
+    /// </summary>
+    private async Task InstallBepInExAsync()
+    {
+        if (_isInstallingBepInEx)
+            return;
+
+        _isInstallingBepInEx = true;
+        ShowBepInExProgressDialog();
+        try
+        {
+            var progress = new Progress<BepInExInstallProgress>(UpdateBepInExProgress);
+            UpdateBepInExProgress(new BepInExInstallProgress(BepInExInstallPhase.Checking, 0, 0));
+
+            var detection = await Task.Run(_bepInExService.Detect);
+            var release = await _bepInExService.GetLatestReleaseAsync(detection.Architecture);
+            if (release is null)
+            {
+                CloseBepInExProgressDialog();
+                StatusText.Text = _appConfig.GetLocalized("Settings:BepInExInstallNoRelease", "未能获取 BepInEx IL2CPP 最新版本信息，请稍后重试或手动下载。");
+                OpenBepInExBuildsPage();
+                return;
+            }
+
+            // 已安装且构建号一致：跳过 34MB 的重复下载（安装版本含完整 commit 哈希，按 be.NNNN 构建号比较）
+            var installedBuild = ParseBepInExBuildNumber(detection.InstalledVersion);
+            if (detection.State == BepInExInstallState.Complete && installedBuild is not null && installedBuild == ParseBepInExBuildNumber(release.Version))
+            {
+                CloseBepInExProgressDialog();
+                var upToDateMessage = string.Format(_appConfig.GetLocalized("Settings:BepInExUpToDate", "BepInEx IL2CPP 已是最新构建（{0}）。"), detection.InstalledVersion);
+                StatusText.Text = upToDateMessage;
+                ShowInWindowToast(_appConfig.GetLocalized("Settings:BepInExRuntimeTitle", "BepInEx 运行环境"), upToDateMessage);
+                return;
+            }
+
+            var version = await Task.Run(() => _bepInExService.DownloadAndInstallAsync(release, progress));
+            CloseBepInExProgressDialog();
+            var successMessage = string.Format(_appConfig.GetLocalized("Settings:BepInExInstallSuccess", "BepInEx IL2CPP 安装成功：{0}"), version);
+            StatusText.Text = successMessage;
+            ShowInWindowToast(_appConfig.GetLocalized("Settings:BepInExRuntimeTitle", "BepInEx 运行环境"), successMessage);
+        }
+        catch (Exception ex)
+        {
+            CloseBepInExProgressDialog();
+            Logger.LogException(ex, "BepInEx install failed");
+            StatusText.Text = string.Format(_appConfig.GetLocalized("Settings:BepInExInstallFailed", "BepInEx 安装失败：{0}"), ex.Message);
+            MessageBox.Show(this, string.Format(_appConfig.GetLocalized("Settings:BepInExInstallFailed", "BepInEx 安装失败：{0}"), ex.Message),
+                _appConfig.GetLocalized("Settings:BepInExRuntimeTitle", "BepInEx 运行环境"), MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            _isInstallingBepInEx = false;
+            RefreshCurrentPageForBepInEx();
+        }
+    }
+
+    /// <summary>
+    /// 打开 BepInEx 安装进度弹窗：Loading 图标 + ProgressBar。
+    /// IsFooterVisible=false 隐藏全部按钮；WPF-UI ContentDialog 无 ESC/点击遮罩关闭途径，
+    /// 因此弹窗只能由 CloseBepInExProgressDialog 的 Hide 调用关闭。
+    /// </summary>
+    private void ShowBepInExProgressDialog()
+    {
+        if (_bepInExProgressDialog is not null)
+            return;
+
+        _bepInExProgressRing = new Wpf.Ui.Controls.ProgressRing { Width = 30, Height = 30, IsIndeterminate = true };
+        _bepInExProgressStatus = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 0, 0), TextWrapping = TextWrapping.Wrap };
+        _bepInExProgressStatus.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+        var header = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+        header.Children.Add(_bepInExProgressRing);
+        header.Children.Add(_bepInExProgressStatus);
+
+        _bepInExProgressBar = new System.Windows.Controls.ProgressBar { Minimum = 0, Maximum = 100, IsIndeterminate = true, Margin = new Thickness(0, 20, 0, 0) };
+
+        var body = new StackPanel { MinWidth = 360 };
+        body.Children.Add(header);
+        body.Children.Add(_bepInExProgressBar);
+
+        var dialog = new Wpf.Ui.Controls.ContentDialog(RootDialogHost)
+        {
+            Title = _appConfig.GetLocalized("Settings:BepInExInstallProgressTitle", "正在安装 BepInEx IL2CPP"),
+            Content = body,
+            IsFooterVisible = false,
+        };
+        _bepInExProgressDialog = dialog;
+        _ = dialog.ShowAsync();
+    }
+
+    /// <summary>按阶段更新进度弹窗：Checking/Extracting 为不定态，Downloading 显示百分比与字节数。</summary>
+    private void UpdateBepInExProgress(BepInExInstallProgress progress)
+    {
+        if (_bepInExProgressDialog is null || _bepInExProgressBar is null || _bepInExProgressStatus is null)
+            return;
+
+        switch (progress.Phase)
+        {
+            case BepInExInstallPhase.Downloading when progress.TotalBytes > 0:
+                _bepInExProgressBar.IsIndeterminate = false;
+                _bepInExProgressBar.Value = progress.BytesDownloaded * 100d / progress.TotalBytes;
+                _bepInExProgressStatus.Text = string.Format(
+                    _appConfig.GetLocalized("Settings:BepInExInstallDownloadingPercent", "正在下载 {0}%（{1} / {2}）"),
+                    Math.Floor(progress.BytesDownloaded * 100d / progress.TotalBytes),
+                    FormatMegabytes(progress.BytesDownloaded),
+                    FormatMegabytes(progress.TotalBytes));
+                break;
+            case BepInExInstallPhase.Downloading:
+                _bepInExProgressBar.IsIndeterminate = true;
+                _bepInExProgressStatus.Text = string.Format(
+                    _appConfig.GetLocalized("Settings:BepInExInstallDownloadingSize", "已下载 {0}"),
+                    FormatMegabytes(progress.BytesDownloaded));
+                break;
+            case BepInExInstallPhase.Extracting:
+                _bepInExProgressBar.IsIndeterminate = true;
+                _bepInExProgressStatus.Text = _appConfig.GetLocalized("Settings:BepInExInstallExtracting", "正在安装 BepInEx IL2CPP...");
+                break;
+            case BepInExInstallPhase.Checking:
+                _bepInExProgressBar.IsIndeterminate = true;
+                _bepInExProgressStatus.Text = _appConfig.GetLocalized("Settings:BepInExInstallChecking", "正在获取 BepInEx IL2CPP 最新版本...");
+                break;
+        }
+    }
+
+    /// <summary>关闭并释放进度弹窗（Hide 会让 ShowAsync 以 None 完成）。</summary>
+    private void CloseBepInExProgressDialog()
+    {
+        _bepInExProgressDialog?.Hide(Wpf.Ui.Controls.ContentDialogResult.None);
+        _bepInExProgressDialog = null;
+        _bepInExProgressRing = null;
+        _bepInExProgressBar = null;
+        _bepInExProgressStatus = null;
+    }
+
+    /// <summary>窗体内 Toast：挂在窗口级 SnackbarPresenter 上，任意页面可见（区别于 Windows 系统级 Toast）。</summary>
+    private void ShowInWindowToast(string title, string message, Wpf.Ui.Controls.ControlAppearance appearance = Wpf.Ui.Controls.ControlAppearance.Success)
+    {
+        new Wpf.Ui.Controls.Snackbar(SettingsSnackbarPresenter)
+        {
+            Title = title,
+            Content = message,
+            Appearance = appearance,
+            Timeout = TimeSpan.FromSeconds(4)
+        }.Show(true);
+    }
+
+    private static string FormatMegabytes(long bytes) => $"{bytes / 1024d / 1024d:0.0} MB";
+
+    /// <summary>从 BepInEx 版本字符串（如 6.0.0-be.788+5b766a3）中提取构建号。</summary>
+    private static string? ParseBepInExBuildNumber(string? version)
+    {
+        if (string.IsNullOrEmpty(version))
+            return null;
+        var match = Regex.Match(version, @"be\.(\d+)", RegexOptions.IgnoreCase);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    /// <summary>安装完成后刷新当前页面，使主页/模组页/设置页的 BepInEx 状态提示立即更新。</summary>
+    private void RefreshCurrentPageForBepInEx()
+    {
+        if (NavHomeRadio.IsChecked == true) ShowHome();
+        else if (NavModsRadio.IsChecked == true) ShowMods();
+        else if (NavSettingsRadio.IsChecked == true) ShowSettings();
+    }
+
+    private void OpenBepInExBuildsPage()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(BepInExService.BuildsPageUrl) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogException(ex, "Failed to open BepInEx builds page");
+            StatusText.Text = ex.Message;
+        }
+    }
+
+    /// <summary>BepInEx 未就绪时的警告卡片（主页 / 模组页复用），说明缺少 ModInjector 时 Plugin DLL 无法注入。</summary>
+    private Border BuildBepInExWarningCard(BepInExDetectionResult detection)
+    {
+        var message = detection.State == BepInExInstallState.InjectorMissing
+            ? _appConfig.GetLocalized("Settings:BepInExInjectorWarning", "已检测到 BepInEx IL2CPP，但缺少 ModInjector（winhttp.dll 或 doorstop_config.ini），Plugin DLL 无法被注入游戏。")
+            : _appConfig.GetLocalized("Settings:BepInExMissingWarning", "未检测到 BepInEx IL2CPP 运行环境。缺少它时无法向游戏注入 Plugin DLL，已安装的 Mod 也不会生效。");
+
+        var card = CreateCard();
+        card.Margin = new Thickness(0, 16, 0, 0);
+        card.BorderBrush = (System.Windows.Media.Brush)FindResource("WarningBrush");
+        var body = new StackPanel();
+        body.Children.Add(new TextBlock { Text = message, Margin = new Thickness(16, 16, 16, 12), TextWrapping = TextWrapping.Wrap, Foreground = (System.Windows.Media.Brush)FindResource("TextBrush") });
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(16, 0, 16, 16) };
+        var downloadButton = CreateButton(_appConfig.GetLocalized("Settings:BepInExDialogDownload", "下载最新版本"), async (_, _) => await InstallBepInExAsync(), "PrimaryButton");
+        downloadButton.Margin = new Thickness(0, 0, 8, 0);
+        actions.Children.Add(downloadButton);
+        actions.Children.Add(CreateButton(_appConfig.GetLocalized("Settings:BepInExDialogOpenPage", "打开下载页"), (_, _) => OpenBepInExBuildsPage()));
+        body.Children.Add(actions);
+        card.Child = body;
+        return card;
+    }
 
     /// <summary>
     /// 右键设置按钮：弹出 WinUI 3 风格输入框（ContentDialog）
@@ -237,8 +534,13 @@ public partial class MainWindow : Window
             warning.Child = new TextBlock { Text = "未在应用目录找到 Touhou Mystia Izakaya.exe。请将管理器部署到游戏目录，或在设置中配置外部启动程序。", Margin = new Thickness(16), Foreground = (System.Windows.Media.Brush)FindResource("TextBrush"), TextWrapping = TextWrapping.Wrap };
             panel.Children.Add(warning);
         }
+
+        var bepInExDetection = _bepInExService.Detect();
+        if (bepInExDetection.State != BepInExInstallState.Complete)
+            panel.Children.Add(BuildBepInExWarningCard(bepInExDetection));
+
         SetPageContent(panel);
-        StatusText.Text = "WPF 桌面模式，不启动本地 Web 服务或浏览器。";
+        StatusText.Text = "就绪。";
     }
 
     private void ShowMods()
@@ -259,6 +561,12 @@ public partial class MainWindow : Window
         toolbar.Children.Add(new TextBlock { Text = "每个 Mod 均可直接启用、禁用或删除。", Style = (Style)FindResource("MutedText"), VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right });
         toolbarCard.Child = toolbar;
         panel.Children.Add(toolbarCard);
+
+        // BepInEx IL2CPP / ModInjector 缺失时，此页安装的 Plugin DLL 无法注入游戏，置顶提示
+        var bepInExDetection = _bepInExService.Detect();
+        if (bepInExDetection.State != BepInExInstallState.Complete)
+            panel.Children.Add(BuildBepInExWarningCard(bepInExDetection));
+
         _modsPanel = new StackPanel { Margin = new Thickness(0, 16, 0, 0) };
         panel.Children.Add(_modsPanel);
         SetPageContent(panel);
@@ -446,6 +754,9 @@ public partial class MainWindow : Window
         // 异常日志
         panel.Children.Add(BuildExceptionLogsCard());
 
+        // BepInEx 运行环境（自动探测 IL2CPP 与 ModInjector，缺失时引导下载）
+        panel.Children.Add(BuildBepInExRuntimeCard());
+
         // BepInEx 配置
         panel.Children.Add(BuildBepInExSettingsCard());
 
@@ -503,7 +814,7 @@ public partial class MainWindow : Window
         SetPageShell("日志");
         var logPath = Logger.GetLogFilePath() ?? Path.Combine(AppContext.BaseDirectory, "Logs", "Latest.Log");
         var card = CreateCard();
-        card.Child = new TextBox { Text = ReadLogTail(logPath), IsReadOnly = true, TextWrapping = TextWrapping.NoWrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(16), BorderThickness = new Thickness(0), FontFamily = new System.Windows.Media.FontFamily("Cascadia Mono"), FontSize = 12, MinHeight = 420 };
+        card.Child = new TextBox { Text = ReadLogTail(logPath), IsReadOnly = true, TextWrapping = TextWrapping.NoWrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(16), BorderThickness = new Thickness(0), FontFamily = (System.Windows.Media.FontFamily)FindResource("MonoFont"), FontSize = 12, MinHeight = 420 };
         SetPageContent(card);
         StatusText.Text = logPath;
     }
@@ -541,10 +852,82 @@ public partial class MainWindow : Window
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
         var card = CreateCard();
         card.MaxWidth = 720;
-        card.Child = new StackPanel { Margin = new Thickness(28), Children = { new TextBlock { Text = "THMI Mod Manager", FontSize = 26, FontWeight = FontWeights.SemiBold, Foreground = (System.Windows.Media.Brush)FindResource("AccentBrush") }, new TextBlock { Text = $"版本 {version}", Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 8, 0, 22) }, new Separator(), new TextBlock { Text = "为 Touhou Mystia Izakaya 提供本地 Mod 管理、启动和配置功能的原生 WPF 桌面客户端。", Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 22, 0, 0) } } };
+        var body = new StackPanel { Margin = new Thickness(28) };
+        body.Children.Add(new TextBlock { Text = "THMI Mod Manager", FontSize = 26, FontWeight = FontWeights.SemiBold, Foreground = (System.Windows.Media.Brush)FindResource("AccentBrush") });
+        body.Children.Add(new TextBlock { Text = $"版本 {version}", Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 8, 0, 22) });
+        body.Children.Add(new Separator());
+        body.Children.Add(new TextBlock { Text = "为 Touhou Mystia Izakaya 提供本地 Mod 管理、启动和配置功能的原生 WPF 桌面客户端。", Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 22, 0, 22), TextWrapping = TextWrapping.Wrap });
+
+        // 深色模式下 TextBlock 默认前景为黑色，标题与组件名必须显式引用主题文本画刷
+        var componentsHeading = new TextBlock { Text = "开源组件", FontSize = 17, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 10) };
+        componentsHeading.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+        body.Children.Add(componentsHeading);
+        foreach (var (name, license, source) in GetOpenSourceComponents())
+        {
+            var nameText = new TextBlock { Text = name, FontWeight = FontWeights.Medium, Margin = new Thickness(0, 4, 0, 0) };
+            nameText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            body.Children.Add(nameText);
+            body.Children.Add(CreateComponentSourceLine(license, source));
+        }
+        body.Children.Add(new TextBlock
+        {
+            Text = "本应用基于 GPL-3.0 协议开源。BepInEx IL2CPP 运行环境在需要时从 builds.bepinex.dev 下载，随包分发的 Segoe UI 字体副本遵循微软字体许可，再分发前请自行确认合规。",
+            Style = (Style)FindResource("MutedText"),
+            FontSize = 12,
+            Margin = new Thickness(0, 14, 0, 0),
+            TextWrapping = TextWrapping.Wrap
+        });
+        card.Child = body;
         SetPageContent(card);
-        StatusText.Text = "GPL-3.0";
+        StatusText.Text = "本应用基于 GPL-3.0 协议开源。";
     }
+
+    /// <summary>组件来源行：URL 形式的来源渲染为可点击超链接（系统浏览器打开），纯文本保持原样。</summary>
+    private FrameworkElement CreateComponentSourceLine(string license, string source)
+    {
+        var line = new TextBlock { Style = (Style)FindResource("MutedText"), FontSize = 12, Margin = new Thickness(0, 0, 0, 6) };
+        line.Inlines.Add(new System.Windows.Documents.Run(license + "  ·  "));
+
+        var isUrl = source.Contains('.', StringComparison.Ordinal) && !source.Contains(' ', StringComparison.Ordinal);
+        if (!isUrl)
+        {
+            line.Inlines.Add(new System.Windows.Documents.Run(source));
+            return line;
+        }
+
+        var link = new System.Windows.Documents.Hyperlink(new System.Windows.Documents.Run(source))
+        {
+            NavigateUri = new Uri($"https://{source}"),
+            Foreground = (System.Windows.Media.Brush)FindResource("AccentBrush"),
+        };
+        link.RequestNavigate += (_, e) =>
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(ex, $"Failed to open link: {e.Uri.AbsoluteUri}");
+            }
+        };
+        line.Inlines.Add(link);
+        return line;
+    }
+
+    /// <summary>应用依赖的开源组件清单（名称 / 许可证 / 来源）。</summary>
+    private static System.Collections.Generic.IReadOnlyList<(string Name, string License, string Source)> GetOpenSourceComponents() => new[]
+    {
+        (".NET 10 / WPF", "MIT", "Microsoft"),
+        ("WPF-UI 4.3.0", "MIT", "github.com/lepoco/wpfui"),
+        ("AvalonEdit 6.3.1.120", "MIT", "github.com/icsharpcode/AvalonEdit"),
+        ("System.Drawing.Common 10.0.5", "MIT", "github.com/dotnet/runtime"),
+        ("Tommy（内嵌源码）", "MIT", "github.com/skwasjar/Tommy"),
+        ("Fluent UI System Icons", "MIT", "github.com/microsoft/fluentui-system-icons"),
+        ("Cascadia Mono", "SIL OFL 1.1", "github.com/microsoft/cascadia-code"),
+        ("Segoe UI（内嵌字体）", "Microsoft 字体许可", "Microsoft"),
+    };
 
     private void RunAction(Func<string> action)
     {
@@ -562,14 +945,14 @@ public partial class MainWindow : Window
         panel.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Explore:Subtitle", "发现并下载 Touhou Project Mod"), Style = (Style)FindResource("MutedText"), FontSize = 17, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 40) });
         var card = CreateCard();
         var content = new StackPanel { Margin = new Thickness(48), HorizontalAlignment = HorizontalAlignment.Stretch };
-        content.Children.Add(new TextBlock { Text = "&#xE721;", FontFamily = (System.Windows.Media.FontFamily)FindResource("IconFont"), FontSize = 72, Foreground = (System.Windows.Media.Brush)FindResource("AccentBrush"), HorizontalAlignment = HorizontalAlignment.Center, Opacity = 0.65 });
+        content.Children.Add(new TextBlock { Text = "\uE721", FontFamily = (System.Windows.Media.FontFamily)FindResource("IconFont"), FontSize = 72, Foreground = (System.Windows.Media.Brush)FindResource("AccentBrush"), HorizontalAlignment = HorizontalAlignment.Center, Opacity = 0.65 });
         content.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Explore:PlaceholderTitle", "暂无可用站点"), FontSize = 28, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 20, 0, 8) });
         content.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Explore:PlaceholderDesc", "当前没有可用的 Mod 下载站点。此功能正在开发中，敬请期待！"), Style = (Style)FindResource("MutedText"), FontSize = 16, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 28) });
         var features = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, 0, 28) };
-        features.Children.Add(CreateExploreFeature("&#xE721;", _appConfig.GetLocalized("Explore:Feature1", "搜索和浏览 Mod")));
-        features.Children.Add(CreateExploreFeature("&#xE896;", _appConfig.GetLocalized("Explore:Feature2", "一键下载安装")));
-        features.Children.Add(CreateExploreFeature("&#xE734;", _appConfig.GetLocalized("Explore:Feature3", "查看 Mod 评分和评论")));
-        features.Children.Add(CreateExploreFeature("&#xE81C;", _appConfig.GetLocalized("Explore:Feature4", "获取最新 Mod 更新")));
+        features.Children.Add(CreateExploreFeature("\uE721", _appConfig.GetLocalized("Explore:Feature1", "搜索和浏览 Mod")));
+        features.Children.Add(CreateExploreFeature("\uE896", _appConfig.GetLocalized("Explore:Feature2", "一键下载安装")));
+        features.Children.Add(CreateExploreFeature("\uE734", _appConfig.GetLocalized("Explore:Feature3", "查看 Mod 评分和评论")));
+        features.Children.Add(CreateExploreFeature("\uE81C", _appConfig.GetLocalized("Explore:Feature4", "获取最新 Mod 更新")));
         content.Children.Add(features);
         content.Children.Add(new Border { Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#E7F3FF")), BorderBrush = (System.Windows.Media.Brush)FindResource("AccentBrush"), BorderThickness = new Thickness(4, 0, 0, 0), Padding = new Thickness(18), Child = new TextBlock { Text = _appConfig.GetLocalized("Explore:InfoText", "我们正在努力构建 Mod 生态系统，请关注后续更新。"), Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#004085")), TextWrapping = TextWrapping.Wrap } });
         card.Child = content;
@@ -619,6 +1002,14 @@ public partial class MainWindow : Window
 
     private void ShowShellAbout()
     {
+        // Wine/Proton（wine_get_version 存在）下 ShellAbout 弹出的是 Wine 风格系统关于框，
+        // 改走应用内"关于"页，观感与多语言文案保持一致；原生 Windows 保留系统 ShellAbout。
+        if (WineEnv.IsWine)
+        {
+            ShowAbout();
+            return;
+        }
+
         var applicationName = "THMI Mod Manager";
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
         var executablePath = Process.GetCurrentProcess().MainModule?.FileName;
@@ -646,6 +1037,7 @@ public partial class MainWindow : Window
         heading.Children.Add(new TextBlock { Text = mod.Name, Style = (Style)FindResource("SectionTitle"), VerticalAlignment = VerticalAlignment.Center });
         heading.Children.Add(CreateBadge(mod.IsDisabled ? "已禁用" : "已启用", mod.IsDisabled ? "#72777D" : "#14866D"));
         if (mod.HasUpdateAvailable) heading.Children.Add(CreateBadge("可更新", "#AC6600"));
+        if (mod.IsValid && !mod.HasManifest) heading.Children.Add(CreateBadge("无清单·基础模式", "#5A5A66"));
         details.Children.Add(heading);
         details.Children.Add(new TextBlock { Text = string.IsNullOrWhiteSpace(mod.Description) ? $"{mod.Author}  |  {mod.FileName}" : mod.Description, Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 6, 0, 0) });
         details.Children.Add(new TextBlock { Text = $"版本 {mod.Version}    作者 {mod.Author}", Foreground = (System.Windows.Media.Brush)FindResource("MutedTextBrush"), FontSize = 12, Margin = new Thickness(0, 8, 0, 0) });
@@ -1195,6 +1587,60 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// BepInEx 运行环境卡片：展示探测状态与已装版本，提供手动检测安装、打开下载页与自动检测开关。
+    /// </summary>
+    private Border BuildBepInExRuntimeCard()
+    {
+        var card = CreateCard();
+        var body = new StackPanel { Margin = new Thickness(20) };
+        body.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Settings:BepInExRuntimeTitle", "BepInEx 运行环境"), Style = (Style)FindResource("SectionTitle") });
+        body.Children.Add(new TextBlock { Text = _appConfig.GetLocalized("Settings:BepInExRuntimeDesc", "自动探测 BepInEx IL2CPP 与 ModInjector（winhttp.dll / doorstop_config.ini）。缺失时无法向游戏注入 Plugin DLL。"), Style = (Style)FindResource("MutedText"), Margin = new Thickness(0, 5, 0, 14), TextWrapping = TextWrapping.Wrap });
+
+        var detection = _bepInExService.Detect();
+        var statusText = detection.State switch
+        {
+            BepInExInstallState.Complete => string.Format(_appConfig.GetLocalized("Settings:BepInExRuntimeStatusComplete", "已安装 {0}（{1}）"), detection.InstalledVersion ?? "?", detection.Architecture),
+            BepInExInstallState.InjectorMissing => string.Format(_appConfig.GetLocalized("Settings:BepInExRuntimeStatusInjectorMissing", "已安装 {0}，但缺少 ModInjector（winhttp.dll / doorstop_config.ini）"), detection.InstalledVersion ?? "?"),
+            _ => _appConfig.GetLocalized("Settings:BepInExRuntimeStatusMissing", "未检测到 BepInEx IL2CPP"),
+        };
+        body.Children.Add(new TextBlock
+        {
+            Text = statusText,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = (System.Windows.Media.Brush)FindResource(detection.State == BepInExInstallState.Complete ? "SuccessBrush" : "WarningBrush"),
+            Margin = new Thickness(0, 0, 0, 14),
+            TextWrapping = TextWrapping.Wrap,
+        });
+
+        var autoCheck = new CheckBox
+        {
+            Content = _appConfig.GetLocalized("Settings:BepInExRuntimeAutoCheck", "启动时自动检测"),
+            IsChecked = GetConfigBool("[BepInEx]AutoCheck", true),
+            Margin = new Thickness(0, 0, 0, 12),
+        };
+        // Set 默认立即持久化，开关即时生效，无需等待“保存设置”
+        autoCheck.Checked += (_, _) => _appConfig.Set("[BepInEx]AutoCheck", "true");
+        autoCheck.Unchecked += (_, _) => _appConfig.Set("[BepInEx]AutoCheck", "false");
+        body.Children.Add(autoCheck);
+
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal };
+        buttons.Children.Add(CreateButton(_appConfig.GetLocalized("Settings:BepInExRuntimeCheckNow", "检测并安装最新版"), async (_, _) =>
+        {
+            var current = _bepInExService.Detect();
+            if (current.State == BepInExInstallState.Complete)
+                await InstallBepInExAsync();   // 已安装：直接检测并更新到最新构建
+            else
+                await ShowBepInExInstallDialog(current, onlyOnce: false);
+        }, "PrimaryButton"));
+        buttons.Children.Add(CreateButton(_appConfig.GetLocalized("Settings:BepInExDialogOpenPage", "打开下载页"), (_, _) => OpenBepInExBuildsPage()));
+        body.Children.Add(buttons);
+
+        card.Child = body;
+        card.Margin = new Thickness(0, 0, 0, 16);
+        return card;
+    }
+
     private string? DetectBepInExConfigPath()
     {
         var saved = _appConfig.Get("[BepInEx]ConfigPath", "");
@@ -1272,7 +1718,8 @@ public partial class MainWindow : Window
         });
     }
 
-    /// <summary>读取 Windows 深浅主题设置（AppsUseLightTheme：0 = 深色）。</summary>
+    /// <summary>读取 Windows 深浅主题设置（AppsUseLightTheme：0 = 深色）。
+    /// Wine/Proton 前缀中没有 Personalize 键：GetValue 返回默认值 1 → 浅色主题，安全降级。</summary>
     private static bool IsSystemDark()
     {
         try

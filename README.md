@@ -4,6 +4,7 @@
 ![Language](https://img.shields.io/badge/Language-C%23-cf6fff?style=flat-square)
 ![Framework](https://img.shields.io/badge/Framework-.NET%2010%20WPF-9fa0db?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20x64-00b600?style=flat-square)
+![Wine](https://img.shields.io/badge/Wine-Proton%2010%2B%20verified-7c3aed?style=flat-square)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager)
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
@@ -28,21 +29,36 @@ A native Windows desktop mod manager for Touhou Mystia Izakaya, built as a WPF a
 - 🎮 **Game Launcher** — launch the game via Steam URL protocol (`steam://rungameid/1584090`) or an external program, with live process monitoring and session timer
 - 📦 **Mod Management** — browse, enable, disable, delete and install mods from the `BepInEx/plugins` directory (ZIP install supported)
 - ⚠️ **Conflict Detection** — based on `UniqueID` / `IncompatibleWith` fields in `Manifest.toml`; conflicts prompt for confirmation with force-enable option
+- 🧩 **Basic Mode** — mods without a `Manifest.toml` still load (name falls back to the DLL file name, shown with a "无清单·基础模式" badge); manifest-driven features (update checks, conflict detection) are unavailable for them
 - 🌐 **Multi-language Support** — localization via INI files, with per-language Home/About markdown resources
 - 🎨 **Theme Switching** — light / dark / follow system, with independent accent color
 - 📝 **Log Viewer** — built-in viewer for `Logs/Latest.Log`; unhandled exceptions are auto-dumped to KernelPanic logs
 - ⚙️ **BepInEx Config Editor** — edit common `BepInEx.cfg` entries directly in the UI
+- 🧪 **BepInEx IL2CPP Auto-Detection** — on startup the manager checks for `BepInEx/core/BepInEx.Unity.IL2CPP.dll` and the ModInjector (`winhttp.dll` + `doorstop_config.ini`); if either is missing (without it, Plugin DLLs cannot be injected), it offers to download and install the latest BepInEx IL2CPP build from builds.bepinex.dev (architecture auto-detected from the game executable)
 - 🔄 **Update Checks** — app updates via GitHub API, mod updates via online version comparison
 - 💾 **Hot-reload Settings** — settings are saved to `AppConfig.Schale` (INI) and applied immediately
+- 🍷 **Wine / Proton Compatibility** — runtime detection via the Wine-only `wine_get_version` export: embedded fonts, in-app notifications and the in-app About page activate automatically under Wine/Proton
 
 ## Requirements
 
-- .NET 10.0 SDK (build only; .NET 10 Desktop Runtime required at runtime)
+- .NET 10.0 Desktop Runtime (x64) on target machines — the default publish is **framework-dependent** (single exe ≈ 13 MB); .NET 10.0 SDK only needed for building, or for a self-contained build (no runtime install needed, ~50 MB+) pass `-p:SelfContained=true -p:PublishTrimmed=false`
 - Windows 10 x64 22H2 or later (may not work well on older Windows versions)
+- Wine / Proton 10+; see [Wine / Proton Compatibility](#wine--proton-compatibility))
 - A legal copy of the game Touhou Mystia Izakaya
 - Stable Internet connection for downloading mods (optional)
 
 **If you insist on running on versions below Windows 10 x64, you must add `DOTNET_EnableWriteXorExecute=0` and `DOTNET_GCName=clrgc.dll` to your system environment variables, then restart the system. See [this issue](https://github.com/dotnet/runtime/issues/79469#issuecomment-1371202114) for more details.**
+
+## Wine / Proton Compatibility
+
+The app also runs under **Wine 10+ / Proton 10+** (verified on ARM64 Proton 11.0). For Wine/Proton, publish a **self-contained** build (`dotnet publish -c Release -r win-x64 -p:SelfContained=true -p:PublishTrimmed=false`) so no .NET runtime has to be installed inside the prefix. Compatibility mode activates at runtime by probing the Wine-only `wine_get_version` export in `ntdll.dll` — no separate build, no preprocessor switch:
+
+- 🔤 **Embedded fonts** load automatically (Wine prefixes lack Segoe UI / Segoe Fluent Icons / Cascadia Mono)
+- 🔔 **Notifications** fall back to an in-app toast (tray balloon tips are unreliable under Wine)
+- ℹ️ The **About** entry opens the in-app About page instead of the Windows ShellAbout dialog
+- 📝 Startup logs print `Wine / Proton Environment Detected (Wine <version>)`
+
+Icon font: [Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) (MIT) and Cascadia Mono (OFL) are redistributable; the embedded Segoe UI text font remains under the Microsoft font license — verify before redistributing.
 
 ## Build from Source
 
@@ -100,10 +116,10 @@ dotnet publish --configuration Release
 Run the generated desktop application from:
 
 ```powershell
-& ".\bin\Release\net10.0-windows\publish\THMI Mod Manager.exe"
+& ".\bin\Release\net10.0-windows\win-x64\publish\THMI Mod Manager.exe"
 ```
 
-*Note: Use `--output <path>` to specify an output directory. Use `-p:SelfContained=true` to include the .NET runtime (no runtime install needed, but larger output). The build automatically copies localization files, theme resources and configuration files to the output directory.*
+*Note: Use `--output <path>` to specify an output directory. Publishing defaults to **framework-dependent** — the output is a single ~13 MB exe, but target machines need the [.NET 10.0 Desktop Runtime (x64)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). For a self-contained build (runtime bundled, no .NET install needed on target machines, output is larger) pass `-p:SelfContained=true -p:PublishTrimmed=false`. The build automatically copies localization files, theme resources and configuration files to the output directory.*
 
 ## Usage
 
@@ -121,6 +137,7 @@ Shows three metric cards (game status, game files present, session timer) and a 
 - Each mod card supports **Enable / Disable / Delete** directly (disabled while the game is running)
 - Conflict detection reads `Manifest.toml`; enabling a conflicting mod prompts for confirmation and supports force-enable
 - Click a mod card to expand details (ID, version, incompatible list)
+- Mods without `Manifest.toml` load in **basic mode** (grey "无清单·基础模式" badge): enable / disable / delete still work, while update checks and conflict detection are skipped for them
 
 ### Explore
 
@@ -135,9 +152,10 @@ Planned mod browsing / download station (under development, placeholder page).
 - **Notifications**: enable or disable update and event notifications
 - **Window Title**: add a "Modded" prefix to the game window title
 - **BepInEx Config**: pick a `BepInEx.cfg` and edit common entries directly
+- **BepInEx Runtime**: shows the detected BepInEx IL2CPP / ModInjector status, with a manual "check & install latest" action and an auto-check-on-startup toggle
 
 Settings are hot-reloaded on save and written to `AppConfig.Schale` in the app directory.
 
-### Logs
+### Logs Generation Part
 
-The built-in log viewer shows `Logs/Latest.Log`; unhandled exceptions are automatically dumped to `KernelPanic_{yyyyMMdd_HHmmss}.log`. Right-click the About nav item to open the Windows system About dialog.
+The built-in log viewer shows `Logs/Latest.Log`; unhandled exceptions are automatically dumped to `KernelPanic_{yyyyMMdd_HHmmss}.log`. Right-click the About nav item to open the Windows system About dialog (under Wine/Proton it opens the in-app About page instead).

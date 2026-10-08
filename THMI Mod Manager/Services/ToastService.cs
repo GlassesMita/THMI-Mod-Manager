@@ -34,6 +34,14 @@ public static class ToastService
     /// <summary>发送一条系统通知气泡；失败时静默降级。</summary>
     public static void Show(string title, string message)
     {
+        // Wine/Proton（wine_get_version 存在）：托盘图标可用，但 NIF_INFO 气泡内容常不被
+        // 兼容层显示，改走应用内 toast 保证通知可见；原生 Windows 保持托盘气泡路径。
+        if (WineEnv.IsWine)
+        {
+            ShowInAppToast(title, message);
+            return;
+        }
+
         try
         {
             lock (Sync)
@@ -138,6 +146,84 @@ public static class ToastService
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
         return value.Length <= maxChars ? value : value[..maxChars];
+    }
+
+    /// <summary>
+    /// Wine/Proton 下的应用内通知：右下角无边框提示窗，6 秒自动关闭。
+    /// 与托盘路径一样保持"绿色"：不落盘、不留常驻窗口、进程退出无残留。
+    /// </summary>
+    private static void ShowInAppToast(string title, string message)
+    {
+        try
+        {
+            var app = System.Windows.Application.Current;
+            var dispatcher = app?.Dispatcher ?? System.Windows.Threading.Dispatcher.CurrentDispatcher;
+            if (!dispatcher.CheckAccess())
+            {
+                dispatcher.BeginInvoke(() => ShowInAppToast(title, message));
+                return;
+            }
+
+            const double width = 320, height = 96;
+            var workArea = System.Windows.SystemParameters.WorkArea;
+            var toast = new System.Windows.Window
+            {
+                Title = "THMI Notification",
+                Width = width,
+                Height = height,
+                WindowStyle = System.Windows.WindowStyle.None,
+                ResizeMode = System.Windows.ResizeMode.NoResize,
+                ShowInTaskbar = false,
+                ShowActivated = false,
+                Topmost = true,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x1F, 0x1F, 0x1F)),
+                Left = Math.Max(0, workArea.Width - width - 16),
+                Top = Math.Max(0, workArea.Height - height - 16),
+                Content = new System.Windows.Controls.Border
+                {
+                    Padding = new System.Windows.Thickness(16),
+                    Child = new System.Windows.Controls.StackPanel
+                    {
+                        Children =
+                        {
+                            new System.Windows.Controls.TextBlock
+                            {
+                                Text = title,
+                                FontWeight = System.Windows.FontWeights.SemiBold,
+                                Foreground = System.Windows.Media.Brushes.White,
+                                TextTrimming = System.Windows.TextTrimming.CharacterEllipsis
+                            },
+                            new System.Windows.Controls.TextBlock
+                            {
+                                Text = message,
+                                Margin = new System.Windows.Thickness(0, 6, 0, 0),
+                                TextWrapping = System.Windows.TextWrapping.Wrap,
+                                MaxHeight = 44,
+                                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xD0, 0xD0, 0xD0))
+                            }
+                        }
+                    }
+                }
+            };
+
+            toast.Show();
+
+            System.Windows.Threading.DispatcherTimer? timer = null;
+            timer = new System.Windows.Threading.DispatcherTimer(
+                TimeSpan.FromSeconds(6),
+                System.Windows.Threading.DispatcherPriority.Background,
+                (_, _) =>
+                {
+                    timer!.Stop();
+                    try { toast.Close(); } catch { /* 已关闭则忽略 */ }
+                },
+                dispatcher);
+            timer.Start();
+        }
+        catch
+        {
+            // 通知失败不影响主流程
+        }
     }
 
     // ============ P/Invoke ============

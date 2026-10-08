@@ -73,7 +73,8 @@ namespace THMI_Mod_Manager.Services
                     }
                 }
 
-                Logger.LogInfo($"Mod scan completed: {allFiles.Count} files, {mods.Count} valid, {failed.Count} failed");
+                var basicCount = mods.Count(m => !m.HasManifest);
+                Logger.LogInfo($"Mod scan completed: {allFiles.Count} files, {mods.Count} valid ({basicCount} basic mode without manifest), {failed.Count} failed");
                 if (failed.Count > 0)
                 {
                     var shown = failed.Take(10).ToList();
@@ -205,6 +206,7 @@ namespace THMI_Mod_Manager.Services
                         }
                         
                         modInfo.IsValid = true;
+                        modInfo.HasManifest = true;
                         Logger.LogEx($"Successfully extracted mod info from {manifestPath}: {modInfo.Name}");
                     }
                     else
@@ -215,16 +217,21 @@ namespace THMI_Mod_Manager.Services
                 }
                 else
                 {
-                    modInfo.ErrorMessage = "Manifest.toml not found";
-                    Logger.LogWarning($"Manifest.toml not found at {manifestPath}");
-                    
+                    // 无 Manifest.toml：降级为基础模式加载（IsValid=true、HasManifest=false）。
+                    // 依赖清单的高级功能（更新检查、冲突检测）随之不可用；删除/启用/禁用等文件级操作不受影响。
+                    modInfo.IsValid = true;
+                    modInfo.HasManifest = false;
+                    modInfo.Version = "未知";
+                    modInfo.Author = "未知";
+
                     var fileName = Path.GetFileNameWithoutExtension(dllPath);
                     if (fileName.EndsWith(".dll"))
                     {
                         fileName = Path.GetFileNameWithoutExtension(fileName);
                     }
-                    
+
                     modInfo.Name = fileName;
+                    Logger.LogWarning($"Manifest.toml not found at {manifestPath} - loaded '{modInfo.Name}' in basic mode (update check and conflict detection unavailable)");
                 }
             }
             catch (Exception ex)
@@ -241,7 +248,7 @@ namespace THMI_Mod_Manager.Services
                 modInfo.Name = fileName;
             }
 
-            if (modInfo.IsValid && !string.IsNullOrEmpty(manifestPath))
+            if (modInfo.IsValid && modInfo.HasManifest && !string.IsNullOrEmpty(manifestPath))
             {
                 _manifestCache[manifestPath] = new ModMetaCacheEntry
                 {
@@ -287,6 +294,7 @@ namespace THMI_Mod_Manager.Services
                 FileSize = source.FileSize,
                 LastModified = source.LastModified,
                 IsValid = source.IsValid,
+                HasManifest = source.HasManifest,
                 ErrorMessage = source.ErrorMessage,
                 InstallTime = source.InstallTime,
                 HasUpdateAvailable = source.HasUpdateAvailable,

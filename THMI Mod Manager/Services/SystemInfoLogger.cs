@@ -25,6 +25,11 @@ namespace THMI_Mod_Manager.Services
             {
                 Logger.LogInfo("*** Initialized Application ***");
 
+                if (WineEnv.IsWine)
+                {
+                    Logger.LogInfo($"Wine / Proton Environment Detected! (Wine {WineEnv.WineVersion ?? "Unknown Version"})。Compatibility Features Enabled: Embedded Fonts / In-App Notifications / In-App About Page.");
+                }
+
                 try
                 {
                     string? appVersion = null;
@@ -36,7 +41,7 @@ namespace THMI_Mod_Manager.Services
                     {
                         Logger.LogWarning($"AppConfigManager not available: {configEx.Message}");
                     }
-                    
+
                     if (!string.IsNullOrEmpty(appVersion))
                     {
                         Logger.LogInfo($"Application Version: {appVersion}");
@@ -61,7 +66,7 @@ namespace THMI_Mod_Manager.Services
                     {
                         Logger.LogInfo("\t");
                         string unityPlayerPath = Path.Combine(_contentRootPath, "UnityPlayer.dll");
-                        
+
                         if (File.Exists(unityPlayerPath))
                         {
                             using var sha1 = SHA1.Create();
@@ -156,80 +161,81 @@ namespace THMI_Mod_Manager.Services
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error during application shutdown logging: {ex.Message}");
+                Logger.LogInfo($"Error during application shutdown logging: {ex.Message}");
             }
         }
 
+        /// <summary>
+        /// CPU 型号。已移除 wmic（WMI COM）调用 —— wmic 在 Win11 24H2+ 被微软移除，
+        /// 且 Wine/Proton 前缀中不存在。改为读取注册表 CentralProcessor 键：
+        /// 该键由原生 Windows 与 Wine/Proton 共同提供，两种环境共用同一实现。
+        /// </summary>
         private string GetProcessorInfo()
         {
             try
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    using var process = Process.Start(new ProcessStartInfo
+                    var cpuName = Microsoft.Win32.Registry.GetValue(
+                        @"HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0",
+                        "ProcessorNameString", null) as string;
+                    if (!string.IsNullOrWhiteSpace(cpuName))
+                        return cpuName.Trim();
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    foreach (var line in File.ReadLines("/proc/cpuinfo"))
                     {
-                        FileName = "wmic",
-                        Arguments = "cpu get name",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        CreateNoWindow = true
-                    });
-                    
-                    if (process != null)
-                    {
-                        string output = process.StandardOutput.ReadToEnd();
-                        process.WaitForExit();
-                        
-                        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                        if (lines.Length > 1)
+                        if (line.StartsWith("model name", StringComparison.OrdinalIgnoreCase))
                         {
-                            return lines[1].Trim();
+                            var idx = line.IndexOf(':');
+                            if (idx >= 0 && idx + 1 < line.Length)
+                                return line[(idx + 1)..].Trim();
                         }
                     }
                 }
-                
-                return $"{RuntimeInformation.ProcessArchitecture} Processor";
             }
             catch
             {
-                return $"{RuntimeInformation.ProcessArchitecture} Processor";
+                // 落入默认值
             }
+
+            return $"{RuntimeInformation.ProcessArchitecture} Processor";
         }
 
+        /// <summary>
+        /// 物理内存（GB）。已移除 wmic（WMI COM）调用，改用 kernel32!GlobalMemoryStatusEx
+        /// flat API —— Wine/Proton 完整实现该导出，与原生 Windows 共用同一实现。
+        /// </summary>
         private double GetMemoryInfo()
         {
             try
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    using var process = Process.Start(new ProcessStartInfo
+                    var status = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
+                    if (GlobalMemoryStatusEx(ref status) && status.ullTotalPhys > 0)
+                        return Math.Round(status.ullTotalPhys / (1024.0 * 1024.0 * 1024.0), 2);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    foreach (var line in File.ReadLines("/proc/meminfo"))
                     {
-                        FileName = "wmic",
-                        Arguments = "computersystem get totalphysicalmemory",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        CreateNoWindow = true
-                    });
-                    
-                    if (process != null)
-                    {
-                        string output = process.StandardOutput.ReadToEnd();
-                        process.WaitForExit();
-                        
-                        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                        if (lines.Length > 1 && long.TryParse(lines[1].Trim(), out long totalMemory))
+                        if (line.StartsWith("MemTotal", StringComparison.OrdinalIgnoreCase))
                         {
-                            return Math.Round(totalMemory / (1024.0 * 1024.0 * 1024.0), 2);
+                            var digits = new string(line.SkipWhile(c => !char.IsDigit(c)).TakeWhile(char.IsDigit).ToArray());
+                            if (long.TryParse(digits, out var totalKb) && totalKb > 0)
+                                return Math.Round(totalKb / (1024.0 * 1024.0), 2);
                         }
                     }
                 }
-                
-                return Math.Round(Environment.WorkingSet / (1024.0 * 1024.0 * 1024.0), 2);
             }
             catch
             {
-                return Math.Round(Environment.WorkingSet / (1024.0 * 1024.0 * 1024.0), 2);
+                // 落入默认值
             }
+
+            return Math.Round(Environment.WorkingSet / (1024.0 * 1024.0 * 1024.0), 2);
         }
 
         private string GetUptime()
@@ -244,5 +250,23 @@ namespace THMI_Mod_Manager.Services
                 return "Unknown";
             }
         }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MEMORYSTATUSEX
+        {
+            public uint dwLength;
+            public uint dwMemoryLoad;
+            public ulong ullTotalPhys;
+            public ulong ullAvailPhys;
+            public ulong ullTotalPageFile;
+            public ulong ullAvailPageFile;
+            public ulong ullTotalVirtual;
+            public ulong ullAvailVirtual;
+            public ulong ullAvailExtendedVirtual;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
     }
 }

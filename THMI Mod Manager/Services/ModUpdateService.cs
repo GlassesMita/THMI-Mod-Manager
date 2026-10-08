@@ -52,6 +52,13 @@ namespace THMI_Mod_Manager.Services
                 await concurrency.WaitAsync(cancellationToken);
                 try
                 {
+                    if (!mod.HasManifest)
+                    {
+                        // 无清单（基础模式）：没有 UpdateUrl / UniqueId 等清单字段，跳过更新检查
+                        mod.HasUpdateAvailable = false;
+                        return mod;
+                    }
+
                     var latestVersion = await GetLatestModVersionAsync(mod, cancellationToken);
                     if (latestVersion != null)
                     {

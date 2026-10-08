@@ -4,6 +4,7 @@
 ![Language](https://img.shields.io/badge/Language-C%23-cf6fff?style=flat-square)
 ![Framework](https://img.shields.io/badge/Framework-.NET%2010%20WPF-9fa0db?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20x64-00b600?style=flat-square)
+![Wine](https://img.shields.io/badge/Wine-Proton%2010%2B%20verified-7c3aed?style=flat-square)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GlassesMita/THMI-Mod-Manager)
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
@@ -28,21 +29,36 @@
 - 🎮 **游戏启动器** - 通过 Steam URL 协议（`steam://rungameid/1584090`）或外部程序启动游戏，实时进程监控与会话计时
 - 📦 **Mod 管理** - 从 `BepInEx/plugins` 目录浏览、启用、禁用、删除与安装 Mod（支持 ZIP 一键安装）
 - ⚠️ **冲突检测** - 基于 `Manifest.toml` 的 `UniqueID` / `IncompatibleWith` 字段，启用冲突 Mod 时提示并支持强制启用
+- 🧩 **基础模式（无清单加载）** - 没有 `Manifest.toml` 的 Mod 也能加载（名称回退为 DLL 文件名，卡片带"无清单·基础模式"徽标）；依赖清单的功能（更新检查、冲突检测）对其不可用
 - 🌐 **多语言支持** - 基于 INI 文件的本地化系统，附带各语言的 Home/About Markdown 资源
 - 🎨 **主题切换** - 浅色 / 深色 / 跟随系统，主题色独立可自定义
 - 📝 **日志查看** - 内置查看器展示 `Logs/Latest.Log`；未处理异常自动转储 KernelPanic 日志
 - ⚙️ **BepInEx 配置** - 直接在界面中编辑 `BepInEx.cfg` 常用项
+- 🧪 **BepInEx IL2CPP 自动探测** - 启动时自动检测 `BepInEx/core/BepInEx.Unity.IL2CPP.dll` 与 ModInjector（`winhttp.dll` + `doorstop_config.ini`）；任一缺失（缺少时无法向游戏注入 Plugin DLL）即引导下载并安装 builds.bepinex.dev 的最新 IL2CPP 构建（依据游戏主程序自动判断 x64/x86 架构）
 - 🔄 **更新检查** - 应用更新基于 GitHub API，Mod 更新基于在线版本比对
 - 💾 **设置热重载** - 设置保存至 `AppConfig.Schale`（INI 格式）并立即生效
+- 🍷 **Wine / Proton 兼容** - 通过 Wine 独有的 `wine_get_version` 导出做运行时探测：Wine/Proton 下自动启用内嵌字体、应用内通知与应用内关于页
 
 ## 系统要求
 
-- .NET 10.0 SDK（仅编译需要；运行时需 .NET 10 桌面运行时）
+- .NET 10.0 桌面运行时（x64）——发布产物默认**框架依赖**（单 exe 约 13 MB）；.NET 10.0 SDK 仅编译需要，或用于自包含构建（免装运行时，约 50 MB+）：传 `-p:SelfContained=true -p:PublishTrimmed=false`
 - Windows 10 x64 22H2 及以上版本（更旧系统可能兼容性不佳）
+- Wine / Proton 10+（已在 ARM64 Proton 11.0 实测；见 [Wine / Proton 兼容](#wine--proton-兼容)）
 - 正版游戏《东方夜雀食堂》本体
 - 稳定的网络连接用于下载 Mod（可选）
 
 **如果您执意要在 Windows 10 x64 以下版本上运行，您必须在系统环境变量内添加 `DOTNET_EnableWriteXorExecute=0` 和 `DOTNET_GCName=clrgc.dll`，然后重新启动。详见[此 Issue](https://github.com/dotnet/runtime/issues/79469#issuecomment-1371202114)。**
+
+## Wine / Proton 兼容
+
+应用同样可以运行在 **Wine 10+ / Proton 10+** 上（已在 ARM64 Proton 11.0 实测）。Wine/Proton 环境请发布**自包含**产物（`dotnet publish -c Release -r win-x64 -p:SelfContained=true -p:PublishTrimmed=false`），免去在 Wine 前缀内安装 .NET 运行时。兼容模式在运行时通过探测 `ntdll.dll` 中 Wine 独有的 `wine_get_version` 导出自动启用——无需单独构建，无预处理器开关：
+
+- 🔤 **内嵌字体**自动加载（Wine 前缀缺少 Segoe UI / Segoe Fluent Icons / Cascadia Mono）
+- 🔔 **通知**降级为应用内 toast（托盘气泡在 Wine 下不可靠）
+- ℹ️ **关于**入口改为打开应用内关于页（而非 Windows ShellAbout 对话框）
+- 📝 启动日志输出 `侦测到 Wine / Proton 环境 (Wine <版本>)`
+
+图标字体：[Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons)（MIT）与 Cascadia Mono（OFL）可再分发。
 
 ## 源码编译
 
@@ -100,10 +116,10 @@ dotnet publish --configuration Release
 从以下目录启动生成的 WPF 桌面程序：
 
 ```powershell
-& ".\bin\Release\net10.0-windows\publish\THMI Mod Manager.exe"
+& ".\bin\Release\net10.0-windows\win-x64\publish\THMI Mod Manager.exe"
 ```
 
-*注意：可使用 `--output <path>` 指定输出目录。使用 `-p:SelfContained=true` 可包含 .NET 运行时（无需安装运行时，但输出体积更大）。编译过程会自动将本地化文件、主题资源和配置文件复制到输出目录。*
+*注意：可使用 `--output <path>` 指定输出目录。发布默认**框架依赖**——产物为单个约 13 MB 的 exe，但目标机需安装 [.NET 10.0 桌面运行时（x64）](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)。如需自包含（运行时随包分发，目标机无需安装 .NET，体积更大），传 `-p:SelfContained=true -p:PublishTrimmed=false`。编译过程会自动将本地化文件、主题资源和配置文件复制到输出目录。*
 
 ## 使用说明
 
@@ -121,6 +137,7 @@ dotnet publish --configuration Release
 - 每个 Mod 卡片可直接**启用 / 禁用 / 删除**（游戏运行时禁用修改）
 - 冲突检测读取 `Manifest.toml`；启用冲突 Mod 时提示并支持强制启用
 - 点击 Mod 卡片可展开详情（ID、版本、不兼容列表）
+- 没有 `Manifest.toml` 的 Mod 以**基础模式**加载（灰色"无清单·基础模式"徽标）：启用 / 禁用 / 删除照常可用，更新检查与冲突检测自动跳过
 
 ### 探索
 
@@ -135,9 +152,10 @@ dotnet publish --configuration Release
 - **通知**：启用或禁用更新与事件通知
 - **窗口标题**：为游戏窗口标题添加 "Modded" 前缀
 - **BepInEx 配置**：选择 `BepInEx.cfg` 后可直接编辑常用配置项
+- **BepInEx 运行环境**：展示 BepInEx IL2CPP / ModInjector 探测状态，支持手动"检测并安装最新版"，可开关启动时自动检测
 
 设置保存后立即生效（热重载），配置写入应用目录下的 `AppConfig.Schale`。
 
-### 日志
+### 日志生成部分
 
-内置日志查看器展示 `Logs/Latest.Log`；未处理异常自动转储 `KernelPanic_{yyyyMMdd_HHmmss}.log`。右键点击"关于"导航项可打开 Windows 系统关于对话框。
+内置日志查看器展示 `Logs/Latest.Log`；未处理异常自动转储 `KernelPanic_{yyyyMMdd_HHmmss}.log`。右键点击"关于"导航项可打开 Windows 系统关于对话框（Wine/Proton 下改为打开应用内关于页）。

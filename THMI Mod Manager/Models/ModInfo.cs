@@ -31,6 +31,14 @@ namespace THMI_Mod_Manager.Models
         public DateTime LastModified { get; set; }
         /// <summary>Whether the mod has a valid manifest / 模组是否有有效的清单文件</summary>
         public bool IsValid { get; set; }
+        /// <summary>
+        /// Whether a Manifest.toml was found and parsed. Mods without one load in basic mode:
+        /// the name falls back to the DLL file name, and manifest-driven features
+        /// (update checks, conflict detection, rich metadata) are unavailable.
+        /// / 是否成功解析 Manifest.toml。无清单的模组以基础模式加载：
+        /// 名称回退为 DLL 文件名，且清单驱动的功能（更新检查、冲突检测、元数据展示）不可用。
+        /// </summary>
+        public bool HasManifest { get; set; }
         /// <summary>Error message if any / 如有错误则包含错误信息</summary>
         public string ErrorMessage { get; set; } = string.Empty;
         /// <summary>Time when the mod was installed / 模组安装时间</summary>

@@ -1,40 +1,12 @@
-﻿[App]
-Name=THMI Mod Manager
-Version=0.3.1
-VersionCode=1
-IsFirstRun=False
+﻿﻿[App]
 ThemeColor=#c670ff
-ModsPath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\Mods
-GamePath=C:\Users\Mila\source\repos\THMI Mod Manager\THMI Mod Manager\bin\Debug\net8.0\
-RequireAdminRestart=False
 
 [Localization]
 Language=zh_HANS
 
-[Cursor]
-UseCustomCursor=False
-CursorType=default
-UseMystiaCursor=False
-
 [Game]
-Status=
 LauncherPath=
 ModifyTitle=true
 
-[Server]
-# Set Port to Random to select a free TCP port on each startup.
-Port=5000
-AllowRemoteSession=False
-
 [Updates]
 CheckForUpdates=True
-UpdateCheckType=GitHub
-UpdateCheckInterval=24
-AutoDownloadUpdates=False
-ProgramUpdateSource=GlassesMita/THMI-Mod-Manager
-LastCheckTime=2026-02-02T12:58:59.0520386+08:00
-
-[Dev]
-IsDevBuild=False
-ShowCVEWarning=True
-

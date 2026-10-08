@@ -10,26 +10,26 @@
     <IsPackable>true</IsPackable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>icon\appicon.ico</ApplicationIcon>
-    
+
     <!-- 语义化版本号配置 -->
     <!-- Version: 用于 NuGet 包和 informational 版本显示，支持预发布标签 -->
-    <Version>0.14.0</Version>
+    <Version>0.15.0</Version>
     <!-- AssemblyVersion: 必须为 4 部分数字格式，用于程序集标识 -->
-    <AssemblyVersion>0.14.0.0</AssemblyVersion>
+    <AssemblyVersion>0.15.0.0</AssemblyVersion>
     <!-- FileVersion: 必须为 4 部分数字格式，用于文件属性对话框显示 -->
-    <FileVersion>0.14.0.0</FileVersion>
+    <FileVersion>0.15.0.0</FileVersion>
     <!-- AssemblyInformationalVersion: 支持完整语义化版本，用于程序集属性显示 -->
-    <AssemblyInformationalVersion>0.14.0</AssemblyInformationalVersion>
-    
+    <AssemblyInformationalVersion>0.15  .0</AssemblyInformationalVersion>
+
     <!-- 禁用源代码控制信息生成（避免版本号后出现 Git 哈希） -->
     <Deterministic>false</Deterministic>
     <ContinuousIntegrationBuild>false</ContinuousIntegrationBuild>
     <SourceLinkRemoveCommitHash>true</SourceLinkRemoveCommitHash>
-    
+
     <!-- 强制覆盖 AssemblyInformationalVersion（确保无哈希） -->
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
-    
+
     <!-- 核心：自定义BuildAll参数（默认false，传入\-\-build-all则为true） -->
     <BuildAll>false</BuildAll>
     <!-- 定义所有目标平台（可按需增删） -->
@@ -39,12 +39,21 @@
     <!-- 关键防坑：内容文件（AppConfig.Schale/Localization）继续复制到 exe 旁而非打进包运行时解压。
          若为 true，运行时解压到临时目录，AppContext.BaseDirectory 将指向临时目录，破坏现有路径识别。 -->
     <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
-    <!-- 自包含部署配置：当传入 SelfContained=true 参数时启用 -->
-    <SelfContained Condition="$(SelfContained) == '' Or $(SelfContained) == 'false'">false</SelfContained>
-    <SelfContained Condition="$(SelfContained) == 'true'">true</SelfContained>
-    <!-- 单文件时不启用裁剪：WPF 反射场景（反射创建异常类型等）需保留元数据 -->
-    <PublishTrimmed>false</PublishTrimmed>
-    
+    <!-- 部署模式：框架依赖（默认）——exe 仅含应用本体（约 15MB），目标机需安装 .NET 10 桌面运行时（x64）。
+         如需恢复自包含（免装运行时），发布时传 -p:SelfContained=true，
+         并建议同时传 -p:PublishTrimmed=false（WPF 官方不支持裁剪，自包含+裁剪已实测触发 PenImc 崩溃）；
+         自包含模式另支持单文件压缩（EnableCompressionInSingleFile）。
+         显式覆盖示例：dotnet publish -c Release -r win-x64 -p:SelfContained=true -p:PublishTrimmed=false -->
+    <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+    <!-- 框架依赖同样需要 RID 决定 apphost：默认 win-x64；显式覆盖：dotnet publish -r <rid> -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <!-- 裁剪仅自包含模式支持（框架依赖报 NETSDK1102），且 WPF 官方不支持裁剪（NETSDK1168，
+         自包含+裁剪已实测触发 PenImc TypeLoadException），默认关闭，勿轻易开启 -->
+    <PublishTrimmed Condition="'$(PublishTrimmed)' == ''">false</PublishTrimmed>
+    <_SuppressWpfTrimError Condition="'$(PublishTrimmed)' == 'true'">true</_SuppressWpfTrimError>
+    <!-- 单文件压缩：仅自包含模式支持（框架依赖报 NETSDK1176） -->
+    <EnableCompressionInSingleFile Condition="'$(SelfContained)' == 'true'">true</EnableCompressionInSingleFile>
+
   </PropertyGroup>
 
   <!-- 游戏目录构建配置：使用 -p:GameDir="路径" 指定游戏目录，构建到游戏目录 -->
@@ -64,6 +73,16 @@
     <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.5" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Wine/Proton 兼容：内嵌字体资源（仅在 WineEnv.IsWine 时经 pack URI 加载，原生 Windows 不使用）。
+         FluentSystemIcons-Regular.ttf：MIT（microsoft/fluentui-system-icons）；CascadiaMono.ttf：OFL，均可再分发；
+         segoeui/segoeuib：微软字体许可，再分发前请自行确认合规。 -->
+    <Resource Include="Assets\Fonts\CascadiaMono.ttf" />
+    <Resource Include="Assets\Fonts\FluentSystemIcons-Regular.ttf" />
+    <Resource Include="Assets\Fonts\segoeui.ttf" />
+    <Resource Include="Assets\Fonts\segoeuib.ttf" />
   </ItemGroup>
 
   <!-- 强制保留必要文件 -->

@@ -23,7 +23,7 @@
             <ComboBox x:Name="LanguageCombo" Width="140" SelectionChanged="LanguageCombo_SelectionChanged" />
         </StackPanel>
         <avalonedit:TextEditor x:Name="Editor" Grid.Row="1"
-                               FontFamily="Cascadia Mono, Consolas"
+                               FontFamily="{DynamicResource MonoFont}"
                                FontSize="13"
                                ShowLineNumbers="True"
                                LineNumbersForeground="#808080"
